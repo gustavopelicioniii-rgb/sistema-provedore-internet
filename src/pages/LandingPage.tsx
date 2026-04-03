@@ -108,10 +108,10 @@ export default function LandingPage() {
           <motion.h1
             variants={fadeUp}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
+            className="font-display text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl"
           >
             Gerencie seu provedor{" "}
-            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               com inteligência
             </span>
           </motion.h1>
