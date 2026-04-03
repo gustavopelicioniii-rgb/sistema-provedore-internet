@@ -17,6 +17,8 @@ import {
   Paperclip, Image, Mic, FileText, X, File, Download,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useTickets, useDeleteTicket, type TicketRecord } from "@/hooks/useTickets";
 import TicketFormDialog from "@/components/tickets/TicketFormDialog";
 import {
