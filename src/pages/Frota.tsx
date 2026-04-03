@@ -208,7 +208,7 @@ export default function Frota() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vehicles.map((vehicle) => {
+                    {filteredVehicles.map((vehicle) => {
                       const st = vehicleStatus[vehicle.status] ?? vehicleStatus.available;
                       const fuelLevel = vehicle.fuel_level ?? 0;
                       return (
