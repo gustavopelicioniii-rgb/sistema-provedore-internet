@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, FileSignature } from "lucide-react";
-import { useContracts, useDeleteContract, STATUS_META, type ContractRecord } from "@/hooks/useContracts";
+import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, FileSignature, FileDown } from "lucide-react";
+import { useContracts, useDeleteContract, STATUS_META, type ContractRecord, type ContractWithRelations } from "@/hooks/useContracts";
+import { generateContractPdf } from "@/utils/contractPdf";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import ContractFormDialog from "@/components/contracts/ContractFormDialog";
 
@@ -107,6 +108,9 @@ export default function Contratos() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleEdit(contract)}>
                               <Pencil className="mr-2 size-3.5" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => generateContractPdf(contract as ContractWithRelations)}>
+                              <FileDown className="mr-2 size-3.5" /> Gerar PDF
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(contract.id)}>
                               <Trash2 className="mr-2 size-3.5" /> Excluir

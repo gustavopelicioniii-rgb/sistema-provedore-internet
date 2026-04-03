@@ -15,7 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload } from "lucide-react";
+import CsvImportDialog from "@/components/customers/CsvImportDialog";
 import { useCustomers, useDeleteCustomer, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj } from "@/utils/formatters";
 import CustomerFormDialog from "@/components/customers/CustomerFormDialog";
@@ -33,6 +34,7 @@ export default function Clientes() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<CustomerRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
 
   const { data: customers, isLoading, error } = useCustomers(debouncedSearch);
   const deleteCustomer = useDeleteCustomer();
@@ -65,10 +67,16 @@ export default function Clientes() {
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground text-sm">Gerencie seus assinantes e contratos</p>
         </div>
-        <Button onClick={handleNew}>
-          <Plus className="mr-2 size-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setCsvOpen(true)}>
+            <Upload className="mr-2 size-4" />
+            Importar CSV
+          </Button>
+          <Button onClick={handleNew}>
+            <Plus className="mr-2 size-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -177,6 +185,7 @@ export default function Clientes() {
       </Card>
 
       <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} editingCustomer={editingCustomer} />
+      <CsvImportDialog open={csvOpen} onOpenChange={setCsvOpen} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

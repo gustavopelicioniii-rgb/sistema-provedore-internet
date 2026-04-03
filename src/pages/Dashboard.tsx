@@ -79,6 +79,7 @@ export default function Dashboard() {
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="month" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis yAxisId="right" orientation="right" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
@@ -91,7 +92,8 @@ export default function Dashboard() {
                           name === "receita" ? "Receita" : "Clientes",
                         ]}
                       />
-                      <Area type="monotone" dataKey="clientes" stroke="hsl(var(--chart-1))" fill="url(#colorClientes)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="clientes" stroke="hsl(var(--chart-1))" fill="url(#colorClientes)" strokeWidth={2} name="clientes" />
+                      <Area type="monotone" dataKey="receita" stroke="hsl(var(--chart-2))" fill="none" strokeWidth={2} strokeDasharray="5 3" name="receita" yAxisId="right" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
