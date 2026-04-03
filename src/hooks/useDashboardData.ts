@@ -21,15 +21,16 @@ export interface DashboardMetricData {
   receivedThisMonth: number;
   defaultingCustomers: number;
   overdueRate: number;
+  churnRate: number;
+  openTickets: number;
+  pendingServiceOrders: number;
   revenueData: Array<{ month: string; clientes: number; receita: number }>;
   invoiceStatusData: Array<{ category: string; count: number }>;
   recentActivities: Array<{ text: string; time: string; type: "success" | "warning" | "destructive" }>;
   alerts: AlertItem[];
-  // Trend sparkline data (last 6 months)
   customerSparkline: number[];
   revenueSparkline: number[];
-  // Trend direction
-  customerTrend: number; // percentage change vs previous month
+  customerTrend: number;
   revenueTrend: number;
   hasData: boolean;
 }
