@@ -1,27 +1,57 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Filter } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
+import { useCustomers, useDeleteCustomer, type CustomerAddress } from "@/hooks/useCustomers";
+import { formatCpfCnpj } from "@/utils/formatters";
+import CustomerFormDialog from "@/components/customers/CustomerFormDialog";
 
-const mockClientes = [
-  { id: 1, nome: "João Silva", cpf: "123.456.789-00", plano: "Fibra 300MB", status: "Ativo", cidade: "São Paulo", score: 9.2 },
-  { id: 2, nome: "Maria Souza", cpf: "987.654.321-00", plano: "Fibra 200MB", status: "Ativo", cidade: "Campinas", score: 8.5 },
-  { id: 3, nome: "Pedro Oliveira", cpf: "456.789.123-00", plano: "Fibra 100MB", status: "Suspenso", cidade: "Santos", score: 4.1 },
-  { id: 4, nome: "Ana Costa", cpf: "321.654.987-00", plano: "Fibra 500MB", status: "Ativo", cidade: "São Paulo", score: 9.8 },
-  { id: 5, nome: "Carlos Lima", cpf: "654.987.321-00", plano: "Fibra 100MB", status: "Inadimplente", cidade: "Guarulhos", score: 2.3 },
-  { id: 6, nome: "Fernanda Rocha", cpf: "789.123.456-00", plano: "Fibra 300MB", status: "Ativo", cidade: "Osasco", score: 7.6 },
-];
-
-const statusColor: Record<string, string> = {
-  Ativo: "bg-success/10 text-success border-success/20",
-  Suspenso: "bg-warning/10 text-warning border-warning/20",
-  Inadimplente: "bg-destructive/10 text-destructive border-destructive/20",
-  Cancelado: "bg-muted text-muted-foreground border-muted",
+const statusMap: Record<string, { label: string; className: string }> = {
+  active: { label: "Ativo", className: "bg-success/10 text-success border-success/20" },
+  suspended: { label: "Suspenso", className: "bg-warning/10 text-warning border-warning/20" },
+  defaulting: { label: "Inadimplente", className: "bg-destructive/10 text-destructive border-destructive/20" },
+  cancelled: { label: "Cancelado", className: "bg-muted text-muted-foreground border-muted" },
 };
 
 export default function Clientes() {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const { data: customers, isLoading } = useCustomers(debouncedSearch);
+  const deleteCustomer = useDeleteCustomer();
+
+  // Simple debounce
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    const timeout = setTimeout(() => setDebouncedSearch(value), 300);
+    return () => clearTimeout(timeout);
+  };
+
+  const handleEdit = (customer: any) => {
+    setEditingCustomer(customer);
+    setFormOpen(true);
+  };
+
+  const handleNew = () => {
+    setEditingCustomer(null);
+    setFormOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (deleteId) {
+      await deleteCustomer.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -29,7 +59,7 @@ export default function Clientes() {
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground text-sm">Gerencie seus assinantes e contratos</p>
         </div>
-        <Button>
+        <Button onClick={handleNew}>
           <Plus className="mr-2 size-4" />
           Novo Cliente
         </Button>
@@ -38,53 +68,117 @@ export default function Clientes() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-base">Todos os Clientes</CardTitle>
-            <div className="flex gap-2">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou CPF..." className="pl-9" />
-              </div>
-              <Button variant="outline" size="icon">
-                <Filter className="size-4" />
-              </Button>
+            <CardTitle className="text-base">
+              Todos os Clientes
+              {customers && <span className="ml-2 text-sm font-normal text-muted-foreground">({customers.length})</span>}
+            </CardTitle>
+            <div className="relative flex-1 sm:w-64 sm:flex-initial">
+              <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou CPF..."
+                className="pl-9"
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>CPF/CNPJ</TableHead>
-                <TableHead>Plano</TableHead>
-                <TableHead>Cidade</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockClientes.map((c) => (
-                <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
-                  <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.cpf}</TableCell>
-                  <TableCell>{c.plano}</TableCell>
-                  <TableCell>{c.cidade}</TableCell>
-                  <TableCell>
-                    <span className={`font-semibold ${c.score >= 7 ? "text-success" : c.score >= 4 ? "text-warning" : "text-destructive"}`}>
-                      {c.score.toFixed(1)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusColor[c.status]}>
-                      {c.status}
-                    </Badge>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !customers?.length ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-muted-foreground">Nenhum cliente encontrado</p>
+              <Button variant="outline" className="mt-4" onClick={handleNew}>
+                <Plus className="mr-2 size-4" />
+                Cadastrar primeiro cliente
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CPF/CNPJ</TableHead>
+                  <TableHead className="hidden md:table-cell">Cidade</TableHead>
+                  <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {customers.map((c) => {
+                  const addr = c.address as CustomerAddress | null;
+                  const st = statusMap[c.status] || statusMap.active;
+                  const score = c.financial_score ?? 5;
+                  return (
+                    <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(c)}>
+                      <TableCell className="font-medium">{c.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatCpfCnpj(c.cpf_cnpj)}</TableCell>
+                      <TableCell className="hidden md:table-cell">{addr?.city || "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{c.whatsapp || "—"}</TableCell>
+                      <TableCell>
+                        <span className={`font-semibold ${score >= 7 ? "text-success" : score >= 4 ? "text-warning" : "text-destructive"}`}>
+                          {score.toFixed(1)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(c); }}>
+                              <Pencil className="mr-2 size-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
+                            >
+                              <Trash2 className="mr-2 size-4" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
+      <CustomerFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editingCustomer={editingCustomer}
+      />
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Todos os dados do cliente serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
