@@ -1,7 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
-import { useAuth } from "@/hooks/useAuth";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 
 export interface CustomerAddress {
@@ -27,6 +26,25 @@ export interface CustomerFormData {
   status?: "active" | "suspended" | "defaulting" | "cancelled";
 }
 
+export type CustomerRecord = Database["public"]["Tables"]["customers"]["Row"];
+
+type CustomerInsert = Database["public"]["Tables"]["customers"]["Insert"];
+type CustomerUpdate = Database["public"]["Tables"]["customers"]["Update"];
+
+async function getCurrentOrganizationId() {
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("organization_id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!profile?.organization_id) {
+    throw new Error("Seu usuário ainda não está vinculado a uma organização. Faça logout e login novamente.");
+  }
+
+  return profile.organization_id;
+}
+
 export function useCustomers(search?: string) {
   return useQuery({
     queryKey: ["customers", search],
@@ -36,14 +54,14 @@ export function useCustomers(search?: string) {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (search && search.trim()) {
+      if (search?.trim()) {
         const term = `%${search.trim()}%`;
         query = query.or(`name.ilike.${term},cpf_cnpj.ilike.${term}`);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return (data ?? []) as CustomerRecord[];
     },
   });
 }
@@ -54,16 +72,10 @@ export function useCreateCustomer() {
 
   return useMutation({
     mutationFn: async (data: CustomerFormData) => {
-      // Get org id from profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("organization_id")
-        .single();
+      const organizationId = await getCurrentOrganizationId();
 
-      if (!profile?.organization_id) throw new Error("Organização não encontrada");
-
-      const insertData = {
-        organization_id: profile.organization_id,
+      const insertData: CustomerInsert = {
+        organization_id: organizationId,
         name: data.name,
         cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
         rg: data.rg || null,
@@ -73,7 +85,7 @@ export function useCreateCustomer() {
         whatsapp: data.whatsapp || null,
         address: (data.address || {}) as Json,
         notes: data.notes || null,
-        status: data.status || ("active" as const),
+        status: data.status || "active",
       };
 
       const { data: customer, error } = await supabase
@@ -87,10 +99,12 @@ export function useCreateCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
       toast({ title: "Cliente criado com sucesso!" });
     },
-    onError: (err: Error) => {
-      toast({ title: "Erro ao criar cliente", description: err.message, variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao criar cliente", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -101,7 +115,8 @@ export function useUpdateCustomer() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<CustomerFormData> }) => {
-      const updateData: Record<string, unknown> = {};
+      const updateData: CustomerUpdate = {};
+
       if (data.name !== undefined) updateData.name = data.name;
       if (data.cpf_cnpj !== undefined) updateData.cpf_cnpj = data.cpf_cnpj.replace(/\D/g, "");
       if (data.rg !== undefined) updateData.rg = data.rg || null;
@@ -125,10 +140,12 @@ export function useUpdateCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
       toast({ title: "Cliente atualizado com sucesso!" });
     },
-    onError: (err: Error) => {
-      toast({ title: "Erro ao atualizar cliente", description: err.message, variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar cliente", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -144,10 +161,12 @@ export function useDeleteCustomer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
       toast({ title: "Cliente removido com sucesso!" });
     },
-    onError: (err: Error) => {
-      toast({ title: "Erro ao remover cliente", description: err.message, variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: "Erro ao remover cliente", description: error.message, variant: "destructive" });
     },
   });
 }
@@ -157,9 +176,11 @@ export async function fetchViaCep(cep: string): Promise<CustomerAddress | null> 
   if (cleanCep.length !== 8) return null;
 
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-    const data = await res.json();
+    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    const data = await response.json();
+
     if (data.erro) return null;
+
     return {
       cep: cleanCep,
       street: data.logradouro || "",
