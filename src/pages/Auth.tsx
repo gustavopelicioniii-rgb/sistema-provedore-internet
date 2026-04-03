@@ -73,7 +73,7 @@ export default function Auth() {
       {/* Left panel — rich branding */}
       <div className="hidden w-[55%] relative overflow-hidden lg:flex">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-blue-700" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
         
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
