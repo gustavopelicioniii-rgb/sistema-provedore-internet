@@ -139,6 +139,14 @@ export default function Automacoes() {
 
   const activeCount = automations.filter((a) => a.enabled).length;
 
+  const activateTemplate = (template: AutomationTemplate) => {
+    const { icon, ...rest } = template;
+    createAutomation.mutate(rest);
+  };
+
+  const isTemplateActive = (template: AutomationTemplate) =>
+    automations.some((a) => a.name === template.name);
+
   const handleSubmit = (values: Partial<Automation>) => {
     if (values.id) {
       updateAutomation.mutate(values as Automation & { id: string });
