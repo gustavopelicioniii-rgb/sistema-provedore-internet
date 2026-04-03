@@ -1,0 +1,123 @@
+import {
+  LayoutDashboard,
+  Users,
+  Kanban,
+  Headset,
+  Radio,
+  Map,
+  ClipboardList,
+  DollarSign,
+  FileText,
+  Package,
+  Car,
+  Wrench,
+  Smartphone,
+  Zap,
+  BarChart3,
+  Settings,
+} from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarFooter,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
+
+const mainNav = [
+  { title: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { title: "Clientes", icon: Users, path: "/clientes" },
+  { title: "CRM", icon: Kanban, path: "/crm" },
+  { title: "Atendimento", icon: Headset, path: "/atendimento" },
+];
+
+const operationalNav = [
+  { title: "Rede & NOC", icon: Radio, path: "/rede" },
+  { title: "Mapa FTTH", icon: Map, path: "/mapa-ftth" },
+  { title: "Ordens de Serviço", icon: ClipboardList, path: "/ordens-servico" },
+  { title: "Técnicos", icon: Wrench, path: "/tecnicos" },
+];
+
+const financeNav = [
+  { title: "Financeiro", icon: DollarSign, path: "/financeiro" },
+  { title: "Fiscal / NF-e", icon: FileText, path: "/fiscal" },
+  { title: "Estoque", icon: Package, path: "/estoque" },
+  { title: "Frota", icon: Car, path: "/frota" },
+];
+
+const advancedNav = [
+  { title: "Portal Assinante", icon: Smartphone, path: "/portal-assinante" },
+  { title: "Automações", icon: Zap, path: "/automacoes" },
+  { title: "Relatórios & BI", icon: BarChart3, path: "/relatorios" },
+  { title: "Configurações", icon: Settings, path: "/configuracoes" },
+];
+
+function NavGroup({ label, items }: { label: string; items: typeof mainNav }) {
+  const location = useLocation();
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.path}>
+              <SidebarMenuButton
+                asChild
+                isActive={location.pathname === item.path}
+                tooltip={item.title}
+              >
+                <NavLink to={item.path}>
+                  <item.icon className="size-4" />
+                  <span>{item.title}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
+
+export function AppSidebar() {
+  return (
+    <Sidebar collapsible="icon" variant="sidebar">
+      <SidebarHeader className="p-4">
+        <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-sm">
+            N
+          </div>
+          <span className="text-lg font-bold text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
+            NetPulse
+          </span>
+        </div>
+      </SidebarHeader>
+      <SidebarSeparator />
+      <SidebarContent className="scrollbar-thin">
+        <NavGroup label="Principal" items={mainNav} />
+        <NavGroup label="Operacional" items={operationalNav} />
+        <NavGroup label="Financeiro" items={financeNav} />
+        <NavGroup label="Avançado" items={advancedNav} />
+      </SidebarContent>
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
+        <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent p-2 group-data-[collapsible=icon]:justify-center">
+          <div className="flex size-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
+            AD
+          </div>
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <span className="text-xs font-medium text-sidebar-accent-foreground">Admin</span>
+            <span className="text-[10px] text-sidebar-foreground">admin@provedor.com</span>
+          </div>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
