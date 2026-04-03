@@ -162,6 +162,7 @@ export function useDeleteCustomer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
       toast({ title: "Cliente removido com sucesso!" });
     },
     onError: (error: Error) => {
