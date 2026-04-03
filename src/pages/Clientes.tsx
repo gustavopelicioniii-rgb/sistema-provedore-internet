@@ -171,7 +171,7 @@ export default function Clientes() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t">
                   <p className="text-xs text-muted-foreground">
-                    Mostrando {page * pageSize + 1}–{Math.min((page + 1) * pageSize, customers.length)} de {customers.length}
+                    Mostrando {page * pageSize + 1} - {Math.min((page + 1) * pageSize, customers.length)} de {customers.length}
                   </p>
                   <div className="flex items-center gap-1">
                     <Button variant="outline" size="icon" className="size-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
