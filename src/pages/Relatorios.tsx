@@ -63,7 +63,7 @@ export default function Relatorios() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-lg bg-success/10"><DollarSign className="size-5 text-success" /></div>
-              <div><p className="text-2xl font-bold">R$ {((data?.monthlyRevenue ?? 0) / 100).toLocaleString("pt-BR")}</p><p className="text-xs text-muted-foreground">MRR</p></div>
+              <div><p className="text-2xl font-bold">R$ {(data?.estimatedMRR ?? 0).toLocaleString("pt-BR")}</p><p className="text-xs text-muted-foreground">MRR</p></div>
             </div>
           </CardContent>
         </Card>
