@@ -34,6 +34,9 @@ const statusConfig = {
   maintenance: { label: "Manutenção", className: "bg-muted text-muted-foreground border-muted", icon: Wrench },
 };
 
+const CHART_COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"];
+const tooltipStyle = { backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", color: "hsl(var(--card-foreground))" };
+
 const typeLabels: Record<string, string> = {
   olt: "OLT", onu: "ONU", router: "Roteador", switch: "Switch",
   server: "Servidor", access_point: "AP", other: "Outro",
