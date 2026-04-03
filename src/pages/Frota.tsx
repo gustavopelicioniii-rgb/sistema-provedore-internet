@@ -90,6 +90,14 @@ export default function Frota() {
     setFormOpen(false);
   };
 
+  const handleFuelSubmit = async (data: Omit<FuelLogInsert, "organization_id">) => {
+    const { data: profile } = await supabase.from("profiles").select("organization_id").single();
+    const orgId = profile?.organization_id;
+    if (!orgId) return;
+    await createFuelLog.mutateAsync({ ...data, organization_id: orgId } as FuelLogInsert);
+    setFuelFormOpen(false);
+  };
+
   const confirmDelete = async () => {
     if (deleteId) {
       await deleteVehicle.mutateAsync(deleteId);
