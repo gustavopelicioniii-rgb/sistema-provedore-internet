@@ -52,7 +52,8 @@ export default function Relatorios() {
         <Button variant="outline"><Calendar className="mr-2 size-4" />Período</Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AnimatedCard index={0}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -61,6 +62,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
+        </AnimatedCard>
+        <AnimatedCard index={1}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -69,6 +72,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
+        </AnimatedCard>
+        <AnimatedCard index={2}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -77,6 +82,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
+        </AnimatedCard>
+        <AnimatedCard index={3}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -85,7 +92,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </AnimatedCard>
+      </StaggerGrid>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
