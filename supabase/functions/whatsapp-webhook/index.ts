@@ -1,0 +1,275 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+/**
+ * Evolution API Webhook - Receives incoming WhatsApp messages
+ * 
+ * Configure in Evolution API:
+ *   Webhook URL: https://<project-ref>.supabase.co/functions/v1/whatsapp-webhook
+ *   Events: MESSAGES_UPSERT
+ * 
+ * Optional: Set EVOLUTION_WEBHOOK_SECRET to validate webhook signatures.
+ */
+
+interface EvolutionMessagePayload {
+  event: string;
+  instance: string;
+  data: {
+    key: {
+      remoteJid: string;
+      fromMe: boolean;
+      id: string;
+    };
+    pushName?: string;
+    message?: {
+      conversation?: string;
+      extendedTextMessage?: { text?: string };
+      imageMessage?: { caption?: string; url?: string };
+      audioMessage?: { url?: string };
+      videoMessage?: { caption?: string; url?: string };
+      documentMessage?: { caption?: string; url?: string; fileName?: string };
+      stickerMessage?: { url?: string };
+      locationMessage?: { degreesLatitude?: number; degreesLongitude?: number };
+    };
+    messageType?: string;
+    messageTimestamp?: number;
+  };
+}
+
+function extractContent(msg: EvolutionMessagePayload["data"]["message"]): { content: string | null; contentType: string; mediaUrl: string | null } {
+  if (!msg) return { content: null, contentType: "text", mediaUrl: null };
+
+  if (msg.conversation) {
+    return { content: msg.conversation, contentType: "text", mediaUrl: null };
+  }
+  if (msg.extendedTextMessage?.text) {
+    return { content: msg.extendedTextMessage.text, contentType: "text", mediaUrl: null };
+  }
+  if (msg.imageMessage) {
+    return { content: msg.imageMessage.caption || null, contentType: "image", mediaUrl: msg.imageMessage.url || null };
+  }
+  if (msg.audioMessage) {
+    return { content: null, contentType: "audio", mediaUrl: msg.audioMessage.url || null };
+  }
+  if (msg.videoMessage) {
+    return { content: msg.videoMessage.caption || null, contentType: "video", mediaUrl: msg.videoMessage.url || null };
+  }
+  if (msg.documentMessage) {
+    return { content: msg.documentMessage.fileName || msg.documentMessage.caption || null, contentType: "document", mediaUrl: msg.documentMessage.url || null };
+  }
+  if (msg.stickerMessage) {
+    return { content: null, contentType: "sticker", mediaUrl: msg.stickerMessage.url || null };
+  }
+  if (msg.locationMessage) {
+    return {
+      content: `${msg.locationMessage.degreesLatitude},${msg.locationMessage.degreesLongitude}`,
+      contentType: "location",
+      mediaUrl: null,
+    };
+  }
+
+  return { content: null, contentType: "text", mediaUrl: null };
+}
+
+function normalizePhone(jid: string): string {
+  // remoteJid format: 5511999999999@s.whatsapp.net
+  return jid.replace(/@.*$/, "");
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Only accept POST
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    // Optional webhook secret validation
+    const webhookSecret = Deno.env.get("EVOLUTION_WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const headerSecret = req.headers.get("x-webhook-secret") || req.headers.get("apikey");
+      if (headerSecret !== webhookSecret) {
+        console.error("Webhook secret mismatch");
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const payload: EvolutionMessagePayload = await req.json();
+    console.log("Webhook event:", payload.event, "instance:", payload.instance);
+
+    // Only process incoming messages
+    if (payload.event !== "messages.upsert" && payload.event !== "MESSAGES_UPSERT") {
+      return new Response(JSON.stringify({ ok: true, skipped: true, reason: "event_not_handled" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { key, pushName, message } = payload.data;
+
+    // Skip messages sent by us (fromMe)
+    if (key.fromMe) {
+      return new Response(JSON.stringify({ ok: true, skipped: true, reason: "from_me" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Skip group messages
+    if (key.remoteJid.includes("@g.us")) {
+      return new Response(JSON.stringify({ ok: true, skipped: true, reason: "group_message" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const phone = normalizePhone(key.remoteJid);
+    const { content, contentType, mediaUrl } = extractContent(message);
+
+    // 1. Find the organization linked to this Evolution instance via channel_configs
+    const { data: channelConfig } = await supabase
+      .from("channel_configs")
+      .select("organization_id, config")
+      .eq("channel", "whatsapp")
+      .eq("enabled", true);
+
+    // Find config matching the instance name
+    let orgId: string | null = null;
+    if (channelConfig && channelConfig.length > 0) {
+      for (const cfg of channelConfig) {
+        const cfgData = cfg.config as Record<string, unknown> | null;
+        if (cfgData && (cfgData as any).instance === payload.instance) {
+          orgId = cfg.organization_id;
+          break;
+        }
+      }
+      // Fallback: if only one config exists, use it
+      if (!orgId && channelConfig.length === 1) {
+        orgId = channelConfig[0].organization_id;
+      }
+    }
+
+    if (!orgId) {
+      console.error("No organization found for WhatsApp instance:", payload.instance);
+      return new Response(JSON.stringify({ error: "No organization configured for this instance" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 2. Try to find existing customer by WhatsApp number
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("id, name")
+      .eq("organization_id", orgId)
+      .or(`whatsapp.eq.${phone},phone.eq.${phone}`)
+      .maybeSingle();
+
+    // 3. Find or create conversation
+    const { data: existingConv } = await supabase
+      .from("conversations")
+      .select("id, status")
+      .eq("organization_id", orgId)
+      .eq("channel", "whatsapp")
+      .eq("channel_contact_id", phone)
+      .in("status", ["open", "waiting"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let conversationId: string;
+
+    if (existingConv) {
+      conversationId = existingConv.id;
+
+      // Re-open if waiting
+      if (existingConv.status === "waiting") {
+        await supabase
+          .from("conversations")
+          .update({ status: "open", updated_at: new Date().toISOString() })
+          .eq("id", conversationId);
+      }
+    } else {
+      // Create new conversation
+      const { data: newConv, error: convError } = await supabase
+        .from("conversations")
+        .insert({
+          organization_id: orgId,
+          customer_id: customer?.id || null,
+          channel: "whatsapp",
+          channel_contact_id: phone,
+          channel_conversation_id: key.remoteJid,
+          status: "open",
+          subject: pushName ? `Conversa com ${pushName}` : `Conversa WhatsApp ${phone}`,
+          metadata: { pushName: pushName || null, instance: payload.instance },
+        })
+        .select("id")
+        .single();
+
+      if (convError || !newConv) {
+        console.error("Error creating conversation:", convError);
+        throw new Error("Failed to create conversation");
+      }
+      conversationId = newConv.id;
+    }
+
+    // 4. Insert message
+    const { error: msgError } = await supabase
+      .from("chat_messages")
+      .insert({
+        conversation_id: conversationId,
+        organization_id: orgId,
+        sender_type: "customer",
+        sender_id: customer?.id || null,
+        content: content,
+        content_type: contentType,
+        media_url: mediaUrl,
+        external_message_id: key.id,
+        metadata: { pushName: pushName || null, remoteJid: key.remoteJid },
+      });
+
+    if (msgError) {
+      console.error("Error inserting message:", msgError);
+      throw new Error("Failed to insert message");
+    }
+
+    // 5. Update conversation preview
+    await supabase
+      .from("conversations")
+      .update({
+        last_message_at: new Date().toISOString(),
+        last_message_preview: (content || `[${contentType}]`).substring(0, 100),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", conversationId);
+
+    console.log("Message processed:", { conversationId, phone, contentType });
+
+    return new Response(
+      JSON.stringify({ ok: true, conversation_id: conversationId }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Webhook error:", message);
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
