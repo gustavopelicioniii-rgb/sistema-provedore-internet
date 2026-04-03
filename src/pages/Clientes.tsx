@@ -34,6 +34,7 @@ export default function Clientes() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<CustomerRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
 
   const { data: customers, isLoading, error } = useCustomers(debouncedSearch);
   const deleteCustomer = useDeleteCustomer();
