@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 
 export type ChatChannel = "whatsapp" | "instagram" | "facebook" | "website" | "telegram" | "email";
 export type ConversationStatus = "open" | "waiting" | "resolved" | "closed";
@@ -71,7 +72,7 @@ export function useConversations(filters?: { status?: ConversationStatus; channe
   });
 }
 
-export function useChatMessages(conversationId: string | null) {
+export function useChatMessages(conversationId: string | null, options?: { onNewIncoming?: (msg: ChatMessage) => void }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -85,12 +86,17 @@ export function useChatMessages(conversationId: string | null) {
         table: "chat_messages",
         filter: `conversation_id=eq.${conversationId}`,
       }, (payload) => {
+        const newMsg = payload.new as ChatMessage;
         queryClient.setQueryData<ChatMessage[]>(["chat-messages", conversationId], (old) => {
-          if (!old) return [payload.new as ChatMessage];
-          const exists = old.some((m) => m.id === (payload.new as ChatMessage).id);
+          if (!old) return [newMsg];
+          const exists = old.some((m) => m.id === newMsg.id);
           if (exists) return old;
-          return [...old, payload.new as ChatMessage];
+          return [...old, newMsg];
         });
+        // Notify on incoming customer messages
+        if (newMsg.sender_type === "customer") {
+          options?.onNewIncoming?.(newMsg);
+        }
       })
       .on("postgres_changes", {
         event: "UPDATE",
@@ -107,7 +113,7 @@ export function useChatMessages(conversationId: string | null) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId, queryClient]);
+  }, [conversationId, queryClient, options?.onNewIncoming]);
 
   return useQuery({
     queryKey: ["chat-messages", conversationId],

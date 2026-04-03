@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ import {
   Paperclip, Image, Mic, FileText, X, File, Download,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useTickets, useDeleteTicket, type TicketRecord } from "@/hooks/useTickets";
 import TicketFormDialog from "@/components/tickets/TicketFormDialog";
 import {
@@ -205,7 +207,15 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 }
 // --- Chat Panel ---
 function ChatPanel({ conversation }: { conversation: Conversation | null }) {
-  const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null);
+  const { play: playSound } = useNotificationSound();
+
+  const handleNewIncoming = useCallback((msg: ChatMessage) => {
+    playSound();
+    const preview = msg.content?.substring(0, 80) || `[${msg.content_type}]`;
+    toast.info("Nova mensagem recebida", { description: preview, duration: 5000 });
+  }, [playSound]);
+
+  const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null, { onNewIncoming: handleNewIncoming });
   const { data: cannedResponses } = useCannedResponses();
   const sendMsg = useSendMessage();
   const updateConv = useUpdateConversation();
