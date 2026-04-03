@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, TrendingDown, TrendingUp, AlertTriangle, ClipboardList, Wifi, Star, Loader2, Package, ArrowUpRight, ArrowDownRight, Minus, Bell } from "lucide-react";
+import { Users, DollarSign, TrendingDown, TrendingUp, AlertTriangle, ClipboardList, Wifi, Star, Loader2, Package, ArrowUpRight, ArrowDownRight, Minus, Bell, Ticket, UserX, Wrench } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line,
