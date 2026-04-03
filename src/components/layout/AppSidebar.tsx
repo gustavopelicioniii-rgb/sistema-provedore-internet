@@ -36,6 +36,7 @@ import {
 const mainNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/" },
   { title: "Clientes", icon: Users, path: "/clientes" },
+  { title: "Contratos", icon: ClipboardList, path: "/contratos" },
   { title: "CRM", icon: Kanban, path: "/crm" },
   { title: "Atendimento", icon: Headset, path: "/atendimento" },
 ];
