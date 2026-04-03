@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Clientes from "@/pages/Clientes";
 import Financeiro from "@/pages/Financeiro";
+import CRM from "@/pages/CRM";
 import PlaceholderPage from "@/pages/PlaceholderPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
