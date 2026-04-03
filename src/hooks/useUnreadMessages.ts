@@ -12,8 +12,9 @@ export function useUnreadMessages() {
 
   // Listen for new messages to invalidate
   useEffect(() => {
+    const channelName = `unread-global-${Date.now()}`;
     const channel = supabase
-      .channel("unread-global")
+      .channel(channelName)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
