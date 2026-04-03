@@ -611,6 +611,7 @@ export default function Configuracoes() {
           <TabsTrigger value="canais"><MessageSquare className="size-4 mr-1.5" />Canais</TabsTrigger>
           <TabsTrigger value="financeiro"><CreditCard className="size-4 mr-1.5" />Financeiro</TabsTrigger>
           <TabsTrigger value="notificacoes"><Bell className="size-4 mr-1.5" />Notificações</TabsTrigger>
+          <TabsTrigger value="respostas"><Zap className="size-4 mr-1.5" />Respostas Rápidas</TabsTrigger>
           <TabsTrigger value="aparencia"><Palette className="size-4 mr-1.5" />Aparência</TabsTrigger>
         </TabsList>
 
