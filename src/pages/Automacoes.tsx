@@ -242,11 +242,52 @@ export default function Automacoes() {
         </Card>
       </div>
 
-      <Tabs defaultValue="automations">
+      <Tabs defaultValue="templates">
         <TabsList>
+          <TabsTrigger value="templates">Templates ({templates.length})</TabsTrigger>
           <TabsTrigger value="automations">Automações ({automations.length})</TabsTrigger>
           <TabsTrigger value="logs">Logs de Execução ({logs.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="templates" className="mt-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {templates.map((t) => {
+              const cat = categoryLabels[t.category];
+              const alreadyActive = isTemplateActive(t);
+              return (
+                <Card key={t.name} className={alreadyActive ? "border-primary/30 bg-primary/5" : ""}>
+                  <CardContent className="py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
+                        <t.icon className="size-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-medium">{t.name}</p>
+                          <Badge variant="outline" className={cat?.className + " text-[10px]"}>{cat?.label}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-3">{t.description}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px]">{triggerLabels[t.trigger_type]}</Badge>
+                          <Badge variant="secondary" className="text-[10px]">{actionLabels[t.action_type]}</Badge>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={alreadyActive ? "outline" : "default"}
+                        disabled={alreadyActive || createAutomation.isPending}
+                        onClick={() => activateTemplate(t)}
+                        className="shrink-0"
+                      >
+                        {alreadyActive ? "✓ Ativado" : "Ativar"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
 
         <TabsContent value="automations" className="space-y-3 mt-4">
           {automations.length === 0 && (
