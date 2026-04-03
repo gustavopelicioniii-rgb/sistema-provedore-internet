@@ -167,7 +167,7 @@ export default function Financeiro() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       )}
 
       {/* Invoices table */}

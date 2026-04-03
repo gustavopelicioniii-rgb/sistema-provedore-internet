@@ -213,7 +213,7 @@ export default function RedeNoc() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       )}
 
       {/* Filters + Devices table */}
