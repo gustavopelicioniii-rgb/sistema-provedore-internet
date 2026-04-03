@@ -96,6 +96,56 @@ function ConversationItem({ conv, active, onClick }: { conv: Conversation; activ
   );
 }
 
+// --- Media rendering helpers ---
+function MediaContent({ msg }: { msg: ChatMessage }) {
+  const isAgent = msg.sender_type === "agent";
+  const linkClass = isAgent ? "text-primary-foreground/80 underline" : "text-primary underline";
+
+  if (!msg.media_url) return null;
+
+  switch (msg.content_type) {
+    case "image":
+      return (
+        <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
+          <img
+            src={msg.media_url}
+            alt={msg.content || "Imagem"}
+            className="max-w-full max-h-60 rounded-lg object-cover"
+            loading="lazy"
+          />
+        </a>
+      );
+    case "audio":
+      return (
+        <audio controls className="max-w-full mb-1" preload="metadata">
+          <source src={msg.media_url} />
+        </audio>
+      );
+    case "video":
+      return (
+        <video controls className="max-w-full max-h-60 rounded-lg mb-1" preload="metadata">
+          <source src={msg.media_url} />
+        </video>
+      );
+    case "document":
+      return (
+        <a href={msg.media_url} target="_blank" rel="noopener noreferrer"
+          className={`flex items-center gap-2 mb-1 text-xs ${linkClass}`}>
+          <FileText className="size-4 shrink-0" />
+          <span className="truncate">{msg.content || "Documento"}</span>
+          <Download className="size-3 shrink-0" />
+        </a>
+      );
+    default:
+      return (
+        <a href={msg.media_url} target="_blank" rel="noopener noreferrer"
+          className={`text-xs ${linkClass} mb-1 block`}>
+          [{msg.content_type}] Abrir arquivo
+        </a>
+      );
+  }
+}
+
 // --- Chat Message Bubble ---
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isAgent = msg.sender_type === "agent";
@@ -118,10 +168,13 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           ? "bg-primary text-primary-foreground rounded-br-md"
           : "bg-muted text-foreground rounded-bl-md"
       }`}>
-        {msg.content_type !== "text" && msg.media_url && (
-          <div className="mb-1 text-xs opacity-70">[{msg.content_type}]</div>
+        <MediaContent msg={msg} />
+        {msg.content && msg.content_type === "text" && (
+          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
         )}
-        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+        {msg.content && msg.content_type !== "text" && msg.content_type !== "document" && (
+          <p className="whitespace-pre-wrap break-words text-xs mt-1">{msg.content}</p>
+        )}
         <p className={`text-[10px] mt-1 ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
           {format(new Date(msg.created_at), "HH:mm")}
         </p>
@@ -129,7 +182,6 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
     </div>
   );
 }
-
 // --- Chat Panel ---
 function ChatPanel({ conversation }: { conversation: Conversation | null }) {
   const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null);
