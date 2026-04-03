@@ -93,7 +93,7 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
-        </AnimatedCard>
+        </MotionCard></AnimatedCard>
       </StaggerGrid>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 lg:grid-cols-2">
