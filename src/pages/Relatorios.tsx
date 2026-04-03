@@ -54,7 +54,7 @@ export default function Relatorios() {
       </div>
 
       <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <AnimatedCard index={0}>
+        <AnimatedCard index={0}><MotionCard>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
