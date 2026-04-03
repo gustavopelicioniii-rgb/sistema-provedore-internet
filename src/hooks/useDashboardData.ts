@@ -55,6 +55,7 @@ export function useDashboardData() {
       if (invoicesResult.error) throw invoicesResult.error;
 
       const inventoryItems = inventoryResult.data ?? [];
+      const openTickets = ticketsResult.data?.length ?? 0;
       const pendingOrders = serviceOrdersResult.data ?? [];
 
       const customers = customersResult.data ?? [];
