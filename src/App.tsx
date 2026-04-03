@@ -58,7 +58,7 @@ const AppRoutes = () => (
       <Route path="/planos" element={<Planos />} />
       <Route path="/contratos" element={<Contratos />} />
       <Route path="/fiscal" element={<PlaceholderPage title="Fiscal / NF-e" description="Emissão de notas fiscais e obrigações fiscais" />} />
-      <Route path="/estoque" element={<PlaceholderPage title="Estoque" description="Controle de equipamentos, materiais e comodato" />} />
+      <Route path="/estoque" element={<Estoque />} />
       <Route path="/frota" element={<PlaceholderPage title="Frota" description="Gestão de veículos, abastecimento e manutenção" />} />
       <Route path="/portal-assinante" element={<PlaceholderPage title="Portal do Assinante" description="App e portal web para clientes" />} />
       <Route path="/automacoes" element={<PlaceholderPage title="Automações" description="Motor de automações inteligentes — o grande diferencial" />} />
