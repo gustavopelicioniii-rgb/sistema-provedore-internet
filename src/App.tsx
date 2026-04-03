@@ -50,8 +50,8 @@ const AppRoutes = () => (
       <Route path="/atendimento" element={<PlaceholderPage title="Atendimento" description="Tickets e service desk unificado" />} />
       <Route path="/rede" element={<PlaceholderPage title="Rede & NOC" description="Monitoramento de OLTs, concentradores e clientes" />} />
       <Route path="/mapa-ftth" element={<PlaceholderPage title="Mapa FTTH" description="Documentação visual da rede óptica" />} />
-      <Route path="/ordens-servico" element={<PlaceholderPage title="Ordens de Serviço" description="Gestão de instalações, manutenções e visitas técnicas" />} />
-      <Route path="/tecnicos" element={<PlaceholderPage title="Técnicos" description="Gestão da equipe técnica e produtividade" />} />
+      <Route path="/ordens-servico" element={<OrdensServico />} />
+      <Route path="/tecnicos" element={<Tecnicos />} />
       <Route path="/financeiro" element={<Financeiro />} />
       <Route path="/planos" element={<Planos />} />
       <Route path="/contratos" element={<Contratos />} />
