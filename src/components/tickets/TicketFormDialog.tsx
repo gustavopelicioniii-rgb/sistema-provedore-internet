@@ -59,7 +59,7 @@ export default function TicketFormDialog({ open, onOpenChange, editing }: Props)
       description: description || undefined,
       priority: priority as TicketFormData["priority"],
       status: status as TicketFormData["status"],
-      customer_id: customerId || undefined,
+      customer_id: customerId && customerId !== "none" ? customerId : undefined,
     };
     try {
       if (isEditing && editing) await update.mutateAsync({ id: editing.id, data: form });
@@ -84,7 +84,7 @@ export default function TicketFormDialog({ open, onOpenChange, editing }: Props)
             <Select value={customerId} onValueChange={setCustomerId}>
               <SelectTrigger><SelectValue placeholder="Selecione um cliente (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {customers?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>

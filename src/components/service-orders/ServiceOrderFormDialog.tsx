@@ -48,14 +48,14 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
   useEffect(() => {
     if (open && editing) {
       setCustomerId(editing.customer_id);
-      setTechnicianId(editing.technician_id || "");
+      setTechnicianId(editing.technician_id || "none");
       setType(editing.type);
       setStatus(editing.status);
       setDescription(editing.description || "");
       setScheduledDate(editing.scheduled_date ? editing.scheduled_date.slice(0, 16) : "");
       setNotes(editing.notes || "");
     } else if (open) {
-      setCustomerId(""); setTechnicianId(""); setType("installation"); setStatus("open");
+      setCustomerId(""); setTechnicianId("none"); setType("installation"); setStatus("open");
       setDescription(""); setScheduledDate(""); setNotes("");
     }
   }, [open, editing]);
@@ -64,7 +64,7 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
     e.preventDefault();
     const form: ServiceOrderFormData = {
       customer_id: customerId,
-      technician_id: technicianId || undefined,
+      technician_id: technicianId === "none" ? undefined : technicianId || undefined,
       type: type as ServiceOrderFormData["type"],
       status: status as ServiceOrderFormData["status"],
       description: description || undefined,
@@ -99,7 +99,7 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
             <Select value={technicianId} onValueChange={setTechnicianId}>
               <SelectTrigger><SelectValue placeholder="Selecione um técnico" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {technicians?.filter((t) => t.status === "active").map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
               </SelectContent>
             </Select>
