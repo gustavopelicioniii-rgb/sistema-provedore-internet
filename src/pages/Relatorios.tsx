@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart3, TrendingUp, Users, DollarSign, Download, FileText, Wrench, Loader2, AlertTriangle,
+  BarChart3, TrendingUp, Users, DollarSign, Download, FileText, Wrench, Loader2, AlertTriangle, Sheet,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
