@@ -110,16 +110,41 @@ export function AppSidebar() {
         <NavGroup label="Avançado" items={advancedNav} />
       </SidebarContent>
       <SidebarFooter className="p-3 group-data-[collapsible=icon]:p-2">
-        <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent p-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex size-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
-            AD
-          </div>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-xs font-medium text-sidebar-accent-foreground">Admin</span>
-            <span className="text-[10px] text-sidebar-foreground">admin@provedor.com</span>
-          </div>
-        </div>
+        <UserFooter />
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function UserFooter() {
+  const { user, signOut } = useAuth();
+  const initials = (user?.user_metadata?.full_name || user?.email || "U")
+    .split(" ")
+    .map((w: string) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const name = user?.user_metadata?.full_name || "Usuário";
+  const email = user?.email || "";
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent p-2 group-data-[collapsible=icon]:justify-center">
+        <div className="flex size-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
+          {initials}
+        </div>
+        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+          <span className="text-xs font-medium text-sidebar-accent-foreground">{name}</span>
+          <span className="text-[10px] text-sidebar-foreground truncate max-w-[140px]">{email}</span>
+        </div>
+      </div>
+      <button
+        onClick={signOut}
+        className="flex w-full items-center gap-2 rounded-lg p-2 text-xs text-sidebar-foreground hover:bg-sidebar-accent transition-colors group-data-[collapsible=icon]:justify-center"
+      >
+        <LogOut className="size-4" />
+        <span className="group-data-[collapsible=icon]:hidden">Sair</span>
+      </button>
+    </div>
   );
 }
