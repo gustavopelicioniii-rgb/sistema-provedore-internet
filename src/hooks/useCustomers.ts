@@ -109,7 +109,7 @@ export function useUpdateCustomer() {
       if (data.email !== undefined) updateData.email = data.email || null;
       if (data.phone !== undefined) updateData.phone = data.phone || null;
       if (data.whatsapp !== undefined) updateData.whatsapp = data.whatsapp || null;
-      if (data.address !== undefined) updateData.address = data.address || {};
+      if (data.address !== undefined) updateData.address = (data.address || {}) as Json;
       if (data.notes !== undefined) updateData.notes = data.notes || null;
       if (data.status !== undefined) updateData.status = data.status;
 
