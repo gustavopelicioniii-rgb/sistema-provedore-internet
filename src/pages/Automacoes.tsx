@@ -137,6 +137,16 @@ export default function Automacoes() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Automation | null>(null);
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+
+  const toggleLogExpand = (id: string) => {
+    setExpandedLogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const activeCount = automations.filter((a) => a.enabled).length;
 
