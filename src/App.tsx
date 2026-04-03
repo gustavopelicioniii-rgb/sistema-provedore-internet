@@ -64,10 +64,10 @@ const AppRoutes = () => (
       <Route path="/fiscal" element={<PlaceholderPage title="Fiscal / NF-e" description="Emissão de notas fiscais e obrigações fiscais" />} />
       <Route path="/estoque" element={<Estoque />} />
       <Route path="/frota" element={<PlaceholderPage title="Frota" description="Gestão de veículos, abastecimento e manutenção" />} />
-      <Route path="/portal-assinante" element={<PlaceholderPage title="Portal do Assinante" description="App e portal web para clientes" />} />
-      <Route path="/automacoes" element={<PlaceholderPage title="Automações" description="Motor de automações inteligentes — o grande diferencial" />} />
-      <Route path="/relatorios" element={<PlaceholderPage title="Relatórios & BI" description="Analytics avançado e relatórios customizados" />} />
-      <Route path="/configuracoes" element={<PlaceholderPage title="Configurações" description="Configurações gerais do sistema e da organização" />} />
+      <Route path="/portal-assinante" element={<PortalAssinante />} />
+      <Route path="/automacoes" element={<Automacoes />} />
+      <Route path="/relatorios" element={<Relatorios />} />
+      <Route path="/configuracoes" element={<Configuracoes />} />
     </Route>
     <Route path="*" element={<NotFound />} />
   </Routes>
