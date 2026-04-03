@@ -298,7 +298,179 @@ function ChannelConfigCard({ channel, existing }: { channel: ChatChannel; existi
   );
 }
 
-// --- Canais Tab ---
+// --- Respostas Rápidas Tab ---
+function RespostasRapidasTab() {
+  const { data: responses, isLoading } = useCannedResponses();
+  const createMut = useCreateCannedResponse();
+  const updateMut = useUpdateCannedResponse();
+  const deleteMut = useDeleteCannedResponse();
+  const { toast } = useToast();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<CannedResponse | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [shortcut, setShortcut] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  const openNew = () => {
+    setEditing(null);
+    setShortcut("");
+    setTitle("");
+    setContent("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (r: CannedResponse) => {
+    setEditing(r);
+    setShortcut(r.shortcut);
+    setTitle(r.title);
+    setContent(r.content);
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!shortcut.trim() || !title.trim() || !content.trim()) {
+      toast({ title: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+    if (editing) {
+      await updateMut.mutateAsync({ id: editing.id, shortcut: shortcut.trim(), title: title.trim(), content: content.trim() });
+    } else {
+      await createMut.mutateAsync({ shortcut: shortcut.trim(), title: title.trim(), content: content.trim() });
+    }
+    toast({ title: editing ? "Resposta atualizada!" : "Resposta criada!" });
+    setDialogOpen(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await deleteMut.mutateAsync(deleteId);
+    toast({ title: "Resposta excluída!" });
+    setDeleteId(null);
+  };
+
+  const isSaving = createMut.isPending || updateMut.isPending;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Respostas Rápidas</CardTitle>
+              <CardDescription>
+                Crie atalhos para mensagens frequentes. No chat, digite <code className="bg-muted px-1.5 py-0.5 rounded text-[11px]">/atalho</code> para usar.
+              </CardDescription>
+            </div>
+            <Button size="sm" onClick={openNew}>
+              <Plus className="size-4 mr-1.5" />Nova Resposta
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : !responses?.length ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Zap className="size-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground">Nenhuma resposta rápida cadastrada</p>
+              <Button variant="outline" className="mt-4" onClick={openNew}>
+                <Plus className="size-4 mr-1.5" />Criar primeira resposta
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-32">Atalho</TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead className="hidden md:table-cell">Conteúdo</TableHead>
+                  <TableHead className="w-20" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {responses.map((r) => (
+                  <TableRow key={r.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openEdit(r)}>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-xs">/{r.shortcut}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">{r.title}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm truncate max-w-xs">
+                      {r.content}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="size-7" onClick={(e) => { e.stopPropagation(); openEdit(r); }}>
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="size-7 text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(r.id); }}>
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Form Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar Resposta Rápida" : "Nova Resposta Rápida"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Atalho</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">/</span>
+                  <Input value={shortcut} onChange={(e) => setShortcut(e.target.value.replace(/\s/g, ""))} placeholder="saudacao" className="pl-7" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Título</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Saudação padrão" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Conteúdo da mensagem</Label>
+              <Textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Olá! Obrigado por entrar em contato..." rows={4} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <><Loader2 className="size-3 animate-spin mr-1.5" />Salvando...</> : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir resposta rápida?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+
 function CanaisTab() {
   const { data: configs, isLoading } = useChannelConfigs();
   const channels: ChatChannel[] = ["whatsapp", "instagram", "facebook", "website", "telegram", "email"];
