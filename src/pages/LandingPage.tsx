@@ -239,8 +239,13 @@ export default function LandingPage() {
             className="mt-12 grid gap-6 md:grid-cols-3"
           >
             {plans.map((plan) => (
-              <motion.div key={plan.name} variants={fadeUp} transition={{ duration: 0.4 }}>
-                <Card className={`relative h-full flex flex-col ${plan.highlight ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary" : ""}`}>
+              <motion.div
+                key={plan.name}
+                variants={fadeUp}
+                transition={{ duration: 0.4 }}
+                whileHover={{ y: -8, transition: { duration: 0.25, ease: "easeOut" } }}
+              >
+                <Card className={`relative h-full flex flex-col transition-all duration-300 hover:shadow-xl ${plan.highlight ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary" : "hover:border-primary/20 hover:shadow-primary/8"}`}>
                   {plan.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge className="bg-primary text-primary-foreground shadow-sm">Mais Popular</Badge>
@@ -262,9 +267,11 @@ export default function LandingPage() {
                       ))}
                     </ul>
                     <Link to="/auth?tab=signup" className="mt-8 block">
-                      <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
-                        Começar Agora <ChevronRight className="ml-1 size-4" />
-                      </Button>
+                      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
+                          Começar Agora <ChevronRight className="ml-1 size-4" />
+                        </Button>
+                      </motion.div>
                     </Link>
                   </CardContent>
                 </Card>
