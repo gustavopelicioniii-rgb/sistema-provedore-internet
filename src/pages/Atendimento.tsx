@@ -338,6 +338,14 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
     setShowCanned(false);
   };
 
+  if (!conversation) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">
+        Selecione uma conversa para iniciar
+      </div>
+    );
+  }
+
   const ch = channelConfig[conversation.channel];
   const ChIcon = ch.icon;
   const customerName = (conversation.customers as any)?.name || conversation.channel_contact_id || "Desconhecido";
