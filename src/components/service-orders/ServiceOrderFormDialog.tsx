@@ -64,7 +64,7 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
     e.preventDefault();
     const form: ServiceOrderFormData = {
       customer_id: customerId,
-      technician_id: technicianId || undefined,
+      technician_id: technicianId === "none" ? undefined : technicianId || undefined,
       type: type as ServiceOrderFormData["type"],
       status: status as ServiceOrderFormData["status"],
       description: description || undefined,
