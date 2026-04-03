@@ -7,11 +7,49 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
 import { useFinanceiroData } from "@/hooks/useFinanceiroData";
 import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+
+const COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+];
+
+const tooltipStyle = {
+  backgroundColor: "hsl(var(--card))",
+  border: "1px solid hsl(var(--border))",
+  borderRadius: "var(--radius)",
+  color: "hsl(var(--card-foreground))",
+};
+
+function HeroKpi({ title, value, icon: Icon, color }: {
+  title: string; value: string; icon: React.ElementType; color: string;
+}) {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+            <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+          </div>
+          <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
+            <Icon className="size-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Financeiro() {
   const { data, isLoading, error } = useFinanceiroData();
@@ -25,14 +63,9 @@ export default function Financeiro() {
   const handleGenerateInvoices = async () => {
     setGenerating(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke("generate-invoices", {
-        method: "POST",
-      });
+      const { data: result, error } = await supabase.functions.invoke("generate-invoices", { method: "POST" });
       if (error) throw error;
-      toast({
-        title: result.created > 0 ? "Faturas geradas!" : "Nenhuma fatura nova",
-        description: result.message,
-      });
+      toast({ title: result.created > 0 ? "Faturas geradas!" : "Nenhuma fatura nova", description: result.message });
       if (result.created > 0) {
         queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
         queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
@@ -48,10 +81,7 @@ export default function Financeiro() {
     if (!payDialog) return;
     setPaying(true);
     try {
-      const { error } = await supabase
-        .from("invoices")
-        .update({ status: "paid" as any, paid_date: paidDate })
-        .eq("id", payDialog.id);
+      const { error } = await supabase.from("invoices").update({ status: "paid" as any, paid_date: paidDate }).eq("id", payDialog.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
@@ -63,13 +93,6 @@ export default function Financeiro() {
       setPaying(false);
     }
   };
-
-  const kpis = [
-    { title: "Faturamento Mensal", value: formatCurrency(data?.monthlyBilling ?? 0), icon: DollarSign, color: "text-primary" },
-    { title: "Recebido", value: formatCurrency(data?.receivedThisMonth ?? 0), icon: CheckCircle, color: "text-success" },
-    { title: "A Receber", value: formatCurrency(data?.receivable ?? 0), icon: TrendingUp, color: "text-warning" },
-    { title: "Inadimplentes", value: `${data?.defaultingCustomers ?? 0} clientes`, icon: AlertTriangle, color: "text-destructive" },
-  ];
 
   return (
     <div className="space-y-6">
@@ -84,20 +107,68 @@ export default function Financeiro() {
         </Button>
       </div>
 
+      {/* Hero KPIs */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        {kpis.map((kpi) => (
-          <Card key={kpi.title}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{kpi.title}</p>
-                <kpi.icon className={`size-4 ${kpi.color}`} />
-              </div>
-              <p className="mt-2 text-2xl font-bold">{kpi.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <HeroKpi title="Faturamento Mensal" value={formatCurrency(data?.monthlyBilling ?? 0)} icon={DollarSign} color="text-primary" />
+        <HeroKpi title="Recebido" value={formatCurrency(data?.receivedThisMonth ?? 0)} icon={CheckCircle} color="text-success" />
+        <HeroKpi title="A Receber" value={formatCurrency(data?.receivable ?? 0)} icon={TrendingUp} color="text-warning" />
+        <HeroKpi title="Inadimplentes" value={`${data?.defaultingCustomers ?? 0} clientes`} icon={AlertTriangle} color="text-destructive" />
       </div>
 
+      {/* Charts */}
+      {!isLoading && !error && data && (
+        <div className="grid gap-4 md:grid-cols-7">
+          <Card className="md:col-span-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Faturado vs Recebido (6 meses)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                      tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={tooltipStyle}
+                      formatter={(value: number) => formatCurrency(value)} />
+                    <Bar dataKey="faturado" name="Faturado" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="recebido" name="Recebido" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-3">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Faturas por Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={data.statusBreakdown.filter((d) => d.count > 0)} cx="50%" cy="50%"
+                      innerRadius={55} outerRadius={85} paddingAngle={3}
+                      dataKey="count" nameKey="category"
+                      label={({ category, count }) => `${category}: ${count}`}
+                      labelLine={false}
+                    >
+                      {data.statusBreakdown.filter((d) => d.count > 0).map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Invoices table */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Faturas Recentes</CardTitle>
@@ -135,15 +206,8 @@ export default function Financeiro() {
                     </TableCell>
                     <TableCell>
                       {(invoice.status === "pending" || invoice.status === "overdue") && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-success hover:text-success"
-                          onClick={() => {
-                            setPaidDate(new Date().toISOString().slice(0, 10));
-                            setPayDialog({ id: invoice.id, name: invoice.customerName });
-                          }}
-                        >
+                        <Button variant="ghost" size="sm" className="text-success hover:text-success"
+                          onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
                           <CheckCircle className="mr-1 size-3.5" /> Baixa
                         </Button>
                       )}
@@ -156,15 +220,12 @@ export default function Financeiro() {
         </CardContent>
       </Card>
 
+      {/* Pay dialog */}
       <Dialog open={!!payDialog} onOpenChange={(v) => !v && setPayDialog(null)}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Dar baixa na fatura</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Dar baixa na fatura</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Confirmar pagamento de <strong>{payDialog?.name}</strong>?
-            </p>
+            <p className="text-sm text-muted-foreground">Confirmar pagamento de <strong>{payDialog?.name}</strong>?</p>
             <div className="space-y-1.5">
               <Label>Data do pagamento</Label>
               <Input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
