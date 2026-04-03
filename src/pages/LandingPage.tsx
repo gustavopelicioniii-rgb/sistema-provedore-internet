@@ -285,10 +285,10 @@ export default function LandingPage() {
       <footer className="border-t py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Wifi className="size-3.5" />
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground font-display font-bold text-[10px]">
+              NP
             </div>
-            <span className="text-sm font-semibold">NetPulse</span>
+            <span className="text-sm font-display font-semibold">NetPulse</span>
           </div>
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} NetPulse. Todos os direitos reservados.</p>
         </div>

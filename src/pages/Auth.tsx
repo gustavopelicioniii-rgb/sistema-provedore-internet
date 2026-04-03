@@ -203,7 +203,7 @@ export default function Auth() {
 
           {/* Header */}
           <div className="lg:text-left text-center">
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-display font-bold tracking-tight">
               {activeTab === "login" ? "Bem-vindo de volta 👋" : "Comece agora"}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
