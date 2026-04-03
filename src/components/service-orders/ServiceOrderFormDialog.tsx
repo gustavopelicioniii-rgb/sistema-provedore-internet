@@ -55,7 +55,7 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
       setScheduledDate(editing.scheduled_date ? editing.scheduled_date.slice(0, 16) : "");
       setNotes(editing.notes || "");
     } else if (open) {
-      setCustomerId(""); setTechnicianId(""); setType("installation"); setStatus("open");
+      setCustomerId(""); setTechnicianId("none"); setType("installation"); setStatus("open");
       setDescription(""); setScheduledDate(""); setNotes("");
     }
   }, [open, editing]);
