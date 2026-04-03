@@ -1,12 +1,42 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap } from "lucide-react";
 import { useFinanceiroData } from "@/hooks/useFinanceiroData";
 import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Financeiro() {
   const { data, isLoading, error } = useFinanceiroData();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerateInvoices = async () => {
+    setGenerating(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("generate-invoices", {
+        method: "POST",
+      });
+      if (error) throw error;
+      toast({
+        title: result.created > 0 ? "Faturas geradas!" : "Nenhuma fatura nova",
+        description: result.message,
+      });
+      if (result.created > 0) {
+        queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro ao gerar faturas", description: err.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const kpis = [
     { title: "Faturamento Mensal", value: formatCurrency(data?.monthlyBilling ?? 0), icon: DollarSign, color: "text-primary" },
@@ -17,9 +47,15 @@ export default function Financeiro() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
-        <p className="text-muted-foreground text-sm">Faturamento, cobranças e fluxo de caixa</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
+          <p className="text-muted-foreground text-sm">Faturamento, cobranças e fluxo de caixa</p>
+        </div>
+        <Button onClick={handleGenerateInvoices} disabled={generating}>
+          {generating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Zap className="mr-2 size-4" />}
+          Gerar Faturas
+        </Button>
       </div>
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
