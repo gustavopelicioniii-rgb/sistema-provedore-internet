@@ -70,10 +70,10 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Wifi className="size-5" />
+            <div className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground font-display font-bold text-xs">
+              NP
             </div>
-            <span className="text-xl font-bold tracking-tight">NetPulse</span>
+            <span className="text-xl font-display font-bold tracking-tight">NetPulse</span>
           </div>
           <div className="hidden items-center gap-6 md:flex">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
