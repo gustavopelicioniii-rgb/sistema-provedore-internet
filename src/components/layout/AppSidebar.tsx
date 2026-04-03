@@ -112,10 +112,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-sm">
-            N
+          <div className="flex size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground font-display font-bold text-sm">
+            NP
           </div>
-          <span className="text-lg font-bold text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden">
+          <span className="text-lg font-display font-bold text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden tracking-tight">
             NetPulse
           </span>
         </div>
