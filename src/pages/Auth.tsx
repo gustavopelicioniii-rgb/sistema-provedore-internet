@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FullPageSpinner } from "@/components/ui/spinner";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +25,7 @@ export default function Auth() {
   const [signupPassword, setSignupPassword] = useState("");
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="animate-spin size-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <FullPageSpinner />;
   }
 
   if (user) return <Navigate to="/" replace />;
