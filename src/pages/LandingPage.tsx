@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Wifi, Users, DollarSign, BarChart3, Shield, Zap, Clock, HeadphonesIcon,
+  Users, DollarSign, BarChart3, Shield, Zap, Clock, HeadphonesIcon,
   Server, Map, FileText, Truck, CheckCircle, ArrowRight, Star, ChevronRight,
 } from "lucide-react";
 

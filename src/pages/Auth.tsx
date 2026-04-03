@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Wifi, ArrowLeft, Shield, Zap, BarChart3, Users, Server,
+  ArrowLeft, Shield, Zap, BarChart3, Users, Server,
   CheckCircle, Star, Globe,
 } from "lucide-react";
 import { motion } from "framer-motion";
