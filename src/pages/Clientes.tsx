@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
-import { useCustomers, useDeleteCustomer, type CustomerAddress } from "@/hooks/useCustomers";
+import { useCustomers, useDeleteCustomer, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj } from "@/utils/formatters";
 import CustomerFormDialog from "@/components/customers/CustomerFormDialog";
 
@@ -22,20 +31,18 @@ export default function Clientes() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [editingCustomer, setEditingCustomer] = useState<CustomerRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: customers, isLoading } = useCustomers(debouncedSearch);
+  const { data: customers, isLoading, error } = useCustomers(debouncedSearch);
   const deleteCustomer = useDeleteCustomer();
 
-  // Simple debounce
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    const timeout = setTimeout(() => setDebouncedSearch(value), 300);
-    return () => clearTimeout(timeout);
-  };
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(search), 300);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
 
-  const handleEdit = (customer: any) => {
+  const handleEdit = (customer: CustomerRecord) => {
     setEditingCustomer(customer);
     setFormOpen(true);
   };
@@ -46,10 +53,9 @@ export default function Clientes() {
   };
 
   const handleDelete = async () => {
-    if (deleteId) {
-      await deleteCustomer.mutateAsync(deleteId);
-      setDeleteId(null);
-    }
+    if (!deleteId) return;
+    await deleteCustomer.mutateAsync(deleteId);
+    setDeleteId(null);
   };
 
   return (
@@ -78,7 +84,7 @@ export default function Clientes() {
                 placeholder="Buscar por nome ou CPF..."
                 className="pl-9"
                 value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
@@ -88,6 +94,8 @@ export default function Clientes() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
+          ) : error ? (
+            <div className="py-12 text-center text-sm text-destructive">Não foi possível carregar os clientes.</div>
           ) : !customers?.length ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground">Nenhum cliente encontrado</p>
@@ -110,38 +118,49 @@ export default function Clientes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((c) => {
-                  const addr = c.address as CustomerAddress | null;
-                  const st = statusMap[c.status] || statusMap.active;
-                  const score = c.financial_score ?? 5;
+                {customers.map((customer) => {
+                  const address = customer.address as CustomerAddress | null;
+                  const status = statusMap[customer.status] || statusMap.active;
+                  const score = customer.financial_score ?? 5;
+
                   return (
-                    <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(c)}>
-                      <TableCell className="font-medium">{c.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatCpfCnpj(c.cpf_cnpj)}</TableCell>
-                      <TableCell className="hidden md:table-cell">{addr?.city || "—"}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{c.whatsapp || "—"}</TableCell>
+                    <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(customer)}>
+                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatCpfCnpj(customer.cpf_cnpj)}</TableCell>
+                      <TableCell className="hidden md:table-cell">{address?.city || "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{customer.whatsapp || "—"}</TableCell>
                       <TableCell>
                         <span className={`font-semibold ${score >= 7 ? "text-success" : score >= 4 ? "text-warning" : "text-destructive"}`}>
                           {score.toFixed(1)}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                        <Badge variant="outline" className={status.className}>
+                          {status.label}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="size-8">
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(c); }}>
+                            <DropdownMenuItem
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleEdit(customer);
+                              }}
+                            >
                               <Pencil className="mr-2 size-4" /> Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setDeleteId(customer.id);
+                              }}
                             >
                               <Trash2 className="mr-2 size-4" /> Excluir
                             </DropdownMenuItem>
@@ -157,11 +176,7 @@ export default function Clientes() {
         </CardContent>
       </Card>
 
-      <CustomerFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editingCustomer={editingCustomer}
-      />
+      <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} editingCustomer={editingCustomer} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
