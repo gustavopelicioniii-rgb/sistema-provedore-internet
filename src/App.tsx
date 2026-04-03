@@ -11,6 +11,8 @@ import Financeiro from "@/pages/Financeiro";
 import CRM from "@/pages/CRM";
 import Planos from "@/pages/Planos";
 import Contratos from "@/pages/Contratos";
+import Tecnicos from "@/pages/Tecnicos";
+import OrdensServico from "@/pages/OrdensServico";
 import PlaceholderPage from "@/pages/PlaceholderPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
