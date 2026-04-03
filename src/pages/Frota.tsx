@@ -190,8 +190,8 @@ export default function Frota() {
               {filteredVehicles.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Car className="size-10 mb-3 opacity-40" />
-                  <p className="text-sm">Nenhum veículo cadastrado.</p>
-                  <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro veículo</Button>
+                  <p className="text-sm">{vehicles.length === 0 ? "Nenhum veículo cadastrado." : "Nenhum veículo encontrado."}</p>
+                  {vehicles.length === 0 && <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro veículo</Button>}
                 </div>
               ) : (
                 <Table>
