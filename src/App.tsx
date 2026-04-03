@@ -15,11 +15,14 @@ import Tecnicos from "@/pages/Tecnicos";
 import OrdensServico from "@/pages/OrdensServico";
 import Atendimento from "@/pages/Atendimento";
 import Estoque from "@/pages/Estoque";
+import RedeNoc from "@/pages/RedeNoc";
+import MapaFtth from "@/pages/MapaFtth";
+import Fiscal from "@/pages/Fiscal";
+import Frota from "@/pages/Frota";
 import PortalAssinante from "@/pages/PortalAssinante";
 import Automacoes from "@/pages/Automacoes";
 import Relatorios from "@/pages/Relatorios";
 import Configuracoes from "@/pages/Configuracoes";
-import PlaceholderPage from "@/pages/PlaceholderPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 
