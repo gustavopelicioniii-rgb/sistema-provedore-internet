@@ -66,28 +66,18 @@ export function InvoicesTab() {
   };
 
   const handleDownloadPdf = (inv: any) => {
-    // Generate a simple PDF-like blob with invoice info
-    const content = [
-      `FATURA - 2ª VIA`,
-      ``,
-      `Cliente: ${(inv.customers as any)?.name ?? "—"}`,
-      `Vencimento: ${formatDate(inv.due_date)}`,
-      `Valor: ${formatCurrency(inv.amount)}`,
-      `Status: ${INVOICE_STATUS[inv.status]?.label ?? inv.status}`,
-      ``,
-      inv.barcode ? `Código de Barras: ${inv.barcode}` : "",
-      ``,
-      `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
-    ].join("\n");
-
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `fatura-${inv.id.slice(0, 8)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "2ª via baixada!" });
+    const st = INVOICE_STATUS[inv.status] ?? { label: inv.status, variant: "outline" as const };
+    generateBoletoPdf({
+      id: inv.id,
+      customerName: (inv.customers as any)?.name ?? "—",
+      amount: inv.amount,
+      dueDate: inv.due_date,
+      status: inv.status,
+      statusLabel: st.label,
+      barcode: inv.barcode,
+      pixQrcode: inv.pix_qrcode,
+    });
+    toast({ title: "Boleto PDF baixado!" });
   };
 
   if (isLoading) {
