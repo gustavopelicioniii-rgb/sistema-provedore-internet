@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Clientes from "@/pages/Clientes";
 import Financeiro from "@/pages/Financeiro";
 import CRM from "@/pages/CRM";
+import Planos from "@/pages/Planos";
 import PlaceholderPage from "@/pages/PlaceholderPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -49,6 +50,7 @@ const AppRoutes = () => (
       <Route path="/ordens-servico" element={<PlaceholderPage title="Ordens de Serviço" description="Gestão de instalações, manutenções e visitas técnicas" />} />
       <Route path="/tecnicos" element={<PlaceholderPage title="Técnicos" description="Gestão da equipe técnica e produtividade" />} />
       <Route path="/financeiro" element={<Financeiro />} />
+      <Route path="/planos" element={<Planos />} />
       <Route path="/fiscal" element={<PlaceholderPage title="Fiscal / NF-e" description="Emissão de notas fiscais e obrigações fiscais" />} />
       <Route path="/estoque" element={<PlaceholderPage title="Estoque" description="Controle de equipamentos, materiais e comodato" />} />
       <Route path="/frota" element={<PlaceholderPage title="Frota" description="Gestão de veículos, abastecimento e manutenção" />} />

@@ -49,6 +49,7 @@ const operationalNav = [
 
 const financeNav = [
   { title: "Financeiro", icon: DollarSign, path: "/financeiro" },
+  { title: "Planos", icon: Radio, path: "/planos" },
   { title: "Fiscal / NF-e", icon: FileText, path: "/fiscal" },
   { title: "Estoque", icon: Package, path: "/estoque" },
   { title: "Frota", icon: Car, path: "/frota" },
