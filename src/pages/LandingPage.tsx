@@ -210,7 +210,7 @@ export default function LandingPage() {
             className="text-center"
           >
             <Badge variant="outline" className="mb-4">Planos</Badge>
-            <h2 className="text-3xl font-bold tracking-tight">Escolha o plano ideal</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight">Escolha o plano ideal</h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
               Comece com 14 dias grátis. Sem cartão de crédito.
             </p>
