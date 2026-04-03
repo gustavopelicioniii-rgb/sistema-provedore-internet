@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import CsvImportDialog from "@/components/customers/CsvImportDialog";
 import { useCustomers, useDeleteCustomer, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj } from "@/utils/formatters";
