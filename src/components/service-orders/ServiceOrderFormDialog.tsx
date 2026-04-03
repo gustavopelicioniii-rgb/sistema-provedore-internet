@@ -48,7 +48,7 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
   useEffect(() => {
     if (open && editing) {
       setCustomerId(editing.customer_id);
-      setTechnicianId(editing.technician_id || "");
+      setTechnicianId(editing.technician_id || "none");
       setType(editing.type);
       setStatus(editing.status);
       setDescription(editing.description || "");
