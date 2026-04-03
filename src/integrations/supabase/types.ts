@@ -149,6 +149,142 @@ export type Database = {
           },
         ]
       }
+      fiscal_invoices: {
+        Row: {
+          access_key: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          invoice_id: string | null
+          issue_date: string
+          model: Database["public"]["Enums"]["fiscal_model"]
+          notes: string | null
+          number: string | null
+          organization_id: string
+          pdf_url: string | null
+          sefaz_response: string | null
+          series: string | null
+          status: Database["public"]["Enums"]["fiscal_status"]
+          updated_at: string
+          value: number
+          xml_content: string | null
+        }
+        Insert: {
+          access_key?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          issue_date?: string
+          model?: Database["public"]["Enums"]["fiscal_model"]
+          notes?: string | null
+          number?: string | null
+          organization_id: string
+          pdf_url?: string | null
+          sefaz_response?: string | null
+          series?: string | null
+          status?: Database["public"]["Enums"]["fiscal_status"]
+          updated_at?: string
+          value: number
+          xml_content?: string | null
+        }
+        Update: {
+          access_key?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          issue_date?: string
+          model?: Database["public"]["Enums"]["fiscal_model"]
+          notes?: string | null
+          number?: string | null
+          organization_id?: string
+          pdf_url?: string | null
+          sefaz_response?: string | null
+          series?: string | null
+          status?: Database["public"]["Enums"]["fiscal_status"]
+          updated_at?: string
+          value?: number
+          xml_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_invoices_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_logs: {
+        Row: {
+          cost: number
+          created_at: string
+          date: string
+          fuel_type: Database["public"]["Enums"]["fuel_type"]
+          id: string
+          km: number | null
+          liters: number
+          notes: string | null
+          organization_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          date?: string
+          fuel_type?: Database["public"]["Enums"]["fuel_type"]
+          id?: string
+          km?: number | null
+          liters: number
+          notes?: string | null
+          organization_id: string
+          vehicle_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          date?: string
+          fuel_type?: Database["public"]["Enums"]["fuel_type"]
+          id?: string
+          km?: number | null
+          liters?: number
+          notes?: string | null
+          organization_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           created_at: string
@@ -396,6 +532,95 @@ export type Database = {
           },
           {
             foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      network_devices: {
+        Row: {
+          api_password: string | null
+          api_port: number | null
+          api_username: string | null
+          connected_clients: number | null
+          cpu_usage: number | null
+          created_at: string
+          device_type: Database["public"]["Enums"]["device_type"]
+          firmware_version: string | null
+          id: string
+          ip_address: string | null
+          last_seen_at: string | null
+          location: string | null
+          mac_address: string | null
+          manufacturer: Database["public"]["Enums"]["device_manufacturer"]
+          memory_usage: number | null
+          model: string | null
+          name: string
+          notes: string | null
+          organization_id: string
+          serial_number: string | null
+          snmp_community: string | null
+          status: Database["public"]["Enums"]["device_status"]
+          updated_at: string
+          uptime: string | null
+        }
+        Insert: {
+          api_password?: string | null
+          api_port?: number | null
+          api_username?: string | null
+          connected_clients?: number | null
+          cpu_usage?: number | null
+          created_at?: string
+          device_type?: Database["public"]["Enums"]["device_type"]
+          firmware_version?: string | null
+          id?: string
+          ip_address?: string | null
+          last_seen_at?: string | null
+          location?: string | null
+          mac_address?: string | null
+          manufacturer?: Database["public"]["Enums"]["device_manufacturer"]
+          memory_usage?: number | null
+          model?: string | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          serial_number?: string | null
+          snmp_community?: string | null
+          status?: Database["public"]["Enums"]["device_status"]
+          updated_at?: string
+          uptime?: string | null
+        }
+        Update: {
+          api_password?: string | null
+          api_port?: number | null
+          api_username?: string | null
+          connected_clients?: number | null
+          cpu_usage?: number | null
+          created_at?: string
+          device_type?: Database["public"]["Enums"]["device_type"]
+          firmware_version?: string | null
+          id?: string
+          ip_address?: string | null
+          last_seen_at?: string | null
+          location?: string | null
+          mac_address?: string | null
+          manufacturer?: Database["public"]["Enums"]["device_manufacturer"]
+          memory_usage?: number | null
+          model?: string | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          serial_number?: string | null
+          snmp_community?: string | null
+          status?: Database["public"]["Enums"]["device_status"]
+          updated_at?: string
+          uptime?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_devices_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -711,6 +936,62 @@ export type Database = {
           },
         ]
       }
+      vehicles: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          fuel_level: number | null
+          id: string
+          km: number | null
+          model: string
+          next_maintenance_date: string | null
+          notes: string | null
+          organization_id: string
+          plate: string
+          status: Database["public"]["Enums"]["vehicle_status"]
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          fuel_level?: number | null
+          id?: string
+          km?: number | null
+          model: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          organization_id: string
+          plate: string
+          status?: Database["public"]["Enums"]["vehicle_status"]
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          fuel_level?: number | null
+          id?: string
+          km?: number | null
+          model?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          organization_id?: string
+          plate?: string
+          status?: Database["public"]["Enums"]["vehicle_status"]
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -726,6 +1007,30 @@ export type Database = {
         | "awaiting_installation"
         | "awaiting_signature"
       customer_status: "active" | "suspended" | "defaulting" | "cancelled"
+      device_manufacturer:
+        | "mikrotik"
+        | "huawei"
+        | "intelbras"
+        | "fiberhome"
+        | "zte"
+        | "other"
+      device_status: "online" | "offline" | "warning" | "maintenance"
+      device_type:
+        | "olt"
+        | "onu"
+        | "router"
+        | "switch"
+        | "server"
+        | "access_point"
+        | "other"
+      fiscal_model: "nfe21" | "nfe22" | "nfcom62"
+      fiscal_status:
+        | "draft"
+        | "pending"
+        | "authorized"
+        | "rejected"
+        | "cancelled"
+      fuel_type: "gasoline" | "ethanol" | "diesel" | "flex"
       inventory_item_type:
         | "onu"
         | "router"
@@ -764,6 +1069,7 @@ export type Database = {
       technician_status: "active" | "inactive" | "vacation"
       ticket_priority: "low" | "medium" | "high" | "urgent"
       ticket_status: "open" | "in_progress" | "waiting" | "resolved" | "closed"
+      vehicle_status: "available" | "in_use" | "maintenance" | "decommissioned"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -899,6 +1205,33 @@ export const Constants = {
         "awaiting_signature",
       ],
       customer_status: ["active", "suspended", "defaulting", "cancelled"],
+      device_manufacturer: [
+        "mikrotik",
+        "huawei",
+        "intelbras",
+        "fiberhome",
+        "zte",
+        "other",
+      ],
+      device_status: ["online", "offline", "warning", "maintenance"],
+      device_type: [
+        "olt",
+        "onu",
+        "router",
+        "switch",
+        "server",
+        "access_point",
+        "other",
+      ],
+      fiscal_model: ["nfe21", "nfe22", "nfcom62"],
+      fiscal_status: [
+        "draft",
+        "pending",
+        "authorized",
+        "rejected",
+        "cancelled",
+      ],
+      fuel_type: ["gasoline", "ethanol", "diesel", "flex"],
       inventory_item_type: [
         "onu",
         "router",
@@ -942,6 +1275,7 @@ export const Constants = {
       technician_status: ["active", "inactive", "vacation"],
       ticket_priority: ["low", "medium", "high", "urgent"],
       ticket_status: ["open", "in_progress", "waiting", "resolved", "closed"],
+      vehicle_status: ["available", "in_use", "maintenance", "decommissioned"],
     },
   },
 } as const
