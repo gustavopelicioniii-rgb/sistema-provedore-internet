@@ -14,7 +14,9 @@ import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2,
   MessageSquare, Send, User, Bot, Globe, Phone,
   Instagram, Facebook, Mail, CheckCheck, Clock, XCircle,
+  Paperclip, Image, Mic, FileText, X, File, Download,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useTickets, useDeleteTicket, type TicketRecord } from "@/hooks/useTickets";
 import TicketFormDialog from "@/components/tickets/TicketFormDialog";
 import {
