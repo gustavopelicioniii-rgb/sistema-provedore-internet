@@ -13,6 +13,8 @@ import {
   Activity, Wifi, WifiOff, AlertTriangle, Server, RefreshCw,
   Signal, CheckCircle, Plus, Pencil, Trash2, Wrench, Search,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -130,40 +132,40 @@ export default function RedeNoc() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card><CardContent className="p-4">
+      <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <AnimatedCard index={0}><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Online</p>
             <Wifi className="size-4 text-success" />
           </div>
           <p className="mt-2 text-2xl font-bold">{onlineCount}</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-4">
+        </CardContent></Card></AnimatedCard>
+        <AnimatedCard index={1}><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Offline</p>
             <WifiOff className="size-4 text-destructive" />
           </div>
           <p className="mt-2 text-2xl font-bold">{offlineCount}</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-4">
+        </CardContent></Card></AnimatedCard>
+        <AnimatedCard index={2}><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Em Alerta</p>
             <AlertTriangle className="size-4 text-warning" />
           </div>
           <p className="mt-2 text-2xl font-bold">{warningCount}</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-4">
+        </CardContent></Card></AnimatedCard>
+        <AnimatedCard index={3}><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Clientes Conectados</p>
             <Signal className="size-4 text-primary" />
           </div>
           <p className="mt-2 text-2xl font-bold">{totalClients.toLocaleString("pt-BR")}</p>
-        </CardContent></Card>
-      </div>
+        </CardContent></Card></AnimatedCard>
+      </StaggerGrid>
 
       {/* Charts */}
       {devices.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Equipamentos por Status</CardTitle></CardHeader>
             <CardContent>
@@ -211,7 +213,7 @@ export default function RedeNoc() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       )}
 
       {/* Filters + Devices table */}

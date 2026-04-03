@@ -11,6 +11,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { useFinanceiroData } from "@/hooks/useFinanceiroData";
 import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,16 +110,16 @@ export default function Financeiro() {
       </div>
 
       {/* Hero KPIs */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <HeroKpi title="Faturamento Mensal" value={formatCurrency(data?.monthlyBilling ?? 0)} icon={DollarSign} color="text-primary" />
-        <HeroKpi title="Recebido" value={formatCurrency(data?.receivedThisMonth ?? 0)} icon={CheckCircle} color="text-success" />
-        <HeroKpi title="A Receber" value={formatCurrency(data?.receivable ?? 0)} icon={TrendingUp} color="text-warning" />
-        <HeroKpi title="Inadimplentes" value={`${data?.defaultingCustomers ?? 0} clientes`} icon={AlertTriangle} color="text-destructive" />
-      </div>
+      <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <AnimatedCard index={0}><HeroKpi title="Faturamento Mensal" value={formatCurrency(data?.monthlyBilling ?? 0)} icon={DollarSign} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={1}><HeroKpi title="Recebido" value={formatCurrency(data?.receivedThisMonth ?? 0)} icon={CheckCircle} color="text-success" /></AnimatedCard>
+        <AnimatedCard index={2}><HeroKpi title="A Receber" value={formatCurrency(data?.receivable ?? 0)} icon={TrendingUp} color="text-warning" /></AnimatedCard>
+        <AnimatedCard index={3}><HeroKpi title="Inadimplentes" value={`${data?.defaultingCustomers ?? 0} clientes`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+      </StaggerGrid>
 
       {/* Charts */}
       {!isLoading && !error && data && (
-        <div className="grid gap-4 md:grid-cols-7">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
           <Card className="md:col-span-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Faturado vs Recebido (6 meses)</CardTitle>
@@ -165,7 +167,7 @@ export default function Financeiro() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       )}
 
       {/* Invoices table */}
