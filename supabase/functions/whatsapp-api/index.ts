@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -9,11 +10,42 @@ interface WhatsAppCommand {
   params: Record<string, string>;
 }
 
-async function evolutionCall(baseUrl: string, apiKey: string, instance: string, path: string, method = "POST", body?: unknown) {
-  const resp = await fetch(`${baseUrl}/message/${path}/${instance}`, {
+interface EvolutionConfig {
+  api_url: string;
+  api_key: string;
+  instance: string;
+}
+
+async function getEvolutionConfig(supabase: ReturnType<typeof createClient>, orgId: string): Promise<EvolutionConfig> {
+  const { data, error } = await supabase
+    .from("channel_configs")
+    .select("config, enabled")
+    .eq("organization_id", orgId)
+    .eq("channel", "whatsapp")
+    .eq("enabled", true)
+    .maybeSingle();
+
+  if (error || !data) {
+    throw new Error("WhatsApp channel not configured. Go to Settings → Channels to set up.");
+  }
+
+  const cfg = data.config as Record<string, string> | null;
+  if (!cfg?.api_url || !cfg?.api_key) {
+    throw new Error("WhatsApp channel is missing API URL or API Key. Check Settings → Channels.");
+  }
+
+  return {
+    api_url: cfg.api_url.replace(/\/+$/, ""),
+    api_key: cfg.api_key,
+    instance: cfg.instance || "default",
+  };
+}
+
+async function evolutionCall(config: EvolutionConfig, path: string, method = "POST", body?: unknown) {
+  const resp = await fetch(`${config.api_url}/message/${path}/${config.instance}`, {
     method,
     headers: {
-      "apikey": apiKey,
+      "apikey": config.api_key,
       "Content-Type": "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -34,7 +66,10 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(
@@ -43,18 +78,26 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claims, error: claimsError } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (claimsError || !claims?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Verify user auth
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+    if (authError || !userData.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const evolutionUrl = Deno.env.get("EVOLUTION_API_URL");
-    const evolutionKey = Deno.env.get("EVOLUTION_API_KEY");
-    const evolutionInstance = Deno.env.get("EVOLUTION_INSTANCE") || "default";
-
-    if (!evolutionUrl || !evolutionKey) {
-      return new Response(JSON.stringify({ error: "Evolution API not configured (EVOLUTION_API_URL, EVOLUTION_API_KEY)" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Get org id
+    const { data: orgId } = await supabase.rpc("get_user_organization_id");
+    if (!orgId) {
+      return new Response(JSON.stringify({ error: "Organization not found" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    // Get Evolution API config from channel_configs table
+    const evolutionConfig = await getEvolutionConfig(supabase, orgId);
 
     const { action, params } = (await req.json()) as WhatsAppCommand;
     let result: unknown;
@@ -63,11 +106,14 @@ Deno.serve(async (req) => {
       case "send_text": {
         const { phone, message } = params;
         if (!phone || !message) {
-          return new Response(JSON.stringify({ error: "phone and message are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "phone and message are required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         const number = phone.replace(/\D/g, "");
-        result = await evolutionCall(evolutionUrl, evolutionKey, evolutionInstance, "sendText", "POST", {
-          number: `55${number}`,
+        result = await evolutionCall(evolutionConfig, "sendText", "POST", {
+          number: number.startsWith("55") ? number : `55${number}`,
           text: message,
         });
         break;
@@ -76,7 +122,10 @@ Deno.serve(async (req) => {
       case "send_billing": {
         const { customer_id } = params;
         if (!customer_id) {
-          return new Response(JSON.stringify({ error: "customer_id is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "customer_id is required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const { data: customer } = await supabase
@@ -86,7 +135,10 @@ Deno.serve(async (req) => {
           .single();
 
         if (!customer?.whatsapp) {
-          return new Response(JSON.stringify({ error: "Customer has no WhatsApp number" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "Customer has no WhatsApp number" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const { data: invoices } = await supabase
@@ -98,7 +150,10 @@ Deno.serve(async (req) => {
           .limit(3);
 
         if (!invoices?.length) {
-          return new Response(JSON.stringify({ error: "No pending invoices" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "No pending invoices" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const lines = invoices.map((inv) =>
@@ -108,8 +163,8 @@ Deno.serve(async (req) => {
         const message = `Olá ${customer.name}! 👋\n\nVocê possui faturas em aberto:\n\n${lines.join("\n")}\n\nPara pagar, acesse o portal do assinante ou entre em contato conosco.`;
 
         const number = customer.whatsapp.replace(/\D/g, "");
-        result = await evolutionCall(evolutionUrl, evolutionKey, evolutionInstance, "sendText", "POST", {
-          number: `55${number}`,
+        result = await evolutionCall(evolutionConfig, "sendText", "POST", {
+          number: number.startsWith("55") ? number : `55${number}`,
           text: message,
         });
         break;
@@ -118,7 +173,10 @@ Deno.serve(async (req) => {
       case "send_boleto": {
         const { invoice_id } = params;
         if (!invoice_id) {
-          return new Response(JSON.stringify({ error: "invoice_id is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "invoice_id is required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const { data: invoice } = await supabase
@@ -128,12 +186,18 @@ Deno.serve(async (req) => {
           .single();
 
         if (!invoice) {
-          return new Response(JSON.stringify({ error: "Invoice not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "Invoice not found" }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const customer = (invoice as any).customers;
         if (!customer?.whatsapp) {
-          return new Response(JSON.stringify({ error: "Customer has no WhatsApp number" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "Customer has no WhatsApp number" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         let message = `Olá ${customer.name}! 📄\n\nSegue sua fatura:\n💰 Valor: R$ ${Number(invoice.amount).toFixed(2)}\n📅 Vencimento: ${invoice.due_date}`;
@@ -146,8 +210,8 @@ Deno.serve(async (req) => {
         }
 
         const number = customer.whatsapp.replace(/\D/g, "");
-        result = await evolutionCall(evolutionUrl, evolutionKey, evolutionInstance, "sendText", "POST", {
-          number: `55${number}`,
+        result = await evolutionCall(evolutionConfig, "sendText", "POST", {
+          number: number.startsWith("55") ? number : `55${number}`,
           text: message,
         });
         break;
@@ -156,27 +220,32 @@ Deno.serve(async (req) => {
       case "send_template": {
         const { phone, template_name, variables } = params;
         if (!phone || !template_name) {
-          return new Response(JSON.stringify({ error: "phone and template_name are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(JSON.stringify({ error: "phone and template_name are required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
         const number = phone.replace(/\D/g, "");
-        // Evolution API template format
-        result = await evolutionCall(evolutionUrl, evolutionKey, evolutionInstance, "sendText", "POST", {
-          number: `55${number}`,
-          text: variables || template_name, // Fallback to template name if no variables
+        result = await evolutionCall(evolutionConfig, "sendText", "POST", {
+          number: number.startsWith("55") ? number : `55${number}`,
+          text: variables || template_name,
         });
         break;
       }
 
       case "check_status": {
-        const resp = await fetch(`${evolutionUrl}/instance/connectionState/${evolutionInstance}`, {
-          headers: { apikey: evolutionKey },
+        const resp = await fetch(`${evolutionConfig.api_url}/instance/connectionState/${evolutionConfig.instance}`, {
+          headers: { apikey: evolutionConfig.api_key },
         });
         result = await resp.json();
         break;
       }
 
       default:
-        return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     }
 
     return new Response(JSON.stringify({ success: true, data: result }), {

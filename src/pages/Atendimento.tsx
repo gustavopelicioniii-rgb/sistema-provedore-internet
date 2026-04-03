@@ -206,7 +206,12 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
 
   const handleSend = () => {
     if (!text.trim()) return;
-    sendMsg.mutate({ conversation_id: conversation.id, content: text.trim() });
+    sendMsg.mutate({
+      conversation_id: conversation.id,
+      content: text.trim(),
+      channel: conversation.channel,
+      channel_contact_id: conversation.channel_contact_id,
+    });
     setText("");
     setShowCanned(false);
   };
