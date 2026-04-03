@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import { useFleet } from "@/hooks/useFleet";
-import type { Vehicle, VehicleInsert } from "@/hooks/useFleet";
+import type { Vehicle, VehicleInsert, FuelLogInsert } from "@/hooks/useFleet";
 import VehicleFormDialog from "@/components/fleet/VehicleFormDialog";
+import FuelLogFormDialog from "@/components/fleet/FuelLogFormDialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
