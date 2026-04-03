@@ -256,8 +256,9 @@ export default function RedeNoc() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Form dialog */}
       <NetworkDeviceFormDialog
