@@ -104,11 +104,11 @@ export default function Auth() {
               transition={{ duration: 0.5 }}
             >
               <div className="flex items-center gap-3">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/10 shadow-lg">
-                  <Wifi className="size-7" />
+                <div className="flex size-14 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm border border-white/10 shadow-lg font-display font-bold text-lg">
+                  NP
                 </div>
                 <div>
-                  <span className="text-3xl font-bold tracking-tight">NetPulse</span>
+                  <span className="text-3xl font-display font-bold tracking-tight">NetPulse</span>
                   <p className="text-xs text-primary-foreground/50 font-medium tracking-wider uppercase">ISP Management</p>
                 </div>
               </div>
