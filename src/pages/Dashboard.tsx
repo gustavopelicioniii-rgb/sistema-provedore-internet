@@ -4,6 +4,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { formatCurrency } from "@/utils/finance";
 
