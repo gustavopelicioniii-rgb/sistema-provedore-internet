@@ -319,6 +319,14 @@ export default function Frota() {
         isLoading={createVehicle.isPending || updateVehicle.isPending}
       />
 
+      <FuelLogFormDialog
+        open={fuelFormOpen}
+        onOpenChange={setFuelFormOpen}
+        vehicles={vehicles}
+        onSubmit={handleFuelSubmit}
+        isLoading={createFuelLog.isPending}
+      />
+
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
