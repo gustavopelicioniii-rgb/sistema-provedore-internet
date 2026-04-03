@@ -93,6 +93,7 @@ export type Database = {
           content_type: string
           conversation_id: string
           created_at: string
+          delivery_status: string
           external_message_id: string | null
           id: string
           media_url: string | null
@@ -107,6 +108,7 @@ export type Database = {
           content_type?: string
           conversation_id: string
           created_at?: string
+          delivery_status?: string
           external_message_id?: string | null
           id?: string
           media_url?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           content_type?: string
           conversation_id?: string
           created_at?: string
+          delivery_status?: string
           external_message_id?: string | null
           id?: string
           media_url?: string | null
