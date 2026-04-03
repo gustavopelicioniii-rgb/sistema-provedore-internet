@@ -437,8 +437,8 @@ export default function Relatorios() {
   );
 }
 
-function ExportCard({ icon: Icon, title, desc, onPdf, onCsv }: {
-  icon: React.ElementType; title: string; desc: string; onPdf?: () => void; onCsv?: () => void;
+function ExportCard({ icon: Icon, title, desc, onPdf, onCsv, onXlsx }: {
+  icon: React.ElementType; title: string; desc: string; onPdf?: () => void; onCsv?: () => void; onXlsx?: () => void;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border p-4">
@@ -453,6 +453,11 @@ function ExportCard({ icon: Icon, title, desc, onPdf, onCsv }: {
         {onPdf && (
           <Button variant="outline" size="sm" onClick={onPdf}>
             <FileText className="size-3.5 mr-1" />PDF
+          </Button>
+        )}
+        {onXlsx && (
+          <Button variant="outline" size="sm" onClick={onXlsx}>
+            <Sheet className="size-3.5 mr-1" />Excel
           </Button>
         )}
         {onCsv && (

@@ -147,6 +147,13 @@ export default function Financeiro() {
           <Button variant="outline" size="sm" disabled={!filteredInvoices.length} onClick={() => {
             const headers = ["Cliente", "Valor", "Vencimento", "Status"];
             const rows = filteredInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
+            downloadXlsx("faturas.xlsx", headers, rows, "Faturas");
+          }}>
+            <Sheet className="mr-2 size-4" /> Excel
+          </Button>
+          <Button variant="outline" size="sm" disabled={!filteredInvoices.length} onClick={() => {
+            const headers = ["Cliente", "Valor", "Vencimento", "Status"];
+            const rows = filteredInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
             downloadPdfTable("Faturas", "faturas.pdf", headers, rows);
           }}>
             <FileText className="mr-2 size-4" /> PDF
