@@ -165,7 +165,7 @@ export default function RedeNoc() {
 
       {/* Charts */}
       {devices.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-base">Equipamentos por Status</CardTitle></CardHeader>
             <CardContent>
