@@ -15,11 +15,14 @@ import Tecnicos from "@/pages/Tecnicos";
 import OrdensServico from "@/pages/OrdensServico";
 import Atendimento from "@/pages/Atendimento";
 import Estoque from "@/pages/Estoque";
+import RedeNoc from "@/pages/RedeNoc";
+import MapaFtth from "@/pages/MapaFtth";
+import Fiscal from "@/pages/Fiscal";
+import Frota from "@/pages/Frota";
 import PortalAssinante from "@/pages/PortalAssinante";
 import Automacoes from "@/pages/Automacoes";
 import Relatorios from "@/pages/Relatorios";
 import Configuracoes from "@/pages/Configuracoes";
-import PlaceholderPage from "@/pages/PlaceholderPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
 
@@ -54,16 +57,16 @@ const AppRoutes = () => (
       <Route path="/clientes" element={<Clientes />} />
       <Route path="/crm" element={<CRM />} />
       <Route path="/atendimento" element={<Atendimento />} />
-      <Route path="/rede" element={<PlaceholderPage title="Rede & NOC" description="Monitoramento de OLTs, concentradores e clientes" />} />
-      <Route path="/mapa-ftth" element={<PlaceholderPage title="Mapa FTTH" description="Documentação visual da rede óptica" />} />
+      <Route path="/rede" element={<RedeNoc />} />
+      <Route path="/mapa-ftth" element={<MapaFtth />} />
       <Route path="/ordens-servico" element={<OrdensServico />} />
       <Route path="/tecnicos" element={<Tecnicos />} />
       <Route path="/financeiro" element={<Financeiro />} />
       <Route path="/planos" element={<Planos />} />
       <Route path="/contratos" element={<Contratos />} />
-      <Route path="/fiscal" element={<PlaceholderPage title="Fiscal / NF-e" description="Emissão de notas fiscais e obrigações fiscais" />} />
+      <Route path="/fiscal" element={<Fiscal />} />
       <Route path="/estoque" element={<Estoque />} />
-      <Route path="/frota" element={<PlaceholderPage title="Frota" description="Gestão de veículos, abastecimento e manutenção" />} />
+      <Route path="/frota" element={<Frota />} />
       <Route path="/portal-assinante" element={<PortalAssinante />} />
       <Route path="/automacoes" element={<Automacoes />} />
       <Route path="/relatorios" element={<Relatorios />} />
