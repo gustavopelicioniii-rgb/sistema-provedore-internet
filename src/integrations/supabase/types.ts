@@ -1316,6 +1316,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      dispatch_automation_event_inline: {
+        Args: {
+          p_event: string
+          p_org_id: string
+          p_record: Record<string, unknown>
+        }
+        Returns: Record<string, unknown>
+      }
       get_user_organization_id: { Args: never; Returns: string }
     }
     Enums: {
