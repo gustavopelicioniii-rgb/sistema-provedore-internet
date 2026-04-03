@@ -59,6 +59,20 @@ export default function RedeNoc() {
   const [formOpen, setFormOpen] = useState(false);
   const [editDevice, setEditDevice] = useState<NetworkDevice | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  const filteredDevices = devices.filter((d) => {
+    const matchesSearch = search === "" ||
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      (d.ip_address ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.location ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.model ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || d.status === statusFilter;
+    const matchesType = typeFilter === "all" || d.device_type === typeFilter;
+    return matchesSearch && matchesStatus && matchesType;
+  });
 
   const onlineCount = devices.filter((d) => d.status === "online").length;
   const offlineCount = devices.filter((d) => d.status === "offline").length;

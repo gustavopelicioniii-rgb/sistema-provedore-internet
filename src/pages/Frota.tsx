@@ -41,6 +41,23 @@ export default function Frota() {
   const [formOpen, setFormOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredVehicles = vehicles.filter((v) => {
+    const matchesSearch = search === "" || 
+      v.model.toLowerCase().includes(search.toLowerCase()) ||
+      v.plate.toLowerCase().includes(search.toLowerCase()) ||
+      (v.assigned_to ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredFuelLogs = fuelLogs.filter((log: any) => {
+    if (search === "") return true;
+    return (log.vehicles?.plate ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (log.vehicles?.model ?? "").toLowerCase().includes(search.toLowerCase());
+  });
 
   const available = vehicles.filter((v) => v.status === "available").length;
   const inUse = vehicles.filter((v) => v.status === "in_use").length;
