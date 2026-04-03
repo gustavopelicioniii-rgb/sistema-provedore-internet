@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { getLastMonths, isSameMonth, normalizeInvoiceStatus, type InvoiceStatus } from "@/utils/finance";
+import { formatCurrency, getLastMonths, isSameMonth, normalizeInvoiceStatus, type InvoiceStatus } from "@/utils/finance";
 
 export interface AlertItem {
   type: "overdue" | "low_stock" | "pending_os";
