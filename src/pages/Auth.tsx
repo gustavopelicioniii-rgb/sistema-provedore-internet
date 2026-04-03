@@ -236,7 +236,7 @@ export default function Auth() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="login-password" className="text-sm font-medium">Senha</Label>
-                    <button type="button" className="text-xs text-primary hover:underline">Esqueceu a senha?</button>
+                    <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-primary hover:underline">Esqueceu a senha?</button>
                   </div>
                   <Input
                     id="login-password"
