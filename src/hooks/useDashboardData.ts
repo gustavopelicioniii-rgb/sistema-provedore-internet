@@ -2,7 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { getLastMonths, isSameMonth, normalizeInvoiceStatus, type InvoiceStatus } from "@/utils/finance";
+import { formatCurrency, getLastMonths, isSameMonth, normalizeInvoiceStatus, type InvoiceStatus } from "@/utils/finance";
+
+export interface AlertItem {
+  type: "overdue" | "low_stock" | "pending_os";
+  title: string;
+  detail: string;
+  severity: "destructive" | "warning";
+}
 
 export interface DashboardMetricData {
   activeCustomers: number;
@@ -17,6 +24,13 @@ export interface DashboardMetricData {
   revenueData: Array<{ month: string; clientes: number; receita: number }>;
   invoiceStatusData: Array<{ category: string; count: number }>;
   recentActivities: Array<{ text: string; time: string; type: "success" | "warning" | "destructive" }>;
+  alerts: AlertItem[];
+  // Trend sparkline data (last 6 months)
+  customerSparkline: number[];
+  revenueSparkline: number[];
+  // Trend direction
+  customerTrend: number; // percentage change vs previous month
+  revenueTrend: number;
   hasData: boolean;
 }
 
@@ -24,17 +38,22 @@ export function useDashboardData() {
   return useQuery({
     queryKey: ["dashboard-data"],
     queryFn: async (): Promise<DashboardMetricData> => {
-      const [customersResult, contractsResult, plansResult, invoicesResult] = await Promise.all([
+      const [customersResult, contractsResult, plansResult, invoicesResult, inventoryResult, serviceOrdersResult] = await Promise.all([
         supabase.from("customers").select("id, name, created_at, status"),
         supabase.from("contracts").select("id, customer_id, plan_id, created_at, status"),
         supabase.from("plans").select("id, name, price, active"),
         supabase.from("invoices").select("id, customer_id, amount, due_date, paid_date, status, created_at"),
+        supabase.from("inventory_items").select("id, name, quantity, min_quantity"),
+        supabase.from("service_orders").select("id, status, type, created_at").in("status", ["open", "in_progress"]),
       ]);
 
       if (customersResult.error) throw customersResult.error;
       if (contractsResult.error) throw contractsResult.error;
       if (plansResult.error) throw plansResult.error;
       if (invoicesResult.error) throw invoicesResult.error;
+
+      const inventoryItems = inventoryResult.data ?? [];
+      const pendingOrders = serviceOrdersResult.data ?? [];
 
       const customers = customersResult.data ?? [];
       const contracts = contractsResult.data ?? [];
@@ -148,6 +167,54 @@ export function useDashboardData() {
           type: activity.type,
         }));
 
+      // Sparklines from revenueData
+      const customerSparkline = revenueData.map((d) => d.clientes);
+      const revenueSparkline = revenueData.map((d) => d.receita);
+
+      // Trend: compare last two months
+      const customerTrend = customerSparkline.length >= 2 && customerSparkline[customerSparkline.length - 2] > 0
+        ? ((customerSparkline[customerSparkline.length - 1] - customerSparkline[customerSparkline.length - 2]) / customerSparkline[customerSparkline.length - 2]) * 100
+        : 0;
+      const revenueTrend = revenueSparkline.length >= 2 && revenueSparkline[revenueSparkline.length - 2] > 0
+        ? ((revenueSparkline[revenueSparkline.length - 1] - revenueSparkline[revenueSparkline.length - 2]) / revenueSparkline[revenueSparkline.length - 2]) * 100
+        : 0;
+
+      // Alerts
+      const alerts: AlertItem[] = [];
+
+      // Overdue invoices alert
+      if (overdueInvoices.length > 0) {
+        alerts.push({
+          type: "overdue",
+          title: `${overdueInvoices.length} fatura(s) vencida(s)`,
+          detail: `Total: ${formatCurrency(overdueInvoices.reduce((s, i) => s + i.amount, 0))}`,
+          severity: "destructive",
+        });
+      }
+
+      // Low stock alerts
+      inventoryItems
+        .filter((item) => item.quantity <= item.min_quantity)
+        .slice(0, 5)
+        .forEach((item) => {
+          alerts.push({
+            type: "low_stock",
+            title: `Estoque baixo: ${item.name}`,
+            detail: `${item.quantity} un. (mín: ${item.min_quantity})`,
+            severity: "warning",
+          });
+        });
+
+      // Pending service orders
+      if (pendingOrders.length > 0) {
+        alerts.push({
+          type: "pending_os",
+          title: `${pendingOrders.length} OS pendente(s)`,
+          detail: `${pendingOrders.filter((o) => o.status === "open").length} abertas, ${pendingOrders.filter((o) => o.status === "in_progress").length} em andamento`,
+          severity: "warning",
+        });
+      }
+
       return {
         activeCustomers,
         totalCustomers,
@@ -161,6 +228,11 @@ export function useDashboardData() {
         revenueData,
         invoiceStatusData,
         recentActivities,
+        alerts,
+        customerSparkline,
+        revenueSparkline,
+        customerTrend,
+        revenueTrend,
         hasData: customers.length > 0 || contracts.length > 0 || plans.length > 0 || invoices.length > 0,
       };
     },

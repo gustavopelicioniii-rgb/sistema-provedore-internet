@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, TrendingDown, AlertTriangle, ClipboardList, Wifi, Star, Loader2 } from "lucide-react";
+import { Users, DollarSign, TrendingDown, TrendingUp, AlertTriangle, ClipboardList, Wifi, Star, Loader2, Package, ArrowUpRight, ArrowDownRight, Minus, Bell } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell, Legend, LineChart, Line,
 } from "recharts";
 import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { MotionCard } from "@/components/motion/MotionInteractions";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboardData, type AlertItem } from "@/hooks/useDashboardData";
 import { formatCurrency } from "@/utils/finance";
+import { Badge } from "@/components/ui/badge";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -17,21 +18,60 @@ const COLORS = [
   "hsl(var(--chart-4))",
 ];
 
-function HeroKpi({ title, value, subtitle, icon: Icon, color }: {
+function MiniSparkline({ data, color }: { data: number[]; color: string }) {
+  const chartData = data.map((v, i) => ({ v, i }));
+  return (
+    <div className="w-20 h-8">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData}>
+          <Line type="monotone" dataKey="v" stroke={color} strokeWidth={1.5} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function TrendBadge({ value }: { value: number }) {
+  if (Math.abs(value) < 0.5) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground">
+        <Minus className="size-3" /> 0%
+      </span>
+    );
+  }
+  const isPositive = value > 0;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${isPositive ? "text-success" : "text-destructive"}`}>
+      {isPositive ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
+      {Math.abs(value).toFixed(1)}%
+    </span>
+  );
+}
+
+function HeroKpi({ title, value, subtitle, icon: Icon, color, sparkline, trend }: {
   title: string; value: string; subtitle?: string; icon: React.ElementType; color: string;
+  sparkline?: number[]; trend?: number;
 }) {
   return (
     <MotionCard>
       <Card className="relative overflow-hidden">
         <CardContent className="p-5">
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1 min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-              <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+                {trend !== undefined && <TrendBadge value={trend} />}
+              </div>
               {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
             </div>
-            <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
-              <Icon className="size-5" />
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className={`flex size-11 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
+                <Icon className="size-5" />
+              </div>
+              {sparkline && sparkline.length > 1 && (
+                <MiniSparkline data={sparkline} color={color.includes("destructive") ? "hsl(var(--destructive))" : "hsl(var(--primary))"} />
+              )}
             </div>
           </div>
         </CardContent>
@@ -56,6 +96,68 @@ function StatRing({ label, value, percent, color }: {
       <p className="text-lg font-bold -mt-[62px]">{value}</p>
       <p className="mt-8 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
     </div>
+  );
+}
+
+function AlertIcon({ type }: { type: AlertItem["type"] }) {
+  switch (type) {
+    case "overdue": return <DollarSign className="size-4 text-destructive" />;
+    case "low_stock": return <Package className="size-4 text-warning" />;
+    case "pending_os": return <ClipboardList className="size-4 text-warning" />;
+  }
+}
+
+function AlertsWidget({ alerts }: { alerts: AlertItem[] }) {
+  if (alerts.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="size-4" /> Alertas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground py-4">Nenhum alerta no momento. Tudo sob controle! ✅</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Bell className="size-4" />
+          Alertas
+          <Badge variant="destructive" className="ml-auto text-[10px] px-1.5 py-0">
+            {alerts.length}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {alerts.map((alert, i) => (
+            <motion.div
+              key={`${alert.type}-${i}`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className={`flex items-start gap-3 rounded-lg border p-3 ${
+                alert.severity === "destructive"
+                  ? "border-destructive/30 bg-destructive/5"
+                  : "border-warning/30 bg-warning/5"
+              }`}
+            >
+              <AlertIcon type={alert.type} />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{alert.title}</p>
+                <p className="text-xs text-muted-foreground">{alert.detail}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -123,16 +225,26 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm">Visão geral do seu provedor em tempo real</p>
       </div>
 
-      {/* Hero KPIs */}
+      {/* Hero KPIs with sparklines & trends */}
       <StaggerGrid className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <AnimatedCard index={0}><HeroKpi title="Assinantes Ativos" value={data.activeCustomers.toLocaleString("pt-BR")}
-          subtitle={`${data.totalCustomers} clientes no total`} icon={Users} color="text-primary" /></AnimatedCard>
-        <AnimatedCard index={1}><HeroKpi title="MRR Estimado" value={formatCurrency(data.estimatedMRR)}
-          subtitle={`${data.activeContracts} contratos ativos`} icon={DollarSign} color="text-success" /></AnimatedCard>
-        <AnimatedCard index={2}><HeroKpi title="Faturamento Mensal" value={formatCurrency(data.monthlyBilling)}
-          subtitle={`Recebido ${formatCurrency(data.receivedThisMonth)}`} icon={Star} color="text-primary" /></AnimatedCard>
-        <AnimatedCard index={3}><HeroKpi title="Inadimplência" value={`${data.overdueRate.toFixed(1)}%`}
-          subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+        <AnimatedCard index={0}>
+          <HeroKpi title="Assinantes Ativos" value={data.activeCustomers.toLocaleString("pt-BR")}
+            subtitle={`${data.totalCustomers} clientes no total`} icon={Users} color="text-primary"
+            sparkline={data.customerSparkline} trend={data.customerTrend} />
+        </AnimatedCard>
+        <AnimatedCard index={1}>
+          <HeroKpi title="MRR Estimado" value={formatCurrency(data.estimatedMRR)}
+            subtitle={`${data.activeContracts} contratos ativos`} icon={DollarSign} color="text-success"
+            sparkline={data.revenueSparkline} trend={data.revenueTrend} />
+        </AnimatedCard>
+        <AnimatedCard index={2}>
+          <HeroKpi title="Faturamento Mensal" value={formatCurrency(data.monthlyBilling)}
+            subtitle={`Recebido ${formatCurrency(data.receivedThisMonth)}`} icon={Star} color="text-primary" />
+        </AnimatedCard>
+        <AnimatedCard index={3}>
+          <HeroKpi title="Inadimplência" value={`${data.overdueRate.toFixed(1)}%`}
+            subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" />
+        </AnimatedCard>
       </StaggerGrid>
 
       {/* Rings row */}
@@ -168,7 +280,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Charts + Alerts */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader className="pb-2">
@@ -229,31 +341,35 @@ export default function Dashboard() {
         </Card>
       </motion.div>
 
-      {/* Recent Activities */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Atividades Recentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.recentActivities.length ? (
-            <div className="space-y-3">
-              {data.recentActivities.map((activity, index) => (
-                <div key={`${activity.text}-${index}`} className="flex items-center gap-3 text-sm">
-                  <div className={`size-2 rounded-full shrink-0 ${
-                    activity.type === "success" ? "bg-success"
-                    : activity.type === "warning" ? "bg-warning"
-                    : "bg-destructive"
-                  }`} />
-                  <span className="flex-1">{activity.text}</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-6 text-sm text-muted-foreground">Ainda não há atividades recentes registradas.</div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Alerts + Recent Activities */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <AlertsWidget alerts={data.alerts} />
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Atividades Recentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.recentActivities.length ? (
+              <div className="space-y-3">
+                {data.recentActivities.map((activity, index) => (
+                  <div key={`${activity.text}-${index}`} className="flex items-center gap-3 text-sm">
+                    <div className={`size-2 rounded-full shrink-0 ${
+                      activity.type === "success" ? "bg-success"
+                      : activity.type === "warning" ? "bg-warning"
+                      : "bg-destructive"
+                    }`} />
+                    <span className="flex-1">{activity.text}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-sm text-muted-foreground">Ainda não há atividades recentes registradas.</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
