@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
+import { MotionCard } from "@/components/motion/MotionInteractions";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { formatCurrency } from "@/utils/finance";
 
