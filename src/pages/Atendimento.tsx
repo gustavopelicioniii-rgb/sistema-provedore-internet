@@ -526,6 +526,7 @@ export default function Atendimento() {
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
     ...(channelFilter !== "all" ? { channel: channelFilter } : {}),
   });
+  const { data: unreadData } = useUnreadMessages();
 
   const filteredConvs = conversations?.filter((c) => {
     if (!chatSearch) return true;
