@@ -260,7 +260,7 @@ export default function Frota() {
         <TabsContent value="fuel" className="mt-4">
           <Card>
             <CardContent className="p-0">
-              {fuelLogs.length === 0 ? (
+              {filteredFuelLogs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Fuel className="size-10 mb-3 opacity-40" />
                   <p className="text-sm">Nenhum abastecimento registrado.</p>
