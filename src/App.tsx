@@ -25,6 +25,7 @@ import Automacoes from "@/pages/Automacoes";
 import Relatorios from "@/pages/Relatorios";
 import Configuracoes from "@/pages/Configuracoes";
 import Auth from "@/pages/Auth";
+import LandingPage from "@/pages/LandingPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/landing" element={<LandingPage />} />
     <Route path="/auth" element={<Auth />} />
     <Route
       element={
