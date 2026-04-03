@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Bell, CreditCard, Shield, Palette } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
@@ -61,6 +62,277 @@ function useUpdateOrganization() {
       toast({ title: "Erro ao salvar", variant: "destructive" });
     },
   });
+}
+
+// --- Channel Config types and hooks ---
+type ChatChannel = "whatsapp" | "instagram" | "facebook" | "website" | "telegram" | "email";
+
+interface ChannelConfigRow {
+  id: string;
+  organization_id: string;
+  channel: ChatChannel;
+  enabled: boolean;
+  config: Record<string, string> | null;
+}
+
+const channelMeta: Record<ChatChannel, { label: string; icon: React.ElementType; color: string; fields: { key: string; label: string; placeholder: string; secret?: boolean }[] }> = {
+  whatsapp: {
+    label: "WhatsApp",
+    icon: Phone,
+    color: "text-emerald-500",
+    fields: [
+      { key: "api_url", label: "URL da Evolution API", placeholder: "https://api.evolution.example.com" },
+      { key: "api_key", label: "API Key", placeholder: "Chave de autenticação", secret: true },
+      { key: "instance", label: "Instância", placeholder: "Nome da instância" },
+      { key: "webhook_secret", label: "Webhook Secret (opcional)", placeholder: "Secret para validar webhooks", secret: true },
+    ],
+  },
+  instagram: {
+    label: "Instagram",
+    icon: Instagram,
+    color: "text-pink-500",
+    fields: [
+      { key: "page_id", label: "Page ID", placeholder: "ID da página do Instagram" },
+      { key: "access_token", label: "Access Token", placeholder: "Token de acesso da Graph API", secret: true },
+      { key: "app_secret", label: "App Secret", placeholder: "Secret do App do Facebook", secret: true },
+      { key: "webhook_verify_token", label: "Webhook Verify Token", placeholder: "Token de verificação" },
+    ],
+  },
+  facebook: {
+    label: "Facebook Messenger",
+    icon: Facebook,
+    color: "text-blue-600",
+    fields: [
+      { key: "page_id", label: "Page ID", placeholder: "ID da página do Facebook" },
+      { key: "access_token", label: "Page Access Token", placeholder: "Token de acesso da página", secret: true },
+      { key: "app_secret", label: "App Secret", placeholder: "Secret do App", secret: true },
+      { key: "webhook_verify_token", label: "Webhook Verify Token", placeholder: "Token de verificação" },
+    ],
+  },
+  website: {
+    label: "Chat do Site",
+    icon: Globe,
+    color: "text-primary",
+    fields: [
+      { key: "widget_color", label: "Cor do Widget", placeholder: "#3B82F6" },
+      { key: "welcome_message", label: "Mensagem de Boas-vindas", placeholder: "Olá! Como posso ajudar?" },
+      { key: "allowed_domains", label: "Domínios Permitidos", placeholder: "meusite.com.br, outro.com" },
+    ],
+  },
+  telegram: {
+    label: "Telegram",
+    icon: Send,
+    color: "text-sky-500",
+    fields: [
+      { key: "bot_token", label: "Bot Token", placeholder: "Token do bot (@BotFather)", secret: true },
+      { key: "bot_username", label: "Username do Bot", placeholder: "@meubot" },
+    ],
+  },
+  email: {
+    label: "E-mail",
+    icon: Mail,
+    color: "text-amber-600",
+    fields: [
+      { key: "smtp_host", label: "Servidor SMTP", placeholder: "smtp.gmail.com" },
+      { key: "smtp_port", label: "Porta SMTP", placeholder: "587" },
+      { key: "smtp_user", label: "Usuário SMTP", placeholder: "email@provedor.com" },
+      { key: "smtp_password", label: "Senha SMTP", placeholder: "Senha do e-mail", secret: true },
+      { key: "imap_host", label: "Servidor IMAP", placeholder: "imap.gmail.com" },
+    ],
+  },
+};
+
+function useChannelConfigs() {
+  return useQuery({
+    queryKey: ["channel-configs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("channel_configs")
+        .select("*")
+        .order("channel");
+      if (error) throw error;
+      return (data ?? []) as unknown as ChannelConfigRow[];
+    },
+  });
+}
+
+function useUpsertChannelConfig() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ channel, enabled, config }: { channel: ChatChannel; enabled: boolean; config: Record<string, string> }) => {
+      const orgId = (await supabase.rpc("get_user_organization_id")).data;
+      if (!orgId) throw new Error("Organização não encontrada");
+
+      // Check if config exists
+      const { data: existing } = await supabase
+        .from("channel_configs")
+        .select("id")
+        .eq("organization_id", orgId)
+        .eq("channel", channel)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from("channel_configs")
+          .update({ enabled, config: config as any, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("channel_configs")
+          .insert({ organization_id: orgId, channel: channel as any, enabled, config: config as any });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["channel-configs"] });
+      toast({ title: "Canal atualizado com sucesso!" });
+    },
+    onError: (e: Error) => {
+      toast({ title: "Erro ao salvar canal", description: e.message, variant: "destructive" });
+    },
+  });
+}
+
+// --- Channel Config Card ---
+function ChannelConfigCard({ channel, existing }: { channel: ChatChannel; existing?: ChannelConfigRow }) {
+  const meta = channelMeta[channel];
+  const Icon = meta.icon;
+  const upsert = useUpsertChannelConfig();
+
+  const [enabled, setEnabled] = useState(existing?.enabled ?? false);
+  const [fields, setFields] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    meta.fields.forEach((f) => { init[f.key] = (existing?.config as any)?.[f.key] || ""; });
+    return init;
+  });
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (existing) {
+      setEnabled(existing.enabled);
+      const updated: Record<string, string> = {};
+      meta.fields.forEach((f) => { updated[f.key] = (existing.config as any)?.[f.key] || ""; });
+      setFields(updated);
+    }
+  }, [existing]);
+
+  const handleSave = () => {
+    upsert.mutate({ channel, enabled, config: fields });
+  };
+
+  const toggleSecret = (key: string) => {
+    setShowSecrets((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const hasRequiredFields = meta.fields.some((f) => fields[f.key]?.trim());
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`flex size-9 items-center justify-center rounded-lg bg-muted ${meta.color}`}>
+              <Icon className="size-4" />
+            </div>
+            <div>
+              <CardTitle className="text-base">{meta.label}</CardTitle>
+              <CardDescription className="text-xs">
+                {enabled && hasRequiredFields ? "Configurado" : "Não configurado"}
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {enabled && hasRequiredFields && (
+              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">Ativo</Badge>
+            )}
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+          </div>
+        </div>
+      </CardHeader>
+      {enabled && (
+        <CardContent className="space-y-3 pt-0">
+          <Separator />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {meta.fields.map((f) => (
+              <div key={f.key} className="space-y-1.5">
+                <Label className="text-xs">{f.label}</Label>
+                <div className="relative">
+                  <Input
+                    type={f.secret && !showSecrets[f.key] ? "password" : "text"}
+                    value={fields[f.key]}
+                    onChange={(e) => setFields((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="text-sm pr-9"
+                  />
+                  {f.secret && (
+                    <button
+                      type="button"
+                      onClick={() => toggleSecret(f.key)}
+                      className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                      {showSecrets[f.key] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end pt-1">
+            <Button size="sm" onClick={handleSave} disabled={upsert.isPending}>
+              {upsert.isPending ? <><Loader2 className="size-3 animate-spin mr-1.5" />Salvando...</> : "Salvar"}
+            </Button>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// --- Canais Tab ---
+function CanaisTab() {
+  const { data: configs, isLoading } = useChannelConfigs();
+  const channels: ChatChannel[] = ["whatsapp", "instagram", "facebook", "website", "telegram", "email"];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Canais de Atendimento</CardTitle>
+          <CardDescription>
+            Configure as credenciais de API para cada canal de comunicação. As mensagens recebidas serão centralizadas na aba de Atendimento.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {channels.map((ch) => {
+          const existing = configs?.find((c) => c.channel === ch);
+          return <ChannelConfigCard key={ch} channel={ch} existing={existing} />;
+        })}
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-xs text-muted-foreground">
+            <strong>WhatsApp:</strong> Configure a URL do webhook na Evolution API como:{" "}
+            <code className="bg-muted px-1.5 py-0.5 rounded text-[11px]">
+              https://nqkhnkwudrsjuuhspknq.supabase.co/functions/v1/whatsapp-webhook
+            </code>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export default function Configuracoes() {
@@ -154,8 +426,9 @@ export default function Configuracoes() {
       </div>
 
       <Tabs defaultValue="empresa" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="empresa"><Building2 className="size-4 mr-1.5" />Empresa</TabsTrigger>
+          <TabsTrigger value="canais"><MessageSquare className="size-4 mr-1.5" />Canais</TabsTrigger>
           <TabsTrigger value="financeiro"><CreditCard className="size-4 mr-1.5" />Financeiro</TabsTrigger>
           <TabsTrigger value="notificacoes"><Bell className="size-4 mr-1.5" />Notificações</TabsTrigger>
           <TabsTrigger value="aparencia"><Palette className="size-4 mr-1.5" />Aparência</TabsTrigger>
@@ -212,6 +485,10 @@ export default function Configuracoes() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="canais" className="space-y-4">
+          <CanaisTab />
         </TabsContent>
 
         <TabsContent value="financeiro" className="space-y-4">
