@@ -121,16 +121,16 @@ export default function Dashboard() {
       </div>
 
       {/* Hero KPIs */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <HeroKpi title="Assinantes Ativos" value={data.activeCustomers.toLocaleString("pt-BR")}
-          subtitle={`${data.totalCustomers} clientes no total`} icon={Users} color="text-primary" />
-        <HeroKpi title="MRR Estimado" value={formatCurrency(data.estimatedMRR)}
-          subtitle={`${data.activeContracts} contratos ativos`} icon={DollarSign} color="text-success" />
-        <HeroKpi title="Faturamento Mensal" value={formatCurrency(data.monthlyBilling)}
-          subtitle={`Recebido ${formatCurrency(data.receivedThisMonth)}`} icon={Star} color="text-primary" />
-        <HeroKpi title="Inadimplência" value={`${data.overdueRate.toFixed(1)}%`}
-          subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" />
-      </div>
+      <StaggerGrid className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <AnimatedCard index={0}><HeroKpi title="Assinantes Ativos" value={data.activeCustomers.toLocaleString("pt-BR")}
+          subtitle={`${data.totalCustomers} clientes no total`} icon={Users} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={1}><HeroKpi title="MRR Estimado" value={formatCurrency(data.estimatedMRR)}
+          subtitle={`${data.activeContracts} contratos ativos`} icon={DollarSign} color="text-success" /></AnimatedCard>
+        <AnimatedCard index={2}><HeroKpi title="Faturamento Mensal" value={formatCurrency(data.monthlyBilling)}
+          subtitle={`Recebido ${formatCurrency(data.receivedThisMonth)}`} icon={Star} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={3}><HeroKpi title="Inadimplência" value={`${data.overdueRate.toFixed(1)}%`}
+          subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+      </StaggerGrid>
 
       {/* Rings row */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
