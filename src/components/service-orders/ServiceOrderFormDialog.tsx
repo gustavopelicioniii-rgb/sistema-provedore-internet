@@ -99,7 +99,7 @@ export default function ServiceOrderFormDialog({ open, onOpenChange, editing }: 
             <Select value={technicianId} onValueChange={setTechnicianId}>
               <SelectTrigger><SelectValue placeholder="Selecione um técnico" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {technicians?.filter((t) => t.status === "active").map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
               </SelectContent>
             </Select>
