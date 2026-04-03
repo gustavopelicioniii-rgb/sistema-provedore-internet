@@ -222,6 +222,85 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          company: string | null
+          created_at: string
+          customer_id: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          position: number
+          source: Database["public"]["Enums"]["lead_source"] | null
+          stage: Database["public"]["Enums"]["lead_stage"]
+          updated_at: string
+          value: number | null
+          whatsapp: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          company?: string | null
+          created_at?: string
+          customer_id?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          position?: number
+          source?: Database["public"]["Enums"]["lead_source"] | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+          value?: number | null
+          whatsapp?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          company?: string | null
+          created_at?: string
+          customer_id?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          position?: number
+          source?: Database["public"]["Enums"]["lead_source"] | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          updated_at?: string
+          value?: number | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address: Json | null
@@ -365,6 +444,20 @@ export type Database = {
         | "awaiting_signature"
       customer_status: "active" | "suspended" | "defaulting" | "cancelled"
       invoice_status: "pending" | "paid" | "overdue" | "cancelled"
+      lead_source:
+        | "referral"
+        | "website"
+        | "social_media"
+        | "cold_call"
+        | "event"
+        | "other"
+      lead_stage:
+        | "new"
+        | "qualified"
+        | "proposal"
+        | "negotiation"
+        | "won"
+        | "lost"
       plan_technology: "fiber" | "radio" | "cable" | "other"
     }
     CompositeTypes: {
@@ -502,6 +595,22 @@ export const Constants = {
       ],
       customer_status: ["active", "suspended", "defaulting", "cancelled"],
       invoice_status: ["pending", "paid", "overdue", "cancelled"],
+      lead_source: [
+        "referral",
+        "website",
+        "social_media",
+        "cold_call",
+        "event",
+        "other",
+      ],
+      lead_stage: [
+        "new",
+        "qualified",
+        "proposal",
+        "negotiation",
+        "won",
+        "lost",
+      ],
       plan_technology: ["fiber", "radio", "cable", "other"],
     },
   },
