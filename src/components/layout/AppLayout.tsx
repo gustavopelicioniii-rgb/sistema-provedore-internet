@@ -51,6 +51,9 @@ export function AppLayout() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          <div className="ml-auto">
+            <GlobalSearch />
+          </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <AnimatePresence mode="wait">
