@@ -158,6 +158,59 @@ export default function RedeNoc() {
         </CardContent></Card>
       </div>
 
+      {/* Charts */}
+      {devices.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Equipamentos por Status</CardTitle></CardHeader>
+            <CardContent>
+              <div className="h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Online", value: onlineCount },
+                        { name: "Offline", value: offlineCount },
+                        { name: "Alerta", value: warningCount },
+                        { name: "Manutenção", value: devices.filter((d) => d.status === "maintenance").length },
+                      ].filter((d) => d.value > 0)}
+                      cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3}
+                      dataKey="value" nameKey="name"
+                      label={({ name, value }) => `${name}: ${value}`} labelLine={false}
+                    >
+                      {[0, 1, 2, 3].map((i) => <Cell key={i} fill={CHART_COLORS[i]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-base">Equipamentos por Tipo</CardTitle></CardHeader>
+            <CardContent>
+              <div className="h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={
+                    Object.entries(typeLabels).map(([key, label]) => ({
+                      tipo: label,
+                      qtd: devices.filter((d) => d.device_type === key).length,
+                    })).filter((d) => d.qtd > 0)
+                  } layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis type="number" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                    <YAxis dataKey="tipo" type="category" width={80} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Bar dataKey="qtd" name="Quantidade" fill="hsl(var(--chart-1))" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Filters + Devices table */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
