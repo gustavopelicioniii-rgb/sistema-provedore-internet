@@ -1,68 +1,39 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
 import {
-  Activity,
-  Wifi,
-  WifiOff,
-  AlertTriangle,
-  Server,
-  RefreshCw,
-  Signal,
-  ArrowUpDown,
-  CheckCircle,
+  Activity, Wifi, WifiOff, AlertTriangle, Server, RefreshCw,
+  Signal, CheckCircle, Plus, Pencil, Trash2, Wrench,
 } from "lucide-react";
-
-interface Device {
-  id: string;
-  name: string;
-  type: "olt" | "switch" | "router" | "server";
-  ip: string;
-  status: "online" | "offline" | "warning";
-  uptime: string;
-  cpu: number;
-  memory: number;
-  clients: number;
-}
-
-const mockDevices: Device[] = [
-  { id: "1", name: "OLT-01 Centro", type: "olt", ip: "10.0.0.1", status: "online", uptime: "45d 12h", cpu: 34, memory: 58, clients: 256 },
-  { id: "2", name: "OLT-02 Norte", type: "olt", ip: "10.0.0.2", status: "online", uptime: "30d 8h", cpu: 42, memory: 65, clients: 189 },
-  { id: "3", name: "OLT-03 Sul", type: "olt", ip: "10.0.0.3", status: "warning", uptime: "2d 4h", cpu: 78, memory: 82, clients: 312 },
-  { id: "4", name: "SW-Core-01", type: "switch", ip: "10.0.1.1", status: "online", uptime: "90d 2h", cpu: 15, memory: 30, clients: 0 },
-  { id: "5", name: "Router-BGP-01", type: "router", ip: "10.0.2.1", status: "online", uptime: "60d 18h", cpu: 22, memory: 45, clients: 0 },
-  { id: "6", name: "OLT-04 Oeste", type: "olt", ip: "10.0.0.4", status: "offline", uptime: "—", cpu: 0, memory: 0, clients: 0 },
-];
-
-interface Alert {
-  id: string;
-  severity: "critical" | "warning" | "info";
-  message: string;
-  device: string;
-  time: string;
-}
-
-const mockAlerts: Alert[] = [
-  { id: "1", severity: "critical", message: "OLT-04 Oeste sem comunicação", device: "OLT-04", time: "há 5 min" },
-  { id: "2", severity: "warning", message: "CPU acima de 75% na OLT-03 Sul", device: "OLT-03", time: "há 15 min" },
-  { id: "3", severity: "warning", message: "Memória acima de 80% na OLT-03 Sul", device: "OLT-03", time: "há 15 min" },
-  { id: "4", severity: "info", message: "OLT-02 Norte reiniciada com sucesso", device: "OLT-02", time: "há 30d" },
-];
+import { useNetworkDevices } from "@/hooks/useNetworkDevices";
+import type { NetworkDevice, NetworkDeviceInsert } from "@/hooks/useNetworkDevices";
+import NetworkDeviceFormDialog from "@/components/network/NetworkDeviceFormDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusConfig = {
   online: { label: "Online", className: "bg-success/10 text-success border-success/20", icon: CheckCircle },
   offline: { label: "Offline", className: "bg-destructive/10 text-destructive border-destructive/20", icon: WifiOff },
   warning: { label: "Alerta", className: "bg-warning/10 text-warning border-warning/20", icon: AlertTriangle },
+  maintenance: { label: "Manutenção", className: "bg-muted text-muted-foreground border-muted", icon: Wrench },
 };
 
-const severityConfig = {
-  critical: { label: "Crítico", className: "bg-destructive/10 text-destructive border-destructive/20" },
-  warning: { label: "Alerta", className: "bg-warning/10 text-warning border-warning/20" },
-  info: { label: "Info", className: "bg-primary/10 text-primary border-primary/20" },
+const typeLabels: Record<string, string> = {
+  olt: "OLT", onu: "ONU", router: "Roteador", switch: "Switch",
+  server: "Servidor", access_point: "AP", other: "Outro",
+};
+
+const manufacturerLabels: Record<string, string> = {
+  mikrotik: "MikroTik", huawei: "Huawei", intelbras: "Intelbras",
+  fiberhome: "FiberHome", zte: "ZTE", other: "Outro",
 };
 
 function CpuMemBar({ value, label }: { value: number; label: string }) {
@@ -70,8 +41,7 @@ function CpuMemBar({ value, label }: { value: number; label: string }) {
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-[10px] text-muted-foreground">
-        <span>{label}</span>
-        <span>{value}%</span>
+        <span>{label}</span><span>{value}%</span>
       </div>
       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
@@ -81,17 +51,46 @@ function CpuMemBar({ value, label }: { value: number; label: string }) {
 }
 
 export default function RedeNoc() {
-  const [refreshing, setRefreshing] = useState(false);
+  const { devices, isLoading, createDevice, updateDevice, deleteDevice } = useNetworkDevices();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editDevice, setEditDevice] = useState<NetworkDevice | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const onlineCount = mockDevices.filter((d) => d.status === "online").length;
-  const offlineCount = mockDevices.filter((d) => d.status === "offline").length;
-  const warningCount = mockDevices.filter((d) => d.status === "warning").length;
-  const totalClients = mockDevices.reduce((acc, d) => acc + d.clients, 0);
+  const onlineCount = devices.filter((d) => d.status === "online").length;
+  const offlineCount = devices.filter((d) => d.status === "offline").length;
+  const warningCount = devices.filter((d) => d.status === "warning").length;
+  const totalClients = devices.reduce((acc, d) => acc + (d.connected_clients ?? 0), 0);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
+  const handleCreate = () => { setEditDevice(null); setFormOpen(true); };
+  const handleEdit = (d: NetworkDevice) => { setEditDevice(d); setFormOpen(true); };
+
+  const handleSubmit = async (data: Omit<NetworkDeviceInsert, "organization_id">) => {
+    const { data: profile } = await supabase.from("profiles").select("organization_id").single();
+    const orgId = profile?.organization_id;
+    if (!orgId) return;
+
+    if (editDevice) {
+      await updateDevice.mutateAsync({ id: editDevice.id, ...data });
+    } else {
+      await createDevice.mutateAsync({ ...data, organization_id: orgId } as NetworkDeviceInsert);
+    }
+    setFormOpen(false);
   };
+
+  const confirmDelete = async () => {
+    if (deleteId) {
+      await deleteDevice.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -100,156 +99,140 @@ export default function RedeNoc() {
           <h1 className="text-2xl font-bold tracking-tight">Rede & NOC</h1>
           <p className="text-muted-foreground text-sm">Monitoramento de equipamentos e status da rede</p>
         </div>
-        <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-          <RefreshCw className={`mr-2 size-4 ${refreshing ? "animate-spin" : ""}`} />
-          Atualizar
+        <Button onClick={handleCreate}>
+          <Plus className="mr-2 size-4" /> Novo Equipamento
         </Button>
       </div>
 
+      {/* Summary cards */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Equipamentos Online</p>
-              <Wifi className="size-4 text-success" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{onlineCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Offline</p>
-              <WifiOff className="size-4 text-destructive" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{offlineCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Em Alerta</p>
-              <AlertTriangle className="size-4 text-warning" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{warningCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Clientes Conectados</p>
-              <Signal className="size-4 text-primary" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{totalClients.toLocaleString("pt-BR")}</p>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Online</p>
+            <Wifi className="size-4 text-success" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{onlineCount}</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Offline</p>
+            <WifiOff className="size-4 text-destructive" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{offlineCount}</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Em Alerta</p>
+            <AlertTriangle className="size-4 text-warning" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{warningCount}</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Clientes Conectados</p>
+            <Signal className="size-4 text-primary" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{totalClients.toLocaleString("pt-BR")}</p>
+        </CardContent></Card>
       </div>
 
-      <Tabs defaultValue="devices">
-        <TabsList>
-          <TabsTrigger value="devices">
-            <Server className="mr-2 size-4" /> Equipamentos
-          </TabsTrigger>
-          <TabsTrigger value="alerts">
-            <Activity className="mr-2 size-4" /> Alertas
-            {mockAlerts.filter((a) => a.severity === "critical").length > 0 && (
-              <Badge variant="destructive" className="ml-2 size-5 p-0 text-[10px] justify-center">
-                {mockAlerts.filter((a) => a.severity === "critical").length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="devices" className="mt-4">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Equipamento</TableHead>
-                    <TableHead>IP</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Uptime</TableHead>
-                    <TableHead className="w-32">CPU / Memória</TableHead>
-                    <TableHead className="text-right">Clientes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockDevices.map((device) => {
-                    const st = statusConfig[device.status];
-                    return (
-                      <TableRow key={device.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Server className="size-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{device.name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{device.type}</p>
-                            </div>
+      {/* Devices table */}
+      <Card>
+        <CardContent className="p-0">
+          {devices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Server className="size-10 mb-3 opacity-40" />
+              <p className="text-sm">Nenhum equipamento cadastrado.</p>
+              <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro equipamento</Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Equipamento</TableHead>
+                  <TableHead>IP</TableHead>
+                  <TableHead>Fabricante</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Uptime</TableHead>
+                  <TableHead className="w-32">CPU / Memória</TableHead>
+                  <TableHead className="text-right">Clientes</TableHead>
+                  <TableHead className="w-20" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {devices.map((device) => {
+                  const st = statusConfig[device.status] ?? statusConfig.offline;
+                  return (
+                    <TableRow key={device.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Server className="size-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{device.name}</p>
+                            <p className="text-xs text-muted-foreground">{typeLabels[device.device_type] ?? device.device_type}</p>
                           </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{device.ip}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={st.className}>
-                            <st.icon className="mr-1 size-3" />
-                            {st.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{device.uptime}</TableCell>
-                        <TableCell>
-                          {device.status !== "offline" ? (
-                            <div className="space-y-1.5">
-                              <CpuMemBar value={device.cpu} label="CPU" />
-                              <CpuMemBar value={device.memory} label="MEM" />
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {device.clients > 0 ? device.clients.toLocaleString("pt-BR") : "—"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-muted-foreground">{device.ip_address ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{manufacturerLabels[device.manufacturer] ?? device.manufacturer}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={st.className}>
+                          <st.icon className="mr-1 size-3" />{st.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{device.uptime ?? "—"}</TableCell>
+                      <TableCell>
+                        {device.status !== "offline" ? (
+                          <div className="space-y-1.5">
+                            <CpuMemBar value={device.cpu_usage ?? 0} label="CPU" />
+                            <CpuMemBar value={device.memory_usage ?? 0} label="MEM" />
+                          </div>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {(device.connected_clients ?? 0) > 0 ? device.connected_clients!.toLocaleString("pt-BR") : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => handleEdit(device)}>
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteId(device.id)}>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="alerts" className="mt-4">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Severidade</TableHead>
-                    <TableHead>Mensagem</TableHead>
-                    <TableHead>Equipamento</TableHead>
-                    <TableHead className="text-right">Quando</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockAlerts.map((alert) => {
-                    const sev = severityConfig[alert.severity];
-                    return (
-                      <TableRow key={alert.id}>
-                        <TableCell>
-                          <Badge variant="outline" className={sev.className}>{sev.label}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{alert.message}</TableCell>
-                        <TableCell className="text-muted-foreground">{alert.device}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{alert.time}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Form dialog */}
+      <NetworkDeviceFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        device={editDevice}
+        onSubmit={handleSubmit}
+        isLoading={createDevice.isPending || updateDevice.isPending}
+      />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover equipamento?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">Remover</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
