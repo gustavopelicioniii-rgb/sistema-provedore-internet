@@ -8,12 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff, Plus, Pencil, Trash2, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useCannedResponses, useCreateCannedResponse, useUpdateCannedResponse, useDeleteCannedResponse,
+  type CannedResponse,
+} from "@/hooks/useChat";
 
 interface OrgSettings {
   due_day?: string;
