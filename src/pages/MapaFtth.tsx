@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import {
   Layers,
   Plus,
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 interface FtthNode {
   id: string;
@@ -36,30 +39,72 @@ const mockNodes: FtthNode[] = [
   { id: "6", name: "Splitter-01 Sul", type: "splitter", address: "Rua Sul, 80", capacity: 32, used: 0, status: "inactive", lat: -23.56, lng: -46.64 },
 ];
 
+const markerColors: Record<FtthNode["type"], string> = {
+  cto: "#6366f1",   // primary / indigo
+  ceo: "#10b981",   // emerald
+  splitter: "#f59e0b", // amber
+  pop: "#ef4444",   // red
+};
+
+function createIcon(type: FtthNode["type"], status: FtthNode["status"]) {
+  const color = status === "inactive" ? "#94a3b8" : markerColors[type];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
+    <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="14" cy="14" r="6" fill="#fff"/>
+    <text x="14" y="17" text-anchor="middle" font-size="9" font-weight="bold" fill="${color}">${type === "pop" ? "P" : type === "ceo" ? "E" : type === "cto" ? "C" : "S"}</text>
+  </svg>`;
+  return L.divIcon({
+    html: svg,
+    className: "",
+    iconSize: [28, 40],
+    iconAnchor: [14, 40],
+    popupAnchor: [0, -40],
+  });
+}
+
 const typeConfig = {
   cto: { label: "CTO", color: "bg-primary/10 text-primary border-primary/20", icon: Boxes },
-  ceo: { label: "CEO", color: "bg-chart-2/10 text-chart-2 border-chart-2/20", icon: Cable },
-  splitter: { label: "Splitter", color: "bg-warning/10 text-warning border-warning/20", icon: CircleDot },
-  pop: { label: "POP", color: "bg-success/10 text-success border-success/20", icon: Layers },
+  ceo: { label: "CEO", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", icon: Cable },
+  splitter: { label: "Splitter", color: "bg-amber-500/10 text-amber-600 border-amber-500/20", icon: CircleDot },
+  pop: { label: "POP", color: "bg-red-500/10 text-red-600 border-red-500/20", icon: Layers },
 };
 
 const statusLabels: Record<string, { label: string; className: string }> = {
-  active: { label: "Ativo", className: "bg-success/10 text-success border-success/20" },
+  active: { label: "Ativo", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
   full: { label: "Lotado", className: "bg-destructive/10 text-destructive border-destructive/20" },
   inactive: { label: "Inativo", className: "bg-muted text-muted-foreground border-muted" },
 };
 
+function FlyToNode({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  map.flyTo([lat, lng], 17, { duration: 0.8 });
+  return null;
+}
+
 export default function MapaFtth() {
   const [search, setSearch] = useState("");
+  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FtthNode["type"] | "all">("all");
 
-  const filtered = mockNodes.filter((n) =>
-    n.name.toLowerCase().includes(search.toLowerCase()) ||
-    n.address.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = mockNodes.filter((n) => {
+    const matchesSearch =
+      n.name.toLowerCase().includes(search.toLowerCase()) ||
+      n.address.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = activeFilter === "all" || n.type === activeFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const mapNodes = activeFilter === "all" ? mockNodes : mockNodes.filter(n => n.type === activeFilter);
 
   const totalCapacity = mockNodes.reduce((a, n) => a + n.capacity, 0);
   const totalUsed = mockNodes.reduce((a, n) => a + n.used, 0);
   const occupancy = totalCapacity > 0 ? ((totalUsed / totalCapacity) * 100).toFixed(1) : "0";
+
+  const center = useMemo<[number, number]>(() => {
+    const avgLat = mockNodes.reduce((s, n) => s + n.lat, 0) / mockNodes.length;
+    const avgLng = mockNodes.reduce((s, n) => s + n.lng, 0) / mockNodes.length;
+    return [avgLat, avgLng];
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -96,7 +141,7 @@ export default function MapaFtth() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted-foreground">Capacidade Total</p>
-              <Cable className="size-4 text-success" />
+              <Cable className="size-4 text-emerald-600" />
             </div>
             <p className="mt-2 text-2xl font-bold">{totalCapacity}</p>
           </CardContent>
@@ -105,11 +150,25 @@ export default function MapaFtth() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted-foreground">Ocupação Média</p>
-              <CircleDot className="size-4 text-warning" />
+              <CircleDot className="size-4 text-amber-500" />
             </div>
             <p className="mt-2 text-2xl font-bold">{occupancy}%</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Filter buttons */}
+      <div className="flex flex-wrap gap-2">
+        {(["all", "cto", "ceo", "splitter", "pop"] as const).map((t) => (
+          <Button
+            key={t}
+            size="sm"
+            variant={activeFilter === t ? "default" : "outline"}
+            onClick={() => setActiveFilter(t)}
+          >
+            {t === "all" ? "Todos" : typeConfig[t].label}
+          </Button>
+        ))}
       </div>
 
       <Tabs defaultValue="map">
@@ -124,29 +183,53 @@ export default function MapaFtth() {
 
         <TabsContent value="map" className="mt-4">
           <Card>
-            <CardContent className="p-0">
-              <div className="flex items-center justify-center h-[450px] bg-muted/30 rounded-lg">
-                <div className="text-center space-y-3">
-                  <MapPin className="mx-auto size-12 text-muted-foreground/30" />
-                  <div>
-                    <p className="font-medium text-muted-foreground">Mapa Interativo</p>
-                    <p className="text-sm text-muted-foreground/70">
-                      Integre com Leaflet ou Google Maps para visualização georreferenciada dos pontos de rede.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2 pt-2">
-                    {mockNodes.map((node) => {
-                      const cfg = typeConfig[node.type];
-                      return (
-                        <Badge key={node.id} variant="outline" className={cfg.color}>
-                          <cfg.icon className="mr-1 size-3" />
-                          {node.name}
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+            <CardContent className="p-0 overflow-hidden rounded-lg">
+              <MapContainer
+                center={center}
+                zoom={14}
+                scrollWheelZoom
+                style={{ height: "500px", width: "100%" }}
+                className="z-0"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {flyTo && <FlyToNode lat={flyTo.lat} lng={flyTo.lng} />}
+                {mapNodes.map((node) => {
+                  const pct = node.capacity > 0 ? Math.round((node.used / node.capacity) * 100) : 0;
+                  const cfg = typeConfig[node.type];
+                  const st = statusLabels[node.status];
+                  return (
+                    <Marker key={node.id} position={[node.lat, node.lng]} icon={createIcon(node.type, node.status)}>
+                      <Popup>
+                        <div className="min-w-[180px]">
+                          <p className="font-bold text-sm mb-1">{node.name}</p>
+                          <p className="text-xs text-gray-500 mb-2">{node.address}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium">Tipo:</span>
+                            <span className="text-xs">{cfg.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium">Status:</span>
+                            <span className="text-xs">{st.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium">Ocupação:</span>
+                            <span className="text-xs">{node.used}/{node.capacity} ({pct}%)</span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-gray-200 mt-2 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+              </MapContainer>
             </CardContent>
           </Card>
         </TabsContent>
@@ -171,6 +254,7 @@ export default function MapaFtth() {
                     <TableHead>Endereço</TableHead>
                     <TableHead>Ocupação</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -191,7 +275,7 @@ export default function MapaFtth() {
                           <div className="flex items-center gap-2">
                             <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${pct >= 90 ? "bg-destructive" : pct >= 60 ? "bg-warning" : "bg-success"}`}
+                                className={`h-full rounded-full ${pct >= 90 ? "bg-destructive" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500"}`}
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
@@ -200,6 +284,17 @@ export default function MapaFtth() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            title="Ver no mapa"
+                            onClick={() => setFlyTo({ lat: node.lat, lng: node.lng })}
+                          >
+                            <MapPin className="size-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
