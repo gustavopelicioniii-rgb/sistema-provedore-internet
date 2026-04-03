@@ -1,30 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
-
-const kpis = [
-  { title: "Faturamento Mensal", value: "R$ 342.960", icon: DollarSign, color: "text-primary" },
-  { title: "Recebido", value: "R$ 298.400", icon: CheckCircle, color: "text-success" },
-  { title: "A Receber", value: "R$ 44.560", icon: TrendingUp, color: "text-warning" },
-  { title: "Inadimplentes", value: "267 clientes", icon: AlertTriangle, color: "text-destructive" },
-];
-
-const faturas = [
-  { id: 1, cliente: "João Silva", valor: "R$ 99,90", vencimento: "10/01/2026", status: "Pago" },
-  { id: 2, cliente: "Maria Souza", valor: "R$ 79,90", vencimento: "10/01/2026", status: "Pago" },
-  { id: 3, cliente: "Pedro Oliveira", valor: "R$ 59,90", vencimento: "05/01/2026", status: "Vencido" },
-  { id: 4, cliente: "Ana Costa", valor: "R$ 149,90", vencimento: "15/01/2026", status: "Pendente" },
-  { id: 5, cliente: "Carlos Lima", valor: "R$ 59,90", vencimento: "20/12/2025", status: "Vencido" },
-];
-
-const statusColor: Record<string, string> = {
-  Pago: "bg-success/10 text-success border-success/20",
-  Pendente: "bg-warning/10 text-warning border-warning/20",
-  Vencido: "bg-destructive/10 text-destructive border-destructive/20",
-};
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { useFinanceiroData } from "@/hooks/useFinanceiroData";
+import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
 
 export default function Financeiro() {
+  const { data, isLoading, error } = useFinanceiroData();
+
+  const kpis = [
+    { title: "Faturamento Mensal", value: formatCurrency(data?.monthlyBilling ?? 0), icon: DollarSign, color: "text-primary" },
+    { title: "Recebido", value: formatCurrency(data?.receivedThisMonth ?? 0), icon: CheckCircle, color: "text-success" },
+    { title: "A Receber", value: formatCurrency(data?.receivable ?? 0), icon: TrendingUp, color: "text-warning" },
+    { title: "Inadimplentes", value: `${data?.defaultingCustomers ?? 0} clientes`, icon: AlertTriangle, color: "text-destructive" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -51,28 +41,40 @@ export default function Financeiro() {
           <CardTitle className="text-base">Faturas Recentes</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {faturas.map((f) => (
-                <TableRow key={f.id}>
-                  <TableCell className="font-medium">{f.cliente}</TableCell>
-                  <TableCell>{f.valor}</TableCell>
-                  <TableCell className="text-muted-foreground">{f.vencimento}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusColor[f.status]}>{f.status}</Badge>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="py-12 text-center text-sm text-destructive">Não foi possível carregar os dados financeiros.</div>
+          ) : !data?.recentInvoices.length ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma fatura cadastrada ainda.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {data.recentInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.customerName}</TableCell>
+                    <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(invoice.dueDate)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={invoiceStatusClasses[invoice.status]}>
+                        {invoiceStatusLabels[invoice.status]}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
