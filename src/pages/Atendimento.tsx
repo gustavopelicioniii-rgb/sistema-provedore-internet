@@ -192,8 +192,12 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
   const [showCanned, setShowCanned] = useState(false);
   const [cannedFilter, setCannedFilter] = useState("");
   const [cannedIndex, setCannedIndex] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -228,44 +232,77 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showCanned || !filteredCanned.length) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setCannedIndex((i) => Math.min(i + 1, filteredCanned.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setCannedIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      selectCannedResponse(filteredCanned[cannedIndex]);
-    } else if (e.key === "Escape") {
-      setShowCanned(false);
-    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setCannedIndex((i) => Math.min(i + 1, filteredCanned.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setCannedIndex((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); selectCannedResponse(filteredCanned[cannedIndex]); }
+    else if (e.key === "Escape") { setShowCanned(false); }
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        <div className="text-center space-y-2">
-          <MessageSquare className="mx-auto size-12 opacity-20" />
-          <p className="text-sm">Selecione uma conversa para visualizar</p>
-        </div>
-      </div>
-    );
-  }
+  const getContentType = (mime: string): string => {
+    if (mime.startsWith("image/")) return "image";
+    if (mime.startsWith("audio/")) return "audio";
+    if (mime.startsWith("video/")) return "video";
+    return "document";
+  };
 
-  const ch = channelConfig[conversation.channel];
-  const ChIcon = ch.icon;
-  const customerName = (conversation.customers as any)?.name || conversation.channel_contact_id || "Desconhecido";
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingFile(file);
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setPendingPreview(url);
+    } else {
+      setPendingPreview(null);
+    }
+    e.target.value = "";
+  };
 
-  const handleSend = () => {
-    if (!text.trim()) return;
-    sendMsg.mutate({
-      conversation_id: conversation.id,
-      content: text.trim(),
-      channel: conversation.channel,
-      channel_contact_id: conversation.channel_contact_id,
-    });
+  const clearPendingFile = () => {
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingFile(null);
+    setPendingPreview(null);
+  };
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${conversation!.organization_id}/${conversation!.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("chat-media").upload(path, file);
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
+  const handleSend = async () => {
+    if (!text.trim() && !pendingFile) return;
+
+    if (pendingFile) {
+      setUploading(true);
+      try {
+        const mediaUrl = await uploadFile(pendingFile);
+        const contentType = getContentType(pendingFile.type);
+        sendMsg.mutate({
+          conversation_id: conversation!.id,
+          content: text.trim() || pendingFile.name,
+          content_type: contentType as any,
+          media_url: mediaUrl,
+          channel: conversation!.channel,
+          channel_contact_id: conversation!.channel_contact_id,
+        });
+        clearPendingFile();
+      } catch (err) {
+        console.error("Upload failed:", err);
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      sendMsg.mutate({
+        conversation_id: conversation!.id,
+        content: text.trim(),
+        channel: conversation!.channel,
+        channel_contact_id: conversation!.channel_contact_id,
+      });
+    }
     setText("");
     setShowCanned(false);
   };
