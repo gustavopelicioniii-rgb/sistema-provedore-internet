@@ -6,8 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  Car, Fuel, Wrench, AlertTriangle, Plus, CheckCircle, Pencil, Trash2,
+  Car, Fuel, Wrench, AlertTriangle, Plus, CheckCircle, Pencil, Trash2, Search,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import { useFleet } from "@/hooks/useFleet";
 import type { Vehicle, VehicleInsert } from "@/hooks/useFleet";
