@@ -125,7 +125,7 @@ export default function Relatorios() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Tendência de Tickets</CardTitle></CardHeader>
