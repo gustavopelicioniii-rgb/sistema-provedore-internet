@@ -16,7 +16,7 @@ import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { MotionCard } from "@/components/motion/MotionInteractions";
 import { useReportsData } from "@/hooks/useReportsData";
 import { formatCurrency } from "@/utils/finance";
-import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { downloadCsv, downloadPdfTable, downloadXlsx } from "@/utils/exportData";
 import { toast } from "sonner";
 import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 
