@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart3, TrendingUp, Users, DollarSign, Download, Calendar, PieChart, Activity } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 
 const monthlyData = [
   { month: "Jan", receita: 45000, despesa: 32000 },
@@ -50,7 +52,8 @@ export default function Relatorios() {
         <Button variant="outline"><Calendar className="mr-2 size-4" />Período</Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <AnimatedCard index={0}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -59,6 +62,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
+        </AnimatedCard>
+        <AnimatedCard index={1}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -67,6 +72,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
+        </AnimatedCard>
+        <AnimatedCard index={2}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -75,6 +82,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
+        </AnimatedCard>
+        <AnimatedCard index={3}>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -83,9 +92,10 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </AnimatedCard>
+      </StaggerGrid>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Receita vs Despesa</CardTitle></CardHeader>
           <CardContent>
@@ -115,7 +125,7 @@ export default function Relatorios() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Tendência de Tickets</CardTitle></CardHeader>

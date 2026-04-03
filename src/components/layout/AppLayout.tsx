@@ -2,6 +2,8 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "./AppSidebar";
 import { Separator } from "@/components/ui/separator";
 import { Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { PageTransition } from "@/components/motion/PageTransition";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -50,7 +52,11 @@ export function AppLayout() {
           </Breadcrumb>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <PageTransition key={location.pathname}>
+              <Outlet />
+            </PageTransition>
+          </AnimatePresence>
         </main>
       </SidebarInset>
     </SidebarProvider>

@@ -4,6 +4,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { formatCurrency } from "@/utils/finance";
 
@@ -119,16 +121,16 @@ export default function Dashboard() {
       </div>
 
       {/* Hero KPIs */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <HeroKpi title="Assinantes Ativos" value={data.activeCustomers.toLocaleString("pt-BR")}
-          subtitle={`${data.totalCustomers} clientes no total`} icon={Users} color="text-primary" />
-        <HeroKpi title="MRR Estimado" value={formatCurrency(data.estimatedMRR)}
-          subtitle={`${data.activeContracts} contratos ativos`} icon={DollarSign} color="text-success" />
-        <HeroKpi title="Faturamento Mensal" value={formatCurrency(data.monthlyBilling)}
-          subtitle={`Recebido ${formatCurrency(data.receivedThisMonth)}`} icon={Star} color="text-primary" />
-        <HeroKpi title="Inadimplência" value={`${data.overdueRate.toFixed(1)}%`}
-          subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" />
-      </div>
+      <StaggerGrid className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <AnimatedCard index={0}><HeroKpi title="Assinantes Ativos" value={data.activeCustomers.toLocaleString("pt-BR")}
+          subtitle={`${data.totalCustomers} clientes no total`} icon={Users} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={1}><HeroKpi title="MRR Estimado" value={formatCurrency(data.estimatedMRR)}
+          subtitle={`${data.activeContracts} contratos ativos`} icon={DollarSign} color="text-success" /></AnimatedCard>
+        <AnimatedCard index={2}><HeroKpi title="Faturamento Mensal" value={formatCurrency(data.monthlyBilling)}
+          subtitle={`Recebido ${formatCurrency(data.receivedThisMonth)}`} icon={Star} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={3}><HeroKpi title="Inadimplência" value={`${data.overdueRate.toFixed(1)}%`}
+          subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+      </StaggerGrid>
 
       {/* Rings row */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -164,7 +166,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-7">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Evolução de Clientes & Receita</CardTitle>
@@ -222,7 +224,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Recent Activities */}
       <Card>
