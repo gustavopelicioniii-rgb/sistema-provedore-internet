@@ -77,7 +77,7 @@ export function useCreateCustomer() {
 
       const { data: customer, error } = await supabase
         .from("customers")
-        .insert(insertData)
+        .insert([insertData])
         .select()
         .single();
 
