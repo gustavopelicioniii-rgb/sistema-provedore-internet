@@ -614,6 +614,7 @@ export default function Atendimento() {
                         conv={c}
                         active={selectedConv?.id === c.id}
                         onClick={() => setSelectedConv(c)}
+                        unreadCount={unreadData?.byConversation[c.id] || 0}
                       />
                     ))
                   )}
