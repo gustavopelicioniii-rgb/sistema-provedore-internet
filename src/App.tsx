@@ -47,41 +47,43 @@ function PublicHome() {
   return <LandingPage />;
 }
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/" element={<PublicHome />} />
-    <Route path="/landing" element={<LandingPage />} />
-    <Route path="/auth" element={<Auth />} />
-    <Route path="/reset-password" element={<ResetPassword />} />
-    <Route
-      element={
-        <ProtectedRoute>
-          <AppLayout />
-        </ProtectedRoute>
-      }
-    >
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/clientes" element={<Clientes />} />
-      <Route path="/crm" element={<CRM />} />
-      <Route path="/atendimento" element={<Atendimento />} />
-      <Route path="/rede" element={<RedeNoc />} />
-      <Route path="/mapa-ftth" element={<MapaFtth />} />
-      <Route path="/ordens-servico" element={<OrdensServico />} />
-      <Route path="/tecnicos" element={<Tecnicos />} />
-      <Route path="/financeiro" element={<Financeiro />} />
-      <Route path="/planos" element={<Planos />} />
-      <Route path="/contratos" element={<Contratos />} />
-      <Route path="/fiscal" element={<Fiscal />} />
-      <Route path="/estoque" element={<Estoque />} />
-      <Route path="/frota" element={<Frota />} />
-      <Route path="/portal-assinante" element={<PortalAssinante />} />
-      <Route path="/automacoes" element={<Automacoes />} />
-      <Route path="/relatorios" element={<Relatorios />} />
-      <Route path="/configuracoes" element={<Configuracoes />} />
-    </Route>
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+const AppRoutes = React.forwardRef<HTMLDivElement>(function AppRoutes(_props, _ref) {
+  return (
+    <Routes>
+      <Route path="/" element={<PublicHome />} />
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/crm" element={<CRM />} />
+        <Route path="/atendimento" element={<Atendimento />} />
+        <Route path="/rede" element={<RedeNoc />} />
+        <Route path="/mapa-ftth" element={<MapaFtth />} />
+        <Route path="/ordens-servico" element={<OrdensServico />} />
+        <Route path="/tecnicos" element={<Tecnicos />} />
+        <Route path="/financeiro" element={<Financeiro />} />
+        <Route path="/planos" element={<Planos />} />
+        <Route path="/contratos" element={<Contratos />} />
+        <Route path="/fiscal" element={<Fiscal />} />
+        <Route path="/estoque" element={<Estoque />} />
+        <Route path="/frota" element={<Frota />} />
+        <Route path="/portal-assinante" element={<PortalAssinante />} />
+        <Route path="/automacoes" element={<Automacoes />} />
+        <Route path="/relatorios" element={<Relatorios />} />
+        <Route path="/configuracoes" element={<Configuracoes />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+});
 
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
