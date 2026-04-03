@@ -4,6 +4,13 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { getLastMonths, isSameMonth, normalizeInvoiceStatus, type InvoiceStatus } from "@/utils/finance";
 
+export interface AlertItem {
+  type: "overdue" | "low_stock" | "pending_os";
+  title: string;
+  detail: string;
+  severity: "destructive" | "warning";
+}
+
 export interface DashboardMetricData {
   activeCustomers: number;
   totalCustomers: number;
@@ -17,6 +24,13 @@ export interface DashboardMetricData {
   revenueData: Array<{ month: string; clientes: number; receita: number }>;
   invoiceStatusData: Array<{ category: string; count: number }>;
   recentActivities: Array<{ text: string; time: string; type: "success" | "warning" | "destructive" }>;
+  alerts: AlertItem[];
+  // Trend sparkline data (last 6 months)
+  customerSparkline: number[];
+  revenueSparkline: number[];
+  // Trend direction
+  customerTrend: number; // percentage change vs previous month
+  revenueTrend: number;
   hasData: boolean;
 }
 
