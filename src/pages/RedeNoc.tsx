@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
+import { MotionCard } from "@/components/motion/MotionInteractions";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
