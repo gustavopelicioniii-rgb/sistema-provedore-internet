@@ -129,14 +129,18 @@ export default function LandingPage() {
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
             <Link to="/auth?tab=signup">
-              <Button size="lg" className="px-8 text-base">
-                Começar Grátis por 14 Dias <ArrowRight className="ml-2 size-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Button size="lg" className="px-8 text-base">
+                  Começar Grátis por 14 Dias <ArrowRight className="ml-2 size-4" />
+                </Button>
+              </motion.div>
             </Link>
             <a href="#features">
-              <Button variant="outline" size="lg" className="px-8 text-base">
-                Conhecer Recursos
-              </Button>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Button variant="outline" size="lg" className="px-8 text-base">
+                  Conhecer Recursos
+                </Button>
+              </motion.div>
             </a>
           </motion.div>
 
