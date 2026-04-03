@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap } from "lucide-react";
 import { useFinanceiroData } from "@/hooks/useFinanceiroData";
 import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
@@ -15,6 +18,9 @@ export default function Financeiro() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
+  const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null);
+  const [paidDate, setPaidDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paying, setPaying] = useState(false);
 
   const handleGenerateInvoices = async () => {
     setGenerating(true);
@@ -35,6 +41,26 @@ export default function Financeiro() {
       toast({ title: "Erro ao gerar faturas", description: err.message, variant: "destructive" });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!payDialog) return;
+    setPaying(true);
+    try {
+      const { error } = await supabase
+        .from("invoices")
+        .update({ status: "paid" as any, paid_date: paidDate })
+        .eq("id", payDialog.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      toast({ title: "Fatura marcada como paga!" });
+      setPayDialog(null);
+    } catch (err: any) {
+      toast({ title: "Erro ao dar baixa", description: err.message, variant: "destructive" });
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -93,6 +119,7 @@ export default function Financeiro() {
                   <TableHead>Valor</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-24">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -106,6 +133,21 @@ export default function Financeiro() {
                         {invoiceStatusLabels[invoice.status]}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {(invoice.status === "pending" || invoice.status === "overdue") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-success hover:text-success"
+                          onClick={() => {
+                            setPaidDate(new Date().toISOString().slice(0, 10));
+                            setPayDialog({ id: invoice.id, name: invoice.customerName });
+                          }}
+                        >
+                          <CheckCircle className="mr-1 size-3.5" /> Baixa
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -113,6 +155,30 @@ export default function Financeiro() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!payDialog} onOpenChange={(v) => !v && setPayDialog(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Dar baixa na fatura</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Confirmar pagamento de <strong>{payDialog?.name}</strong>?
+            </p>
+            <div className="space-y-1.5">
+              <Label>Data do pagamento</Label>
+              <Input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayDialog(null)}>Cancelar</Button>
+            <Button onClick={handleMarkPaid} disabled={paying}>
+              {paying ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle className="mr-2 size-4" />}
+              Confirmar Pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

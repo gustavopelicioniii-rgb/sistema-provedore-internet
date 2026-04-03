@@ -109,6 +109,9 @@ export default function Contratos() {
                             <DropdownMenuItem onClick={() => handleEdit(contract)}>
                               <Pencil className="mr-2 size-3.5" /> Editar
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => generateContractPdf(contract as ContractWithRelations)}>
+                              <FileDown className="mr-2 size-3.5" /> Gerar PDF
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(contract.id)}>
                               <Trash2 className="mr-2 size-3.5" /> Excluir
                             </DropdownMenuItem>

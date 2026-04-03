@@ -79,6 +79,7 @@ export default function Dashboard() {
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="month" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis yAxisId="right" orientation="right" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",

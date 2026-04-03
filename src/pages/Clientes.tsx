@@ -185,6 +185,7 @@ export default function Clientes() {
       </Card>
 
       <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} editingCustomer={editingCustomer} />
+      <CsvImportDialog open={csvOpen} onOpenChange={setCsvOpen} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
