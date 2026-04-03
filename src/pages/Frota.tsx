@@ -278,7 +278,7 @@ export default function Frota() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {fuelLogs.map((log: any) => (
+                    {filteredFuelLogs.map((log: any) => (
                       <TableRow key={log.id}>
                         <TableCell className="font-mono">{log.vehicles?.plate ?? "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{formatDate(log.date)}</TableCell>
