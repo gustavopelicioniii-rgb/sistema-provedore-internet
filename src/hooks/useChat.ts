@@ -92,6 +92,18 @@ export function useChatMessages(conversationId: string | null) {
           return [...old, payload.new as ChatMessage];
         });
       })
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "chat_messages",
+        filter: `conversation_id=eq.${conversationId}`,
+      }, (payload) => {
+        queryClient.setQueryData<ChatMessage[]>(["chat-messages", conversationId], (old) => {
+          if (!old) return old;
+          const updated = payload.new as ChatMessage;
+          return old.map((m) => m.id === updated.id ? { ...m, delivery_status: updated.delivery_status } : m);
+        });
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
