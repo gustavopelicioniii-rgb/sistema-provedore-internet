@@ -168,7 +168,7 @@ export default function LandingPage() {
             className="text-center"
           >
             <Badge variant="outline" className="mb-4">Recursos</Badge>
-            <h2 className="text-3xl font-bold tracking-tight">Tudo que seu provedor precisa</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight">Tudo que seu provedor precisa</h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
               Do cadastro de clientes ao monitoramento da rede, o NetPulse cobre toda a operação.
             </p>
