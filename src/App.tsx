@@ -43,6 +43,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/landing" element={<LandingPage />} />
     <Route path="/auth" element={<Auth />} />
     <Route
       element={
