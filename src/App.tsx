@@ -64,7 +64,7 @@ const AppRoutes = () => (
       <Route path="/financeiro" element={<Financeiro />} />
       <Route path="/planos" element={<Planos />} />
       <Route path="/contratos" element={<Contratos />} />
-      <Route path="/fiscal" element={<PlaceholderPage title="Fiscal / NF-e" description="Emissão de notas fiscais e obrigações fiscais" />} />
+      <Route path="/fiscal" element={<Fiscal />} />
       <Route path="/estoque" element={<Estoque />} />
       <Route path="/frota" element={<PlaceholderPage title="Frota" description="Gestão de veículos, abastecimento e manutenção" />} />
       <Route path="/portal-assinante" element={<PortalAssinante />} />
