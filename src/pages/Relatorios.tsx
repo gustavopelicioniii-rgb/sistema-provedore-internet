@@ -95,7 +95,7 @@ export default function Relatorios() {
         </AnimatedCard>
       </StaggerGrid>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Receita vs Despesa</CardTitle></CardHeader>
           <CardContent>
