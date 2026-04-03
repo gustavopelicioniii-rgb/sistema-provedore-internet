@@ -44,6 +44,7 @@ export default function Frota() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [fuelFormOpen, setFuelFormOpen] = useState(false);
 
   const filteredVehicles = vehicles.filter((v) => {
     const matchesSearch = search === "" || 
