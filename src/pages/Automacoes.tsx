@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff, FileText, UserCheck, AlertTriangle, CreditCard, Bell, Clock, MessageSquare, Mail } from "lucide-react";
+import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff, FileText, UserCheck, AlertTriangle, CreditCard, Bell, Clock, MessageSquare, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAutomations, type Automation, type AutomationLog } from "@/hooks/useAutomations";
 import AutomationFormDialog from "@/components/automations/AutomationFormDialog";
 import { toast } from "sonner";
@@ -136,6 +137,16 @@ export default function Automacoes() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Automation | null>(null);
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+
+  const toggleLogExpand = (id: string) => {
+    setExpandedLogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const activeCount = automations.filter((a) => a.enabled).length;
 
@@ -389,24 +400,62 @@ export default function Automacoes() {
           ) : (
             logs.map((log) => {
               const automation = automations.find((a) => a.id === log.automation_id);
+              const isExpanded = expandedLogs.has(log.id);
+              const hasPayload = log.trigger_payload && Object.keys(log.trigger_payload).length > 0;
+              const hasResponse = log.response_payload && Object.keys(log.response_payload).length > 0;
+
               return (
-                <Card key={log.id}>
-                  <CardContent className="flex items-center gap-3 py-3">
-                    {logStatusIcons[log.status]}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{automation?.name || "Automação removida"}</p>
-                      {log.error_message && (
-                        <p className="text-xs text-destructive">{log.error_message}</p>
-                      )}
-                    </div>
-                    <Badge variant={log.status === "success" ? "default" : log.status === "error" ? "destructive" : "secondary"}>
-                      {log.status}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {format(new Date(log.executed_at), "dd/MM HH:mm:ss", { locale: ptBR })}
-                    </span>
-                  </CardContent>
-                </Card>
+                <Collapsible key={log.id} open={isExpanded} onOpenChange={() => toggleLogExpand(log.id)}>
+                  <Card>
+                    <CollapsibleTrigger asChild>
+                      <CardContent className="flex items-center gap-3 py-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                        {logStatusIcons[log.status]}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{automation?.name || "Automação removida"}</p>
+                          {log.error_message && (
+                            <p className="text-xs text-destructive">{log.error_message}</p>
+                          )}
+                        </div>
+                        <Badge variant={log.status === "success" ? "default" : log.status === "error" ? "destructive" : "secondary"}>
+                          {log.status}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                          {format(new Date(log.executed_at), "dd/MM HH:mm:ss", { locale: ptBR })}
+                        </span>
+                        {isExpanded ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
+                      </CardContent>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="px-6 pb-4 space-y-3 border-t border-border pt-3">
+                        {hasPayload && (
+                          <div>
+                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Payload Enviado</p>
+                            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 overflow-x-auto max-h-48 border">
+                              {JSON.stringify(log.trigger_payload, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {hasResponse && (
+                          <div>
+                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Resposta Recebida</p>
+                            <pre className="text-[11px] bg-muted/50 rounded-lg p-3 overflow-x-auto max-h-48 border">
+                              {JSON.stringify(log.response_payload, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                        {log.error_message && (
+                          <div>
+                            <p className="text-[10px] font-medium text-destructive uppercase tracking-wider mb-1">Erro</p>
+                            <p className="text-xs text-destructive bg-destructive/10 rounded-lg p-3 border border-destructive/20">{log.error_message}</p>
+                          </div>
+                        )}
+                        {!hasPayload && !hasResponse && !log.error_message && (
+                          <p className="text-xs text-muted-foreground">Nenhum detalhe disponível para este log.</p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               );
             })
           )}
