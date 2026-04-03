@@ -54,46 +54,54 @@ export default function Relatorios() {
       </div>
 
       <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <AnimatedCard index={0}><MotionCard>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10"><Users className="size-5 text-primary" /></div>
-              <div><p className="text-2xl font-bold">{data?.totalCustomers ?? 0}</p><p className="text-xs text-muted-foreground">Clientes ativos</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        </MotionCard></AnimatedCard>
-        <AnimatedCard index={1}><MotionCard>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-success/10"><DollarSign className="size-5 text-success" /></div>
-              <div><p className="text-2xl font-bold">R$ {(data?.estimatedMRR ?? 0).toLocaleString("pt-BR")}</p><p className="text-xs text-muted-foreground">MRR</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        </MotionCard></AnimatedCard>
-        <AnimatedCard index={2}><MotionCard>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-warning/10"><TrendingUp className="size-5 text-warning" /></div>
-              <div><p className="text-2xl font-bold">{data?.overdueRate?.toFixed(1) ?? 0}%</p><p className="text-xs text-muted-foreground">Inadimplência</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        </MotionCard></AnimatedCard>
-        <AnimatedCard index={3}><MotionCard>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-accent"><BarChart3 className="size-5 text-accent-foreground" /></div>
-              <div><p className="text-2xl font-bold">{data?.activeContracts ?? 0}</p><p className="text-xs text-muted-foreground">Contratos ativos</p></div>
-            </div>
-          </CardContent>
-        </Card>
-        </MotionCard></AnimatedCard>
+        <AnimatedCard index={0}>
+          <MotionCard>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10"><Users className="size-5 text-primary" /></div>
+                  <div><p className="text-2xl font-bold">{data?.totalCustomers ?? 0}</p><p className="text-xs text-muted-foreground">Clientes ativos</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </MotionCard>
+        </AnimatedCard>
+        <AnimatedCard index={1}>
+          <MotionCard>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-success/10"><DollarSign className="size-5 text-success" /></div>
+                  <div><p className="text-2xl font-bold">R$ {(data?.estimatedMRR ?? 0).toLocaleString("pt-BR")}</p><p className="text-xs text-muted-foreground">MRR</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </MotionCard>
+        </AnimatedCard>
+        <AnimatedCard index={2}>
+          <MotionCard>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-warning/10"><TrendingUp className="size-5 text-warning" /></div>
+                  <div><p className="text-2xl font-bold">{data?.overdueRate?.toFixed(1) ?? 0}%</p><p className="text-xs text-muted-foreground">Inadimplência</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </MotionCard>
+        </AnimatedCard>
+        <AnimatedCard index={3}>
+          <MotionCard>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-accent"><BarChart3 className="size-5 text-accent-foreground" /></div>
+                  <div><p className="text-2xl font-bold">{data?.activeContracts ?? 0}</p><p className="text-xs text-muted-foreground">Contratos ativos</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </MotionCard>
+        </AnimatedCard>
       </StaggerGrid>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 lg:grid-cols-2">
