@@ -15,7 +15,9 @@ import {
   Zap,
   BarChart3,
   Settings,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
