@@ -52,6 +52,9 @@ export function useDashboardData() {
       if (plansResult.error) throw plansResult.error;
       if (invoicesResult.error) throw invoicesResult.error;
 
+      const inventoryItems = inventoryResult.data ?? [];
+      const pendingOrders = serviceOrdersResult.data ?? [];
+
       const customers = customersResult.data ?? [];
       const contracts = contractsResult.data ?? [];
       const plans = plansResult.data ?? [];
