@@ -1,3 +1,4 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FullPageSpinner } from "@/components/ui/spinner";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
