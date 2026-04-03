@@ -13,6 +13,7 @@ import {
   CheckCircle, Star, Globe,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 
 const benefits = [
   { icon: Zap, title: "Automações Inteligentes", text: "Reduza churn em até 40% com fluxos automáticos de cobrança e retenção" },
