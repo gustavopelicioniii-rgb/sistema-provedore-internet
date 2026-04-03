@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import { useFleet } from "@/hooks/useFleet";
-import type { Vehicle, VehicleInsert } from "@/hooks/useFleet";
+import type { Vehicle, VehicleInsert, FuelLogInsert } from "@/hooks/useFleet";
 import VehicleFormDialog from "@/components/fleet/VehicleFormDialog";
+import FuelLogFormDialog from "@/components/fleet/FuelLogFormDialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -37,12 +38,13 @@ const fuelTypes: Record<string, string> = {
 };
 
 export default function Frota() {
-  const { vehicles, fuelLogs, isLoading, createVehicle, updateVehicle, deleteVehicle } = useFleet();
+  const { vehicles, fuelLogs, isLoading, createVehicle, updateVehicle, deleteVehicle, createFuelLog } = useFleet();
   const [formOpen, setFormOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [fuelFormOpen, setFuelFormOpen] = useState(false);
 
   const filteredVehicles = vehicles.filter((v) => {
     const matchesSearch = search === "" || 
@@ -86,6 +88,14 @@ export default function Frota() {
       await createVehicle.mutateAsync({ ...data, organization_id: orgId } as VehicleInsert);
     }
     setFormOpen(false);
+  };
+
+  const handleFuelSubmit = async (data: Omit<FuelLogInsert, "organization_id">) => {
+    const { data: profile } = await supabase.from("profiles").select("organization_id").single();
+    const orgId = profile?.organization_id;
+    if (!orgId) return;
+    await createFuelLog.mutateAsync({ ...data, organization_id: orgId } as FuelLogInsert);
+    setFuelFormOpen(false);
   };
 
   const confirmDelete = async () => {
@@ -257,7 +267,12 @@ export default function Frota() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="fuel" className="mt-4">
+        <TabsContent value="fuel" className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => setFuelFormOpen(true)}>
+              <Plus className="mr-2 size-4" /> Novo Abastecimento
+            </Button>
+          </div>
           <Card>
             <CardContent className="p-0">
               {filteredFuelLogs.length === 0 ? (
@@ -302,6 +317,14 @@ export default function Frota() {
         vehicle={editVehicle}
         onSubmit={handleSubmit}
         isLoading={createVehicle.isPending || updateVehicle.isPending}
+      />
+
+      <FuelLogFormDialog
+        open={fuelFormOpen}
+        onOpenChange={setFuelFormOpen}
+        vehicles={vehicles}
+        onSubmit={handleFuelSubmit}
+        isLoading={createFuelLog.isPending}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
