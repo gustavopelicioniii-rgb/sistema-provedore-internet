@@ -1,82 +1,86 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Spinner } from "@/components/ui/spinner";
 import {
-  Car,
-  Fuel,
-  Wrench,
-  AlertTriangle,
-  Plus,
-  MapPin,
-  Calendar,
-  CheckCircle,
-  Clock,
+  Car, Fuel, Wrench, AlertTriangle, Plus, CheckCircle, Pencil, Trash2,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/finance";
-
-interface Vehicle {
-  id: string;
-  plate: string;
-  model: string;
-  year: number;
-  km: number;
-  status: "available" | "in_use" | "maintenance";
-  assignedTo?: string;
-  nextMaintenance: string;
-  fuelLevel: number;
-}
-
-const mockVehicles: Vehicle[] = [
-  { id: "1", plate: "ABC-1234", model: "Fiat Strada", year: 2023, km: 45230, status: "in_use", assignedTo: "Carlos Técnico", nextMaintenance: "2026-05-15", fuelLevel: 65 },
-  { id: "2", plate: "DEF-5678", model: "VW Saveiro", year: 2022, km: 62100, status: "available", nextMaintenance: "2026-04-20", fuelLevel: 90 },
-  { id: "3", plate: "GHI-9012", model: "Renault Kangoo", year: 2024, km: 18500, status: "in_use", assignedTo: "Ana Instaladora", nextMaintenance: "2026-06-01", fuelLevel: 40 },
-  { id: "4", plate: "JKL-3456", model: "Fiat Fiorino", year: 2021, km: 89000, status: "maintenance", nextMaintenance: "2026-04-05", fuelLevel: 20 },
-];
-
-interface FuelLog {
-  id: string;
-  vehiclePlate: string;
-  date: string;
-  liters: number;
-  cost: number;
-  km: number;
-  type: "gasoline" | "ethanol" | "diesel";
-}
-
-const mockFuelLogs: FuelLog[] = [
-  { id: "1", vehiclePlate: "ABC-1234", date: "2026-04-02", liters: 45, cost: 292.50, km: 45230, type: "gasoline" },
-  { id: "2", vehiclePlate: "GHI-9012", date: "2026-04-01", liters: 38, cost: 247.00, km: 18500, type: "gasoline" },
-  { id: "3", vehiclePlate: "DEF-5678", date: "2026-03-28", liters: 50, cost: 325.00, km: 62100, type: "gasoline" },
-  { id: "4", vehiclePlate: "JKL-3456", date: "2026-03-25", liters: 42, cost: 273.00, km: 88500, type: "gasoline" },
-];
+import { useFleet } from "@/hooks/useFleet";
+import type { Vehicle, VehicleInsert } from "@/hooks/useFleet";
+import VehicleFormDialog from "@/components/fleet/VehicleFormDialog";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const vehicleStatus: Record<string, { label: string; className: string }> = {
   available: { label: "Disponível", className: "bg-success/10 text-success border-success/20" },
   in_use: { label: "Em uso", className: "bg-primary/10 text-primary border-primary/20" },
   maintenance: { label: "Manutenção", className: "bg-warning/10 text-warning border-warning/20" },
+  decommissioned: { label: "Desativado", className: "bg-muted text-muted-foreground border-muted" },
 };
 
 const fuelTypes: Record<string, string> = {
   gasoline: "Gasolina",
   ethanol: "Etanol",
   diesel: "Diesel",
+  flex: "Flex",
 };
 
 export default function Frota() {
-  const available = mockVehicles.filter((v) => v.status === "available").length;
-  const inUse = mockVehicles.filter((v) => v.status === "in_use").length;
-  const inMaintenance = mockVehicles.filter((v) => v.status === "maintenance").length;
-  const totalFuelCost = mockFuelLogs.reduce((a, l) => a + l.cost, 0);
+  const { vehicles, fuelLogs, isLoading, createVehicle, updateVehicle, deleteVehicle } = useFleet();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const maintenanceSoon = mockVehicles.filter((v) => {
-    const d = new Date(v.nextMaintenance);
+  const available = vehicles.filter((v) => v.status === "available").length;
+  const inUse = vehicles.filter((v) => v.status === "in_use").length;
+  const inMaintenance = vehicles.filter((v) => v.status === "maintenance").length;
+  const totalFuelCost = fuelLogs.reduce((a, l) => a + Number(l.cost), 0);
+
+  const maintenanceSoon = vehicles.filter((v) => {
+    if (!v.next_maintenance_date) return false;
+    const d = new Date(v.next_maintenance_date);
     const now = new Date();
     const diff = (d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return diff <= 30 && diff >= 0;
   });
+
+  const handleCreate = () => { setEditVehicle(null); setFormOpen(true); };
+  const handleEdit = (v: Vehicle) => { setEditVehicle(v); setFormOpen(true); };
+
+  const handleSubmit = async (data: Omit<VehicleInsert, "organization_id">) => {
+    const { data: profile } = await supabase.from("profiles").select("organization_id").single();
+    const orgId = profile?.organization_id;
+    if (!orgId) return;
+
+    if (editVehicle) {
+      await updateVehicle.mutateAsync({ id: editVehicle.id, ...data });
+    } else {
+      await createVehicle.mutateAsync({ ...data, organization_id: orgId } as VehicleInsert);
+    }
+    setFormOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteId) {
+      await deleteVehicle.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -85,48 +89,40 @@ export default function Frota() {
           <h1 className="text-2xl font-bold tracking-tight">Frota</h1>
           <p className="text-muted-foreground text-sm">Gestão de veículos, abastecimento e manutenção</p>
         </div>
-        <Button>
+        <Button onClick={handleCreate}>
           <Plus className="mr-2 size-4" /> Novo Veículo
         </Button>
       </div>
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Disponíveis</p>
-              <CheckCircle className="size-4 text-success" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{available}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Em Uso</p>
-              <Car className="size-4 text-primary" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{inUse}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Em Manutenção</p>
-              <Wrench className="size-4 text-warning" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{inMaintenance}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Gasto Combustível</p>
-              <Fuel className="size-4 text-destructive" />
-            </div>
-            <p className="mt-2 text-2xl font-bold">{formatCurrency(totalFuelCost)}</p>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Disponíveis</p>
+            <CheckCircle className="size-4 text-success" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{available}</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Em Uso</p>
+            <Car className="size-4 text-primary" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{inUse}</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Em Manutenção</p>
+            <Wrench className="size-4 text-warning" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{inMaintenance}</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Gasto Combustível</p>
+            <Fuel className="size-4 text-destructive" />
+          </div>
+          <p className="mt-2 text-2xl font-bold">{formatCurrency(totalFuelCost)}</p>
+        </CardContent></Card>
       </div>
 
       {maintenanceSoon.length > 0 && (
@@ -137,7 +133,7 @@ export default function Frota() {
               <div>
                 <p className="font-medium text-sm">Manutenções Próximas</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {maintenanceSoon.map((v) => `${v.model} (${v.plate}) — ${formatDate(v.nextMaintenance)}`).join(" · ")}
+                  {maintenanceSoon.map((v) => `${v.model} (${v.plate}) — ${formatDate(v.next_maintenance_date!)}`).join(" · ")}
                 </p>
               </div>
             </div>
@@ -147,63 +143,79 @@ export default function Frota() {
 
       <Tabs defaultValue="vehicles">
         <TabsList>
-          <TabsTrigger value="vehicles">
-            <Car className="mr-2 size-4" /> Veículos
-          </TabsTrigger>
-          <TabsTrigger value="fuel">
-            <Fuel className="mr-2 size-4" /> Abastecimentos
-          </TabsTrigger>
+          <TabsTrigger value="vehicles"><Car className="mr-2 size-4" /> Veículos</TabsTrigger>
+          <TabsTrigger value="fuel"><Fuel className="mr-2 size-4" /> Abastecimentos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vehicles" className="mt-4">
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Veículo</TableHead>
-                    <TableHead>Placa</TableHead>
-                    <TableHead>KM Atual</TableHead>
-                    <TableHead>Combustível</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead>Próx. Manutenção</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockVehicles.map((vehicle) => {
-                    const st = vehicleStatus[vehicle.status];
-                    return (
-                      <TableRow key={vehicle.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{vehicle.model}</p>
-                            <p className="text-xs text-muted-foreground">{vehicle.year}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono">{vehicle.plate}</TableCell>
-                        <TableCell className="text-muted-foreground">{vehicle.km.toLocaleString("pt-BR")} km</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${vehicle.fuelLevel > 50 ? "bg-success" : vehicle.fuelLevel > 25 ? "bg-warning" : "bg-destructive"}`}
-                                style={{ width: `${vehicle.fuelLevel}%` }}
-                              />
+              {vehicles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <Car className="size-10 mb-3 opacity-40" />
+                  <p className="text-sm">Nenhum veículo cadastrado.</p>
+                  <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro veículo</Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Veículo</TableHead>
+                      <TableHead>Placa</TableHead>
+                      <TableHead>KM Atual</TableHead>
+                      <TableHead>Combustível</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead>Próx. Manutenção</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-20" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vehicles.map((vehicle) => {
+                      const st = vehicleStatus[vehicle.status] ?? vehicleStatus.available;
+                      const fuelLevel = vehicle.fuel_level ?? 0;
+                      return (
+                        <TableRow key={vehicle.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{vehicle.model}</p>
+                              <p className="text-xs text-muted-foreground">{vehicle.year}</p>
                             </div>
-                            <span className="text-xs text-muted-foreground">{vehicle.fuelLevel}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{vehicle.assignedTo ?? "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{formatDate(vehicle.nextMaintenance)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={st.className}>{st.label}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell className="font-mono">{vehicle.plate}</TableCell>
+                          <TableCell className="text-muted-foreground">{(vehicle.km ?? 0).toLocaleString("pt-BR")} km</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${fuelLevel > 50 ? "bg-success" : fuelLevel > 25 ? "bg-warning" : "bg-destructive"}`}
+                                  style={{ width: `${fuelLevel}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground">{fuelLevel}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{vehicle.assigned_to ?? "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{vehicle.next_maintenance_date ? formatDate(vehicle.next_maintenance_date) : "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={st.className}>{st.label}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="icon" variant="ghost" onClick={() => handleEdit(vehicle)}>
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="text-destructive" onClick={() => setDeleteId(vehicle.id)}>
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -211,34 +223,62 @@ export default function Frota() {
         <TabsContent value="fuel" className="mt-4">
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Veículo</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Litros</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>KM</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockFuelLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-mono">{log.vehiclePlate}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatDate(log.date)}</TableCell>
-                      <TableCell>{log.liters}L</TableCell>
-                      <TableCell className="text-muted-foreground">{fuelTypes[log.type]}</TableCell>
-                      <TableCell className="font-semibold">{formatCurrency(log.cost)}</TableCell>
-                      <TableCell className="text-muted-foreground">{log.km.toLocaleString("pt-BR")}</TableCell>
+              {fuelLogs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <Fuel className="size-10 mb-3 opacity-40" />
+                  <p className="text-sm">Nenhum abastecimento registrado.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Veículo</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Litros</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>KM</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {fuelLogs.map((log: any) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-mono">{log.vehicles?.plate ?? "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(log.date)}</TableCell>
+                        <TableCell>{Number(log.liters)}L</TableCell>
+                        <TableCell className="text-muted-foreground">{fuelTypes[log.fuel_type] ?? log.fuel_type}</TableCell>
+                        <TableCell className="font-semibold">{formatCurrency(Number(log.cost))}</TableCell>
+                        <TableCell className="text-muted-foreground">{log.km ? log.km.toLocaleString("pt-BR") : "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <VehicleFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        vehicle={editVehicle}
+        onSubmit={handleSubmit}
+        isLoading={createVehicle.isPending || updateVehicle.isPending}
+      />
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover veículo?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">Remover</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
