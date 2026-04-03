@@ -224,7 +224,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Recent Activities */}
       <Card>
