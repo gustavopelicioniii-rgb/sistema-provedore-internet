@@ -267,7 +267,12 @@ export default function Frota() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="fuel" className="mt-4">
+        <TabsContent value="fuel" className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => setFuelFormOpen(true)}>
+              <Plus className="mr-2 size-4" /> Novo Abastecimento
+            </Button>
+          </div>
           <Card>
             <CardContent className="p-0">
               {filteredFuelLogs.length === 0 ? (
