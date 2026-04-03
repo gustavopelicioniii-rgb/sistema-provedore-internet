@@ -102,6 +102,12 @@ function NavGroup({ label, items, badgeMap }: { label: string; items: typeof mai
 }
 
 export function AppSidebar() {
+  const { data: unread } = useUnreadMessages();
+  const badgeMap: Record<string, number> = {};
+  if (unread && unread.total > 0) {
+    badgeMap["/atendimento"] = unread.total;
+  }
+
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
@@ -116,7 +122,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent className="scrollbar-thin">
-        <NavGroup label="Principal" items={mainNav} />
+        <NavGroup label="Principal" items={mainNav} badgeMap={badgeMap} />
         <NavGroup label="Operacional" items={operationalNav} />
         <NavGroup label="Financeiro" items={financeNav} />
         <NavGroup label="Avançado" items={advancedNav} />
