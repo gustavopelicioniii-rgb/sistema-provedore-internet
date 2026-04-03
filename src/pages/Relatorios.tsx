@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { BarChart3, TrendingUp, Users, DollarSign, Download, Calendar, PieChart, Activity } from "lucide-react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 
 const monthlyData = [
   { month: "Jan", receita: 45000, despesa: 32000 },
