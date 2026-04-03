@@ -71,7 +71,7 @@ export function useCreateCustomer() {
         email: data.email || null,
         phone: data.phone || null,
         whatsapp: data.whatsapp || null,
-        address: (data.address as Record<string, unknown>) || {},
+        address: (data.address || {}) as Json,
         notes: data.notes || null,
         status: data.status || ("active" as const),
       };
