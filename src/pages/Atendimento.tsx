@@ -207,7 +207,15 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 }
 // --- Chat Panel ---
 function ChatPanel({ conversation }: { conversation: Conversation | null }) {
-  const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null);
+  const { play: playSound } = useNotificationSound();
+
+  const handleNewIncoming = useCallback((msg: ChatMessage) => {
+    playSound();
+    const preview = msg.content?.substring(0, 80) || `[${msg.content_type}]`;
+    toast.info("Nova mensagem recebida", { description: preview, duration: 5000 });
+  }, [playSound]);
+
+  const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null, { onNewIncoming: handleNewIncoming });
   const { data: cannedResponses } = useCannedResponses();
   const sendMsg = useSendMessage();
   const updateConv = useUpdateConversation();
