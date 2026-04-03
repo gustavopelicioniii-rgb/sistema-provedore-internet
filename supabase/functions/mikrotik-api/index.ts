@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.49.4/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 interface MikrotikCommand {
   action: "list_pppoe" | "create_pppoe" | "remove_pppoe" | "block_client" | "unblock_client" | "set_speed" | "get_traffic" | "list_queues";
