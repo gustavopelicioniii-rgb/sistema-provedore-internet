@@ -154,33 +154,63 @@ export default function RedeNoc() {
         </CardContent></Card>
       </div>
 
-      {/* Devices table */}
-      <Card>
-        <CardContent className="p-0">
-          {devices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Server className="size-10 mb-3 opacity-40" />
-              <p className="text-sm">Nenhum equipamento cadastrado.</p>
-              <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro equipamento</Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Equipamento</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>Fabricante</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Uptime</TableHead>
-                  <TableHead className="w-32">CPU / Memória</TableHead>
-                  <TableHead className="text-right">Clientes</TableHead>
-                  <TableHead className="w-20" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {devices.map((device) => {
-                  const st = statusConfig[device.status] ?? statusConfig.offline;
-                  return (
+      {/* Filters + Devices table */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input placeholder="Buscar por nome, IP, modelo ou local..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos status</SelectItem>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="offline">Offline</SelectItem>
+              <SelectItem value="warning">Alerta</SelectItem>
+              <SelectItem value="maintenance">Manutenção</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos tipos</SelectItem>
+              <SelectItem value="olt">OLT</SelectItem>
+              <SelectItem value="onu">ONU</SelectItem>
+              <SelectItem value="router">Roteador</SelectItem>
+              <SelectItem value="switch">Switch</SelectItem>
+              <SelectItem value="server">Servidor</SelectItem>
+              <SelectItem value="access_point">AP</SelectItem>
+              <SelectItem value="other">Outro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            {filteredDevices.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <Server className="size-10 mb-3 opacity-40" />
+                <p className="text-sm">{devices.length === 0 ? "Nenhum equipamento cadastrado." : "Nenhum equipamento encontrado."}</p>
+                {devices.length === 0 && <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro equipamento</Button>}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Equipamento</TableHead>
+                    <TableHead>IP</TableHead>
+                    <TableHead>Fabricante</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Uptime</TableHead>
+                    <TableHead className="w-32">CPU / Memória</TableHead>
+                    <TableHead className="text-right">Clientes</TableHead>
+                    <TableHead className="w-20" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDevices.map((device) => {
+                    const st = statusConfig[device.status] ?? statusConfig.offline;
+                    return (
                     <TableRow key={device.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
