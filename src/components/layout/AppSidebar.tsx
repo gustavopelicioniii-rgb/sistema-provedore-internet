@@ -132,6 +132,9 @@ function UserFooter() {
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center justify-between px-2 group-data-[collapsible=icon]:justify-center">
+        <ThemeToggle />
+      </div>
       <div className="flex items-center gap-2 rounded-lg bg-sidebar-accent p-2 group-data-[collapsible=icon]:justify-center">
         <div className="flex size-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
           {initials}
