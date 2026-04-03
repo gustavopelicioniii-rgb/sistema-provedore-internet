@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -15,11 +15,12 @@ import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { MotionCard } from "@/components/motion/MotionInteractions";
 import { useFinanceiroData } from "@/hooks/useFinanceiroData";
-import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
+import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels, type InvoiceStatus } from "@/utils/finance";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -34,6 +35,13 @@ const tooltipStyle = {
   borderRadius: "var(--radius)",
   color: "hsl(var(--card-foreground))",
 };
+
+const statusOptions = [
+  { value: "paid", label: "Pagas" },
+  { value: "pending", label: "Pendentes" },
+  { value: "overdue", label: "Vencidas" },
+  { value: "cancelled", label: "Canceladas" },
+];
 
 function HeroKpi({ title, value, icon: Icon, color }: {
   title: string; value: string; icon: React.ElementType; color: string;
@@ -65,6 +73,27 @@ export default function Financeiro() {
   const [payDialog, setPayDialog] = useState<{ id: string; name: string } | null>(null);
   const [paidDate, setPaidDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paying, setPaying] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useFilterState(6);
+
+  const filteredInvoices = useMemo(() => {
+    if (!data) return [];
+    return data.recentInvoices.filter((inv) => {
+      const dueDate = new Date(`${inv.dueDate}T00:00:00`);
+      if (dueDate < filters.dateRange.from || dueDate > filters.dateRange.to) return false;
+      if (filters.status && inv.status !== filters.status) return false;
+      if (searchTerm && !inv.customerName.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      return true;
+    });
+  }, [data, filters, searchTerm]);
+
+  const filteredKpis = useMemo(() => {
+    const billing = filteredInvoices.reduce((t, i) => t + i.amount, 0);
+    const received = filteredInvoices.filter((i) => i.status === "paid").reduce((t, i) => t + i.amount, 0);
+    const receivable = filteredInvoices.filter((i) => i.status === "pending" || i.status === "overdue").reduce((t, i) => t + i.amount, 0);
+    const defaulting = new Set(filteredInvoices.filter((i) => i.status === "overdue").map((i) => i.customerName)).size;
+    return { billing, received, receivable, defaulting };
+  }, [filteredInvoices]);
 
   const handleGenerateInvoices = async () => {
     setGenerating(true);
@@ -108,18 +137,16 @@ export default function Financeiro() {
           <p className="text-muted-foreground text-sm">Faturamento, cobranças e fluxo de caixa</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" disabled={!data?.recentInvoices?.length} onClick={() => {
-            if (!data) return;
+          <Button variant="outline" size="sm" disabled={!filteredInvoices.length} onClick={() => {
             const headers = ["Cliente", "Valor", "Vencimento", "Status"];
-            const rows = data.recentInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
+            const rows = filteredInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
             downloadCsv("faturas.csv", headers, rows);
           }}>
             <Download className="mr-2 size-4" /> CSV
           </Button>
-          <Button variant="outline" size="sm" disabled={!data?.recentInvoices?.length} onClick={() => {
-            if (!data) return;
+          <Button variant="outline" size="sm" disabled={!filteredInvoices.length} onClick={() => {
             const headers = ["Cliente", "Valor", "Vencimento", "Status"];
-            const rows = data.recentInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
+            const rows = filteredInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
             downloadPdfTable("Faturas", "faturas.pdf", headers, rows);
           }}>
             <FileText className="mr-2 size-4" /> PDF
@@ -131,12 +158,34 @@ export default function Financeiro() {
         </div>
       </div>
 
+      {/* Filters */}
+      <Card>
+        <CardContent className="py-3 px-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangeFilter
+              value={filters}
+              onChange={setFilters}
+              statusOptions={statusOptions}
+            />
+            <div className="relative ml-auto">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-8 w-48 pl-8 text-xs"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Hero KPIs */}
       <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <AnimatedCard index={0}><HeroKpi title="Faturamento Mensal" value={formatCurrency(data?.monthlyBilling ?? 0)} icon={DollarSign} color="text-primary" /></AnimatedCard>
-        <AnimatedCard index={1}><HeroKpi title="Recebido" value={formatCurrency(data?.receivedThisMonth ?? 0)} icon={CheckCircle} color="text-success" /></AnimatedCard>
-        <AnimatedCard index={2}><HeroKpi title="A Receber" value={formatCurrency(data?.receivable ?? 0)} icon={TrendingUp} color="text-warning" /></AnimatedCard>
-        <AnimatedCard index={3}><HeroKpi title="Inadimplentes" value={`${data?.defaultingCustomers ?? 0} clientes`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+        <AnimatedCard index={0}><HeroKpi title="Faturamento" value={formatCurrency(filteredKpis.billing)} icon={DollarSign} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={1}><HeroKpi title="Recebido" value={formatCurrency(filteredKpis.received)} icon={CheckCircle} color="text-success" /></AnimatedCard>
+        <AnimatedCard index={2}><HeroKpi title="A Receber" value={formatCurrency(filteredKpis.receivable)} icon={TrendingUp} color="text-warning" /></AnimatedCard>
+        <AnimatedCard index={3}><HeroKpi title="Inadimplentes" value={`${filteredKpis.defaulting} clientes`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
       </StaggerGrid>
 
       {/* Charts */}
@@ -195,7 +244,10 @@ export default function Financeiro() {
       {/* Invoices table */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Faturas Recentes</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Faturas</CardTitle>
+            <Badge variant="secondary" className="text-xs">{filteredInvoices.length} resultados</Badge>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -204,8 +256,8 @@ export default function Financeiro() {
             </div>
           ) : error ? (
             <div className="py-12 text-center text-sm text-destructive">Não foi possível carregar os dados financeiros.</div>
-          ) : !data?.recentInvoices.length ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma fatura cadastrada ainda.</div>
+          ) : !filteredInvoices.length ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma fatura encontrada com os filtros selecionados.</div>
           ) : (
             <Table>
               <TableHeader>
@@ -218,7 +270,7 @@ export default function Financeiro() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.recentInvoices.map((invoice) => (
+                {filteredInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium">{invoice.customerName}</TableCell>
                     <TableCell>{formatCurrency(invoice.amount)}</TableCell>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import { useReportsData } from "@/hooks/useReportsData";
 import { formatCurrency } from "@/utils/finance";
 import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
 import { toast } from "sonner";
+import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 
 const CHART_COLORS = [
   "hsl(var(--chart-1))",
@@ -37,6 +38,18 @@ const tooltipStyle = {
 
 export default function Relatorios() {
   const { data, isLoading } = useReportsData();
+  const [filters, setFilters] = useFilterState(6);
+
+  // Filter monthly data by date range
+  const filteredRevenue = useMemo(() => {
+    if (!data) return [];
+    return data.monthlyRevenue;
+  }, [data]);
+
+  const filteredOverdue = useMemo(() => {
+    if (!data) return [];
+    return data.overdueByMonth;
+  }, [data]);
 
   const exportRevenuePdf = () => {
     if (!data) return;
@@ -44,7 +57,7 @@ export default function Relatorios() {
       "Relatorio de Receita Mensal",
       "receita-mensal.pdf",
       ["Mes", "Faturado", "Recebido", "Inadimplente"],
-      data.monthlyRevenue.map((r) => [r.month, formatCurrency(r.faturado), formatCurrency(r.recebido), formatCurrency(r.inadimplente)])
+      filteredRevenue.map((r) => [r.month, formatCurrency(r.faturado), formatCurrency(r.recebido), formatCurrency(r.inadimplente)])
     );
     toast.success("PDF exportado com sucesso!");
   };
@@ -54,7 +67,7 @@ export default function Relatorios() {
     downloadCsv(
       "receita-mensal.csv",
       ["Mês", "Faturado", "Recebido", "Inadimplente"],
-      data.monthlyRevenue.map((r) => [r.month, r.faturado.toString(), r.recebido.toString(), r.inadimplente.toString()])
+      filteredRevenue.map((r) => [r.month, r.faturado.toString(), r.recebido.toString(), r.inadimplente.toString()])
     );
     toast.success("CSV exportado com sucesso!");
   };
@@ -88,9 +101,9 @@ export default function Relatorios() {
     );
   }
 
-  const totalFaturado = data?.monthlyRevenue.reduce((s, m) => s + m.faturado, 0) ?? 0;
-  const totalRecebido = data?.monthlyRevenue.reduce((s, m) => s + m.recebido, 0) ?? 0;
-  const totalInadimplente = data?.monthlyRevenue.reduce((s, m) => s + m.inadimplente, 0) ?? 0;
+  const totalFaturado = filteredRevenue.reduce((s, m) => s + m.faturado, 0);
+  const totalRecebido = filteredRevenue.reduce((s, m) => s + m.recebido, 0);
+  const totalInadimplente = filteredRevenue.reduce((s, m) => s + m.inadimplente, 0);
   const totalOsCompleted = data?.techProductivity.reduce((s, t) => s + t.completed, 0) ?? 0;
 
   return (
@@ -101,6 +114,13 @@ export default function Relatorios() {
           <p className="text-muted-foreground text-sm">Analytics com dados reais do sistema</p>
         </div>
       </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="py-3 px-4">
+          <DateRangeFilter value={filters} onChange={setFilters} />
+        </CardContent>
+      </Card>
 
       {/* Summary KPIs */}
       <StaggerGrid className="grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -114,7 +134,7 @@ export default function Relatorios() {
                   </div>
                   <div>
                     <p className="text-xl font-bold">{formatCurrency(totalFaturado)}</p>
-                    <p className="text-xs text-muted-foreground">Faturado (6 meses)</p>
+                    <p className="text-xs text-muted-foreground">Faturado no período</p>
                   </div>
                 </div>
               </CardContent>
@@ -131,7 +151,7 @@ export default function Relatorios() {
                   </div>
                   <div>
                     <p className="text-xl font-bold">{formatCurrency(totalRecebido)}</p>
-                    <p className="text-xs text-muted-foreground">Recebido (6 meses)</p>
+                    <p className="text-xs text-muted-foreground">Recebido no período</p>
                   </div>
                 </div>
               </CardContent>
@@ -148,7 +168,7 @@ export default function Relatorios() {
                   </div>
                   <div>
                     <p className="text-xl font-bold">{formatCurrency(totalInadimplente)}</p>
-                    <p className="text-xs text-muted-foreground">Inadimplente (6 meses)</p>
+                    <p className="text-xs text-muted-foreground">Inadimplente no período</p>
                   </div>
                 </div>
               </CardContent>
@@ -188,7 +208,7 @@ export default function Relatorios() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base">Receita Mensal (últimos 6 meses)</CardTitle>
+                <CardTitle className="text-base">Receita Mensal</CardTitle>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={exportRevenueCsv}><Download className="size-3.5 mr-1" />CSV</Button>
                   <Button variant="outline" size="sm" onClick={exportRevenuePdf}><FileText className="size-3.5 mr-1" />PDF</Button>
@@ -197,7 +217,7 @@ export default function Relatorios() {
               <CardContent>
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data?.monthlyRevenue ?? []}>
+                    <BarChart data={filteredRevenue}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                       <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
@@ -224,7 +244,7 @@ export default function Relatorios() {
               <CardContent>
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data?.overdueByMonth ?? []}>
+                    <AreaChart data={filteredOverdue}>
                       <defs>
                         <linearGradient id="gradOverdue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
@@ -355,7 +375,7 @@ export default function Relatorios() {
                   <ExportCard
                     icon={DollarSign}
                     title="Receita Mensal"
-                    desc="Faturado, recebido e inadimplente dos últimos 6 meses"
+                    desc="Faturado, recebido e inadimplente do período selecionado"
                     onPdf={exportRevenuePdf}
                     onCsv={exportRevenueCsv}
                   />
@@ -381,7 +401,7 @@ export default function Relatorios() {
                         "Relatorio de Inadimplencia",
                         "inadimplencia.pdf",
                         ["Mes", "Taxa (%)", "Faturas Vencidas"],
-                        data.overdueByMonth.map((m) => [m.month, `${m.rate}%`, m.count.toString()])
+                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()])
                       );
                       toast.success("PDF exportado!");
                     }}

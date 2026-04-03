@@ -87,7 +87,7 @@ export function useFinanceiroData() {
         };
       });
 
-      const recentInvoices = normalizedInvoices.slice(0, 8).map((inv) => ({
+      const recentInvoices = normalizedInvoices.map((inv) => ({
         id: inv.id,
         customerName: customerNames.get(inv.customer_id) ?? "Cliente removido",
         amount: inv.amount,
