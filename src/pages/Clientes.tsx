@@ -35,14 +35,22 @@ export default function Clientes() {
   const [editingCustomer, setEditingCustomer] = useState<CustomerRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
   const { data: customers, isLoading, error } = useCustomers(debouncedSearch);
   const deleteCustomer = useDeleteCustomer();
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setDebouncedSearch(search), 300);
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
     return () => window.clearTimeout(timeout);
   }, [search]);
+
+  const totalPages = customers ? Math.ceil(customers.length / pageSize) : 0;
+  const paginatedCustomers = customers?.slice(page * pageSize, (page + 1) * pageSize);
 
   const handleEdit = (customer: CustomerRecord) => {
     setEditingCustomer(customer);
