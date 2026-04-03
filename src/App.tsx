@@ -42,7 +42,7 @@ const AppRoutes = () => (
     >
       <Route path="/" element={<Dashboard />} />
       <Route path="/clientes" element={<Clientes />} />
-      <Route path="/crm" element={<PlaceholderPage title="CRM" description="Pipeline de vendas e gestão de leads" />} />
+      <Route path="/crm" element={<CRM />} />
       <Route path="/atendimento" element={<PlaceholderPage title="Atendimento" description="Tickets e service desk unificado" />} />
       <Route path="/rede" element={<PlaceholderPage title="Rede & NOC" description="Monitoramento de OLTs, concentradores e clientes" />} />
       <Route path="/mapa-ftth" element={<PlaceholderPage title="Mapa FTTH" description="Documentação visual da rede óptica" />} />
