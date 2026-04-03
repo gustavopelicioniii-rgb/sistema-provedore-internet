@@ -14,7 +14,9 @@ import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2,
   MessageSquare, Send, User, Bot, Globe, Phone,
   Instagram, Facebook, Mail, CheckCheck, Clock, XCircle,
+  Paperclip, Image, Mic, FileText, X, File, Download,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useTickets, useDeleteTicket, type TicketRecord } from "@/hooks/useTickets";
 import TicketFormDialog from "@/components/tickets/TicketFormDialog";
 import {
@@ -94,6 +96,56 @@ function ConversationItem({ conv, active, onClick }: { conv: Conversation; activ
   );
 }
 
+// --- Media rendering helpers ---
+function MediaContent({ msg }: { msg: ChatMessage }) {
+  const isAgent = msg.sender_type === "agent";
+  const linkClass = isAgent ? "text-primary-foreground/80 underline" : "text-primary underline";
+
+  if (!msg.media_url) return null;
+
+  switch (msg.content_type) {
+    case "image":
+      return (
+        <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block mb-1">
+          <img
+            src={msg.media_url}
+            alt={msg.content || "Imagem"}
+            className="max-w-full max-h-60 rounded-lg object-cover"
+            loading="lazy"
+          />
+        </a>
+      );
+    case "audio":
+      return (
+        <audio controls className="max-w-full mb-1" preload="metadata">
+          <source src={msg.media_url} />
+        </audio>
+      );
+    case "video":
+      return (
+        <video controls className="max-w-full max-h-60 rounded-lg mb-1" preload="metadata">
+          <source src={msg.media_url} />
+        </video>
+      );
+    case "document":
+      return (
+        <a href={msg.media_url} target="_blank" rel="noopener noreferrer"
+          className={`flex items-center gap-2 mb-1 text-xs ${linkClass}`}>
+          <FileText className="size-4 shrink-0" />
+          <span className="truncate">{msg.content || "Documento"}</span>
+          <Download className="size-3 shrink-0" />
+        </a>
+      );
+    default:
+      return (
+        <a href={msg.media_url} target="_blank" rel="noopener noreferrer"
+          className={`text-xs ${linkClass} mb-1 block`}>
+          [{msg.content_type}] Abrir arquivo
+        </a>
+      );
+  }
+}
+
 // --- Chat Message Bubble ---
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isAgent = msg.sender_type === "agent";
@@ -116,10 +168,13 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
           ? "bg-primary text-primary-foreground rounded-br-md"
           : "bg-muted text-foreground rounded-bl-md"
       }`}>
-        {msg.content_type !== "text" && msg.media_url && (
-          <div className="mb-1 text-xs opacity-70">[{msg.content_type}]</div>
+        <MediaContent msg={msg} />
+        {msg.content && msg.content_type === "text" && (
+          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
         )}
-        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+        {msg.content && msg.content_type !== "text" && msg.content_type !== "document" && (
+          <p className="whitespace-pre-wrap break-words text-xs mt-1">{msg.content}</p>
+        )}
         <p className={`text-[10px] mt-1 ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
           {format(new Date(msg.created_at), "HH:mm")}
         </p>
@@ -127,7 +182,6 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
     </div>
   );
 }
-
 // --- Chat Panel ---
 function ChatPanel({ conversation }: { conversation: Conversation | null }) {
   const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null);
@@ -138,8 +192,12 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
   const [showCanned, setShowCanned] = useState(false);
   const [cannedFilter, setCannedFilter] = useState("");
   const [cannedIndex, setCannedIndex] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -174,47 +232,84 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showCanned || !filteredCanned.length) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setCannedIndex((i) => Math.min(i + 1, filteredCanned.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setCannedIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      selectCannedResponse(filteredCanned[cannedIndex]);
-    } else if (e.key === "Escape") {
-      setShowCanned(false);
-    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setCannedIndex((i) => Math.min(i + 1, filteredCanned.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setCannedIndex((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); selectCannedResponse(filteredCanned[cannedIndex]); }
+    else if (e.key === "Escape") { setShowCanned(false); }
   };
 
-  if (!conversation) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-muted-foreground">
-        <div className="text-center space-y-2">
-          <MessageSquare className="mx-auto size-12 opacity-20" />
-          <p className="text-sm">Selecione uma conversa para visualizar</p>
-        </div>
-      </div>
-    );
-  }
+  const getContentType = (mime: string): string => {
+    if (mime.startsWith("image/")) return "image";
+    if (mime.startsWith("audio/")) return "audio";
+    if (mime.startsWith("video/")) return "video";
+    return "document";
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingFile(file);
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setPendingPreview(url);
+    } else {
+      setPendingPreview(null);
+    }
+    e.target.value = "";
+  };
+
+  const clearPendingFile = () => {
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingFile(null);
+    setPendingPreview(null);
+  };
+
+  const uploadFile = async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop() || "bin";
+    const path = `${conversation!.organization_id}/${conversation!.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("chat-media").upload(path, file);
+    if (error) throw error;
+    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    return urlData.publicUrl;
+  };
+
+  const handleSend = async () => {
+    if (!text.trim() && !pendingFile) return;
+
+    if (pendingFile) {
+      setUploading(true);
+      try {
+        const mediaUrl = await uploadFile(pendingFile);
+        const contentType = getContentType(pendingFile.type);
+        sendMsg.mutate({
+          conversation_id: conversation!.id,
+          content: text.trim() || pendingFile.name,
+          content_type: contentType as any,
+          media_url: mediaUrl,
+          channel: conversation!.channel,
+          channel_contact_id: conversation!.channel_contact_id,
+        });
+        clearPendingFile();
+      } catch (err) {
+        console.error("Upload failed:", err);
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      sendMsg.mutate({
+        conversation_id: conversation!.id,
+        content: text.trim(),
+        channel: conversation!.channel,
+        channel_contact_id: conversation!.channel_contact_id,
+      });
+    }
+    setText("");
+    setShowCanned(false);
+  };
 
   const ch = channelConfig[conversation.channel];
   const ChIcon = ch.icon;
   const customerName = (conversation.customers as any)?.name || conversation.channel_contact_id || "Desconhecido";
-
-  const handleSend = () => {
-    if (!text.trim()) return;
-    sendMsg.mutate({
-      conversation_id: conversation.id,
-      content: text.trim(),
-      channel: conversation.channel,
-      channel_contact_id: conversation.channel_contact_id,
-    });
-    setText("");
-    setShowCanned(false);
-  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -288,10 +383,49 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
           </div>
         )}
 
+        {/* Pending file preview */}
+        {pendingFile && (
+          <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/50 p-2">
+            {pendingPreview ? (
+              <img src={pendingPreview} alt="Preview" className="size-14 rounded object-cover" />
+            ) : (
+              <div className="flex size-14 items-center justify-center rounded bg-muted">
+                {pendingFile.type.startsWith("audio/") ? <Mic className="size-5 text-muted-foreground" /> :
+                 pendingFile.type.startsWith("video/") ? <File className="size-5 text-muted-foreground" /> :
+                 <FileText className="size-5 text-muted-foreground" />}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{pendingFile.name}</p>
+              <p className="text-[10px] text-muted-foreground">{(pendingFile.size / 1024).toFixed(1)} KB</p>
+            </div>
+            <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={clearPendingFile}>
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        )}
+
         <form
           onSubmit={(e) => { e.preventDefault(); if (!showCanned) handleSend(); }}
           className="flex items-center gap-2"
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            onChange={handleFileSelect}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            disabled={conversation.status === "closed" || uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="size-4" />
+          </Button>
           <div className="relative flex-1">
             <Input
               ref={inputRef}
@@ -303,8 +437,12 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
               disabled={conversation.status === "closed"}
             />
           </div>
-          <Button type="submit" size="icon" disabled={!text.trim() || sendMsg.isPending || conversation.status === "closed"}>
-            <Send className="size-4" />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={(!text.trim() && !pendingFile) || sendMsg.isPending || uploading || conversation.status === "closed"}
+          >
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
           </Button>
         </form>
       </div>
