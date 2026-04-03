@@ -162,3 +162,49 @@ export function useCannedResponses() {
     },
   });
 }
+
+export function useCreateCannedResponse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { shortcut: string; title: string; content: string }) => {
+      const orgId = (await supabase.rpc("get_user_organization_id")).data;
+      if (!orgId) throw new Error("Organização não encontrada");
+      const { error } = await supabase.from("canned_responses").insert({
+        organization_id: orgId,
+        shortcut: input.shortcut,
+        title: input.title,
+        content: input.content,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["canned-responses"] });
+    },
+  });
+}
+
+export function useUpdateCannedResponse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; shortcut?: string; title?: string; content?: string }) => {
+      const { error } = await supabase.from("canned_responses").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["canned-responses"] });
+    },
+  });
+}
+
+export function useDeleteCannedResponse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("canned_responses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["canned-responses"] });
+    },
+  });
+}
