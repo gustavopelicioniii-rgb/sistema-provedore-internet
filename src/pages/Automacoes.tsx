@@ -1,16 +1,110 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff } from "lucide-react";
+import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff, FileText, UserCheck, AlertTriangle, CreditCard, Bell, Clock, MessageSquare, Mail } from "lucide-react";
 import { useAutomations, type Automation, type AutomationLog } from "@/hooks/useAutomations";
 import AutomationFormDialog from "@/components/automations/AutomationFormDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface AutomationTemplate {
+  name: string;
+  description: string;
+  category: Automation["category"];
+  trigger_type: Automation["trigger_type"];
+  trigger_config: Record<string, unknown>;
+  action_type: Automation["action_type"];
+  action_config: Record<string, unknown>;
+  icon: React.ElementType;
+}
+
+const templates: AutomationTemplate[] = [
+  {
+    name: "Lembrete de Vencimento (3 dias)",
+    description: "Envia notificação via webhook 3 dias antes do vencimento da fatura",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.due_soon", days_before: 3 },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "payment_reminder", days_before: 3 } },
+    icon: Clock,
+  },
+  {
+    name: "Fatura Vencida — 1ª Cobrança",
+    description: "Dispara webhook no dia do vencimento sem pagamento para iniciar régua de cobrança",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.overdue" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "first_collection", stage: 1 } },
+    icon: Mail,
+  },
+  {
+    name: "Cobrança Recorrente (7 dias)",
+    description: "Envia lembrete via webhook 7 dias após vencimento sem pagamento",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.overdue", days_after: 7 },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "recurring_collection", stage: 2 } },
+    icon: MessageSquare,
+  },
+  {
+    name: "Suspensão Automática (15 dias)",
+    description: "Suspende contrato automaticamente após 15 dias de inadimplência",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.overdue", days_after: 15 },
+    action_type: "internal",
+    action_config: { action: "suspend_contract" },
+    icon: AlertTriangle,
+  },
+  {
+    name: "Boas-vindas ao Novo Assinante",
+    description: "Envia mensagem de boas-vindas quando um novo contrato é ativado",
+    category: "atendimento",
+    trigger_type: "event",
+    trigger_config: { event: "contract.created" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "welcome_message" } },
+    icon: UserCheck,
+  },
+  {
+    name: "Pesquisa NPS pós-atendimento",
+    description: "Envia pesquisa de satisfação quando um ticket é resolvido",
+    category: "atendimento",
+    trigger_type: "event",
+    trigger_config: { event: "ticket.resolved" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "nps_survey" } },
+    icon: Bell,
+  },
+  {
+    name: "Reativação por Pagamento",
+    description: "Reativa contrato automaticamente quando pagamento é confirmado",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.paid" },
+    action_type: "internal",
+    action_config: { action: "reactivate_contract" },
+    icon: CreditCard,
+  },
+  {
+    name: "Notificar Nova OS",
+    description: "Dispara webhook quando uma nova ordem de serviço é criada",
+    category: "operacional",
+    trigger_type: "event",
+    trigger_config: { event: "service_order.created" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "new_service_order" } },
+    icon: FileText,
+  },
+];
 
 const categoryLabels: Record<string, { label: string; className: string }> = {
   cobranca: { label: "Cobrança", className: "bg-warning/10 text-warning border-warning/20" },
