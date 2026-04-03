@@ -6,8 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  Car, Fuel, Wrench, AlertTriangle, Plus, CheckCircle, Pencil, Trash2,
+  Car, Fuel, Wrench, AlertTriangle, Plus, CheckCircle, Pencil, Trash2, Search,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import { useFleet } from "@/hooks/useFleet";
 import type { Vehicle, VehicleInsert } from "@/hooks/useFleet";
@@ -37,6 +41,23 @@ export default function Frota() {
   const [formOpen, setFormOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredVehicles = vehicles.filter((v) => {
+    const matchesSearch = search === "" || 
+      v.model.toLowerCase().includes(search.toLowerCase()) ||
+      v.plate.toLowerCase().includes(search.toLowerCase()) ||
+      (v.assigned_to ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredFuelLogs = fuelLogs.filter((log: any) => {
+    if (search === "") return true;
+    return (log.vehicles?.plate ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (log.vehicles?.model ?? "").toLowerCase().includes(search.toLowerCase());
+  });
 
   const available = vehicles.filter((v) => v.status === "available").length;
   const inUse = vehicles.filter((v) => v.status === "in_use").length;
@@ -147,14 +168,30 @@ export default function Frota() {
           <TabsTrigger value="fuel"><Fuel className="mr-2 size-4" /> Abastecimentos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="vehicles" className="mt-4">
+        <TabsContent value="vehicles" className="mt-4 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input placeholder="Buscar por modelo, placa ou responsável..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="available">Disponível</SelectItem>
+                <SelectItem value="in_use">Em uso</SelectItem>
+                <SelectItem value="maintenance">Manutenção</SelectItem>
+                <SelectItem value="decommissioned">Desativado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Card>
             <CardContent className="p-0">
-              {vehicles.length === 0 ? (
+              {filteredVehicles.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Car className="size-10 mb-3 opacity-40" />
-                  <p className="text-sm">Nenhum veículo cadastrado.</p>
-                  <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro veículo</Button>
+                  <p className="text-sm">{vehicles.length === 0 ? "Nenhum veículo cadastrado." : "Nenhum veículo encontrado."}</p>
+                  {vehicles.length === 0 && <Button variant="link" className="mt-1" onClick={handleCreate}>Cadastrar primeiro veículo</Button>}
                 </div>
               ) : (
                 <Table>
@@ -171,7 +208,7 @@ export default function Frota() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vehicles.map((vehicle) => {
+                    {filteredVehicles.map((vehicle) => {
                       const st = vehicleStatus[vehicle.status] ?? vehicleStatus.available;
                       const fuelLevel = vehicle.fuel_level ?? 0;
                       return (
@@ -223,7 +260,7 @@ export default function Frota() {
         <TabsContent value="fuel" className="mt-4">
           <Card>
             <CardContent className="p-0">
-              {fuelLogs.length === 0 ? (
+              {filteredFuelLogs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Fuel className="size-10 mb-3 opacity-40" />
                   <p className="text-sm">Nenhum abastecimento registrado.</p>
@@ -241,7 +278,7 @@ export default function Frota() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {fuelLogs.map((log: any) => (
+                    {filteredFuelLogs.map((log: any) => (
                       <TableRow key={log.id}>
                         <TableCell className="font-mono">{log.vehicles?.plate ?? "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{formatDate(log.date)}</TableCell>
