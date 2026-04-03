@@ -19,7 +19,7 @@ import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels, 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { downloadCsv, downloadPdfTable, downloadXlsx } from "@/utils/exportData";
 import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 
 const COLORS = [
