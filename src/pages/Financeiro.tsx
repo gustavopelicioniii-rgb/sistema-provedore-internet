@@ -110,12 +110,12 @@ export default function Financeiro() {
       </div>
 
       {/* Hero KPIs */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <HeroKpi title="Faturamento Mensal" value={formatCurrency(data?.monthlyBilling ?? 0)} icon={DollarSign} color="text-primary" />
-        <HeroKpi title="Recebido" value={formatCurrency(data?.receivedThisMonth ?? 0)} icon={CheckCircle} color="text-success" />
-        <HeroKpi title="A Receber" value={formatCurrency(data?.receivable ?? 0)} icon={TrendingUp} color="text-warning" />
-        <HeroKpi title="Inadimplentes" value={`${data?.defaultingCustomers ?? 0} clientes`} icon={AlertTriangle} color="text-destructive" />
-      </div>
+      <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <AnimatedCard index={0}><HeroKpi title="Faturamento Mensal" value={formatCurrency(data?.monthlyBilling ?? 0)} icon={DollarSign} color="text-primary" /></AnimatedCard>
+        <AnimatedCard index={1}><HeroKpi title="Recebido" value={formatCurrency(data?.receivedThisMonth ?? 0)} icon={CheckCircle} color="text-success" /></AnimatedCard>
+        <AnimatedCard index={2}><HeroKpi title="A Receber" value={formatCurrency(data?.receivable ?? 0)} icon={TrendingUp} color="text-warning" /></AnimatedCard>
+        <AnimatedCard index={3}><HeroKpi title="Inadimplentes" value={`${data?.defaultingCustomers ?? 0} clientes`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+      </StaggerGrid>
 
       {/* Charts */}
       {!isLoading && !error && data && (
