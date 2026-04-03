@@ -112,7 +112,7 @@ export function useChatMessages(conversationId: string | null) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (msg: { conversation_id: string; content: string; content_type?: ContentType; media_url?: string }) => {
+    mutationFn: async (msg: { conversation_id: string; content: string; content_type?: ContentType; media_url?: string; channel?: ChatChannel; channel_contact_id?: string | null }) => {
       const orgId = (await supabase.rpc("get_user_organization_id")).data;
       const userId = (await supabase.auth.getUser()).data.user?.id;
       const { error } = await supabase.from("chat_messages").insert({
@@ -131,6 +131,26 @@ export function useSendMessage() {
         last_message_at: new Date().toISOString(),
         last_message_preview: msg.content?.substring(0, 100),
       } as any).eq("id", msg.conversation_id);
+
+      // If WhatsApp channel, also send via Evolution API
+      if (msg.channel === "whatsapp" && msg.channel_contact_id) {
+        try {
+          const { data, error: fnError } = await supabase.functions.invoke("whatsapp-api", {
+            body: {
+              action: "send_text",
+              params: {
+                phone: msg.channel_contact_id,
+                message: msg.content,
+              },
+            },
+          });
+          if (fnError) {
+            console.error("Failed to send via WhatsApp:", fnError);
+          }
+        } catch (e) {
+          console.error("WhatsApp send error:", e);
+        }
+      }
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["chat-messages", vars.conversation_id] });
