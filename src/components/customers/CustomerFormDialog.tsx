@@ -5,26 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCreateCustomer, useUpdateCustomer, fetchViaCep, type CustomerFormData, type CustomerAddress } from "@/hooks/useCustomers";
+import { useCreateCustomer, useUpdateCustomer, fetchViaCep, type CustomerFormData, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj, formatPhone, formatCep, validateCpfCnpj } from "@/utils/formatters";
 import { Loader2 } from "lucide-react";
 
 interface CustomerFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingCustomer?: {
-    id: string;
-    name: string;
-    cpf_cnpj: string;
-    rg?: string | null;
-    birth_date?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    whatsapp?: string | null;
-    address?: CustomerAddress | null;
-    notes?: string | null;
-    status?: string;
-  } | null;
+  editingCustomer?: CustomerRecord | null;
 }
 
 const statusOptions = [
