@@ -7,8 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Activity, Wifi, WifiOff, AlertTriangle, Server, RefreshCw,
-  Signal, CheckCircle, Plus, Pencil, Trash2, Wrench,
+  Signal, CheckCircle, Plus, Pencil, Trash2, Wrench, Search,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useNetworkDevices } from "@/hooks/useNetworkDevices";
 import type { NetworkDevice, NetworkDeviceInsert } from "@/hooks/useNetworkDevices";
 import NetworkDeviceFormDialog from "@/components/network/NetworkDeviceFormDialog";
