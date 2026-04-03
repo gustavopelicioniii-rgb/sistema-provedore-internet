@@ -83,8 +83,8 @@ export default function Relatorios() {
             </div>
           </CardContent>
         </Card>
-        </AnimatedCard>
-        <AnimatedCard index={3}>
+        </MotionCard></AnimatedCard>
+        <AnimatedCard index={3}><MotionCard>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
