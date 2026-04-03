@@ -13,6 +13,8 @@ import {
   Activity, Wifi, WifiOff, AlertTriangle, Server, RefreshCw,
   Signal, CheckCircle, Plus, Pencil, Trash2, Wrench, Search,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
