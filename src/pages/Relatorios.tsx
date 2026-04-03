@@ -1,66 +1,121 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BarChart3, TrendingUp, Users, DollarSign, Download, Calendar, PieChart, Activity } from "lucide-react";
-import { useDashboardData } from "@/hooks/useDashboardData";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BarChart3, TrendingUp, Users, DollarSign, Download, FileText, Wrench, Loader2, AlertTriangle,
+} from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area,
+} from "recharts";
 import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { MotionCard } from "@/components/motion/MotionInteractions";
+import { useReportsData } from "@/hooks/useReportsData";
+import { formatCurrency } from "@/utils/finance";
+import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { toast } from "sonner";
 
-const monthlyData = [
-  { month: "Jan", receita: 45000, despesa: 32000 },
-  { month: "Fev", receita: 48000, despesa: 33000 },
-  { month: "Mar", receita: 52000, despesa: 31000 },
-  { month: "Abr", receita: 55000, despesa: 34000 },
-  { month: "Mai", receita: 58000, despesa: 35000 },
-  { month: "Jun", receita: 62000, despesa: 36000 },
+const CHART_COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--primary))",
+  "hsl(var(--success))",
 ];
 
-const clientsByPlan = [
-  { name: "100 Mbps", value: 120, color: "hsl(var(--primary))" },
-  { name: "200 Mbps", value: 85, color: "hsl(var(--accent))" },
-  { name: "500 Mbps", value: 45, color: "hsl(var(--warning))" },
-  { name: "1 Gbps", value: 20, color: "hsl(var(--success))" },
-];
-
-const ticketTrend = [
-  { month: "Jan", tickets: 42 },
-  { month: "Fev", tickets: 38 },
-  { month: "Mar", tickets: 35 },
-  { month: "Abr", tickets: 40 },
-  { month: "Mai", tickets: 33 },
-  { month: "Jun", tickets: 28 },
-];
-
-const reports = [
-  { title: "Relatório Financeiro Mensal", desc: "Receitas, despesas e inadimplência", icon: DollarSign, type: "PDF" },
-  { title: "Base de Clientes", desc: "Listagem completa com status e planos", icon: Users, type: "CSV" },
-  { title: "Análise de Churn", desc: "Taxa de cancelamento e motivos", icon: TrendingUp, type: "PDF" },
-  { title: "Performance Técnica", desc: "Tempo médio de atendimento e SLA", icon: Activity, type: "PDF" },
-];
+const tooltipStyle = {
+  backgroundColor: "hsl(var(--card))",
+  border: "1px solid hsl(var(--border))",
+  borderRadius: "var(--radius)",
+  color: "hsl(var(--card-foreground))",
+};
 
 export default function Relatorios() {
-  const { data } = useDashboardData();
+  const { data, isLoading } = useReportsData();
+
+  const exportRevenuePdf = () => {
+    if (!data) return;
+    downloadPdfTable(
+      "Relatorio de Receita Mensal",
+      "receita-mensal.pdf",
+      ["Mes", "Faturado", "Recebido", "Inadimplente"],
+      data.monthlyRevenue.map((r) => [r.month, formatCurrency(r.faturado), formatCurrency(r.recebido), formatCurrency(r.inadimplente)])
+    );
+    toast.success("PDF exportado com sucesso!");
+  };
+
+  const exportRevenueCsv = () => {
+    if (!data) return;
+    downloadCsv(
+      "receita-mensal.csv",
+      ["Mês", "Faturado", "Recebido", "Inadimplente"],
+      data.monthlyRevenue.map((r) => [r.month, r.faturado.toString(), r.recebido.toString(), r.inadimplente.toString()])
+    );
+    toast.success("CSV exportado com sucesso!");
+  };
+
+  const exportCustomersCsv = () => {
+    if (!data) return;
+    downloadCsv(
+      "clientes.csv",
+      ["Nome", "CPF/CNPJ", "Status", "Telefone", "Email"],
+      data.customerExport.map((c) => [c.name, c.cpf_cnpj, c.status, c.phone, c.email])
+    );
+    toast.success("CSV de clientes exportado!");
+  };
+
+  const exportTechPdf = () => {
+    if (!data) return;
+    downloadPdfTable(
+      "Produtividade de Tecnicos",
+      "produtividade-tecnicos.pdf",
+      ["Tecnico", "OS Concluidas", "OS Pendentes", "Tempo Medio (dias)"],
+      data.techProductivity.map((t) => [t.name, t.completed.toString(), t.pending.toString(), t.avgDays.toString()])
+    );
+    toast.success("PDF exportado com sucesso!");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-7 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const totalFaturado = data?.monthlyRevenue.reduce((s, m) => s + m.faturado, 0) ?? 0;
+  const totalRecebido = data?.monthlyRevenue.reduce((s, m) => s + m.recebido, 0) ?? 0;
+  const totalInadimplente = data?.monthlyRevenue.reduce((s, m) => s + m.inadimplente, 0) ?? 0;
+  const totalOsCompleted = data?.techProductivity.reduce((s, t) => s + t.completed, 0) ?? 0;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Relatórios & BI</h1>
-          <p className="text-muted-foreground text-sm">Analytics avançado e relatórios customizados</p>
+          <p className="text-muted-foreground text-sm">Analytics com dados reais do sistema</p>
         </div>
-        <Button variant="outline"><Calendar className="mr-2 size-4" />Período</Button>
       </div>
 
-      <StaggerGrid className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Summary KPIs */}
+      <StaggerGrid className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <AnimatedCard index={0}>
           <MotionCard>
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10"><Users className="size-5 text-primary" /></div>
-                  <div><p className="text-2xl font-bold">{data?.totalCustomers ?? 0}</p><p className="text-xs text-muted-foreground">Clientes ativos</p></div>
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                    <DollarSign className="size-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{formatCurrency(totalFaturado)}</p>
+                    <p className="text-xs text-muted-foreground">Faturado (6 meses)</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -71,8 +126,13 @@ export default function Relatorios() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-success/10"><DollarSign className="size-5 text-success" /></div>
-                  <div><p className="text-2xl font-bold">R$ {(data?.estimatedMRR ?? 0).toLocaleString("pt-BR")}</p><p className="text-xs text-muted-foreground">MRR</p></div>
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-success/10">
+                    <TrendingUp className="size-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{formatCurrency(totalRecebido)}</p>
+                    <p className="text-xs text-muted-foreground">Recebido (6 meses)</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -83,8 +143,13 @@ export default function Relatorios() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-warning/10"><TrendingUp className="size-5 text-warning" /></div>
-                  <div><p className="text-2xl font-bold">{data?.overdueRate?.toFixed(1) ?? 0}%</p><p className="text-xs text-muted-foreground">Inadimplência</p></div>
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-destructive/10">
+                    <AlertTriangle className="size-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{formatCurrency(totalInadimplente)}</p>
+                    <p className="text-xs text-muted-foreground">Inadimplente (6 meses)</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -95,8 +160,13 @@ export default function Relatorios() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-accent"><BarChart3 className="size-5 text-accent-foreground" /></div>
-                  <div><p className="text-2xl font-bold">{data?.activeContracts ?? 0}</p><p className="text-xs text-muted-foreground">Contratos ativos</p></div>
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Wrench className="size-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">{totalOsCompleted}</p>
+                    <p className="text-xs text-muted-foreground">OS concluídas</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -104,72 +174,252 @@ export default function Relatorios() {
         </AnimatedCard>
       </StaggerGrid>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Receita vs Despesa</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip />
-                <Bar dataKey="receita" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="despesa" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="receita" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="receita">Receita</TabsTrigger>
+          <TabsTrigger value="inadimplencia">Inadimplência</TabsTrigger>
+          <TabsTrigger value="tecnicos">Técnicos</TabsTrigger>
+          <TabsTrigger value="planos">Planos</TabsTrigger>
+          <TabsTrigger value="exportar">Exportar</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Clientes por Plano</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <RePieChart>
-                <Pie data={clientsByPlan} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                  {clientsByPlan.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip />
-              </RePieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Tendência de Tickets</CardTitle></CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={ticketTrend}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="month" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip />
-              <Line type="monotone" dataKey="tickets" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Relatórios Disponíveis</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {reports.map((r) => (
-              <div key={r.title} className="flex items-center gap-3 rounded-lg border p-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <r.icon className="size-5 text-primary" />
+        {/* Receita Tab */}
+        <TabsContent value="receita">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base">Receita Mensal (últimos 6 meses)</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={exportRevenueCsv}><Download className="size-3.5 mr-1" />CSV</Button>
+                  <Button variant="outline" size="sm" onClick={exportRevenuePdf}><FileText className="size-3.5 mr-1" />PDF</Button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{r.title}</p>
-                  <p className="text-xs text-muted-foreground">{r.desc}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[350px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data?.monthlyRevenue ?? []}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => formatCurrency(v)} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Bar dataKey="faturado" name="Faturado" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="recebido" name="Recebido" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="inadimplente" name="Inadimplente" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <Button variant="ghost" size="sm"><Download className="size-4 mr-1" />{r.type}</Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* Inadimplência Tab */}
+        <TabsContent value="inadimplencia">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Taxa de Inadimplência por Mês</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[350px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data?.overdueByMonth ?? []}>
+                      <defs>
+                        <linearGradient id="gradOverdue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name: string) => [name === "rate" ? `${v}%` : v, name === "rate" ? "Taxa" : "Qtd"]} />
+                      <Area type="monotone" dataKey="rate" name="Taxa (%)" stroke="hsl(var(--destructive))" fill="url(#gradOverdue)" strokeWidth={2} />
+                      <Line type="monotone" dataKey="count" name="Faturas vencidas" stroke="hsl(var(--chart-4))" strokeWidth={2} dot={{ r: 4 }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* Técnicos Tab */}
+        <TabsContent value="tecnicos">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base">Produtividade dos Técnicos</CardTitle>
+                <Button variant="outline" size="sm" onClick={exportTechPdf}><FileText className="size-3.5 mr-1" />PDF</Button>
+              </CardHeader>
+              <CardContent>
+                {data?.techProductivity.length ? (
+                  <>
+                    <div className="h-[300px] mb-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data.techProductivity} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis type="number" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                          <YAxis type="category" dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} width={120} />
+                          <Tooltip contentStyle={tooltipStyle} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="completed" name="Concluídas" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="pending" name="Pendentes" fill="hsl(var(--chart-4))" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Técnico</TableHead>
+                          <TableHead className="text-center">Concluídas</TableHead>
+                          <TableHead className="text-center">Pendentes</TableHead>
+                          <TableHead className="text-center">Tempo Médio</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.techProductivity.map((t) => (
+                          <TableRow key={t.name}>
+                            <TableCell className="font-medium">{t.name}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-success/10 text-success border-success/20">{t.completed}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">{t.pending}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">{t.avgDays > 0 ? `${t.avgDays} dias` : "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">Cadastre técnicos e ordens de serviço para ver a produtividade.</p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* Planos Tab */}
+        <TabsContent value="planos">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Distribuição de Contratos por Plano</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data?.planDistribution.length ? (
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={data.planDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={70}
+                          outerRadius={110}
+                          paddingAngle={3}
+                          dataKey="count"
+                          nameKey="name"
+                          label={({ name, count }) => `${name}: ${count}`}
+                          labelLine={false}
+                        >
+                          {data.planDistribution.map((_, i) => (
+                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">Cadastre contratos para ver a distribuição por plano.</p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* Exportar Tab */}
+        <TabsContent value="exportar">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Relatórios Disponíveis para Exportação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ExportCard
+                    icon={DollarSign}
+                    title="Receita Mensal"
+                    desc="Faturado, recebido e inadimplente dos últimos 6 meses"
+                    onPdf={exportRevenuePdf}
+                    onCsv={exportRevenueCsv}
+                  />
+                  <ExportCard
+                    icon={Users}
+                    title="Base de Clientes"
+                    desc="Listagem completa com CPF/CNPJ, status e contato"
+                    onCsv={exportCustomersCsv}
+                  />
+                  <ExportCard
+                    icon={Wrench}
+                    title="Produtividade de Técnicos"
+                    desc="OS concluídas, pendentes e tempo médio"
+                    onPdf={exportTechPdf}
+                  />
+                  <ExportCard
+                    icon={AlertTriangle}
+                    title="Inadimplência"
+                    desc="Taxa e volume de faturas vencidas por mês"
+                    onPdf={() => {
+                      if (!data) return;
+                      downloadPdfTable(
+                        "Relatorio de Inadimplencia",
+                        "inadimplencia.pdf",
+                        ["Mes", "Taxa (%)", "Faturas Vencidas"],
+                        data.overdueByMonth.map((m) => [m.month, `${m.rate}%`, m.count.toString()])
+                      );
+                      toast.success("PDF exportado!");
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function ExportCard({ icon: Icon, title, desc, onPdf, onCsv }: {
+  icon: React.ElementType; title: string; desc: string; onPdf?: () => void; onCsv?: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border p-4">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <Icon className="size-5 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+      <div className="flex gap-1.5">
+        {onPdf && (
+          <Button variant="outline" size="sm" onClick={onPdf}>
+            <FileText className="size-3.5 mr-1" />PDF
+          </Button>
+        )}
+        {onCsv && (
+          <Button variant="outline" size="sm" onClick={onCsv}>
+            <Download className="size-3.5 mr-1" />CSV
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
