@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
+import { MotionCard } from "@/components/motion/MotionInteractions";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { formatCurrency } from "@/utils/finance";
 
@@ -20,20 +21,22 @@ function HeroKpi({ title, value, subtitle, icon: Icon, color }: {
   title: string; value: string; subtitle?: string; icon: React.ElementType; color: string;
 }) {
   return (
-    <Card className="relative overflow-hidden">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-            <p className="text-3xl font-extrabold tracking-tight">{value}</p>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+    <MotionCard>
+      <Card className="relative overflow-hidden">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+              <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+              {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+            </div>
+            <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
+              <Icon className="size-5" />
+            </div>
           </div>
-          <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
-            <Icon className="size-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </MotionCard>
   );
 }
 

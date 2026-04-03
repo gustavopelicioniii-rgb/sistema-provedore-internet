@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
+import { MotionCard } from "@/components/motion/MotionInteractions";
 import { useFinanceiroData } from "@/hooks/useFinanceiroData";
 import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels } from "@/utils/finance";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,19 +38,21 @@ function HeroKpi({ title, value, icon: Icon, color }: {
   title: string; value: string; icon: React.ElementType; color: string;
 }) {
   return (
-    <Card className="relative overflow-hidden">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-            <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+    <MotionCard>
+      <Card className="relative overflow-hidden">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+              <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+            </div>
+            <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
+              <Icon className="size-5" />
+            </div>
           </div>
-          <div className={`flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${color}`}>
-            <Icon className="size-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </MotionCard>
   );
 }
 
