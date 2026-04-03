@@ -428,6 +428,123 @@ export type Database = {
           },
         ]
       }
+      service_orders: {
+        Row: {
+          address: Json | null
+          completed_date: string | null
+          created_at: string
+          customer_id: string
+          description: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["service_order_status"]
+          technician_id: string | null
+          type: Database["public"]["Enums"]["service_order_type"]
+          updated_at: string
+        }
+        Insert: {
+          address?: Json | null
+          completed_date?: string | null
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["service_order_status"]
+          technician_id?: string | null
+          type?: Database["public"]["Enums"]["service_order_type"]
+          updated_at?: string
+        }
+        Update: {
+          address?: Json | null
+          completed_date?: string | null
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["service_order_status"]
+          technician_id?: string | null
+          type?: Database["public"]["Enums"]["service_order_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technicians: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          specialty: Database["public"]["Enums"]["technician_specialty"]
+          status: Database["public"]["Enums"]["technician_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          specialty?: Database["public"]["Enums"]["technician_specialty"]
+          status?: Database["public"]["Enums"]["technician_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          specialty?: Database["public"]["Enums"]["technician_specialty"]
+          status?: Database["public"]["Enums"]["technician_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technicians_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -459,6 +576,18 @@ export type Database = {
         | "won"
         | "lost"
       plan_technology: "fiber" | "radio" | "cable" | "other"
+      service_order_status: "open" | "in_progress" | "completed" | "cancelled"
+      service_order_type:
+        | "installation"
+        | "maintenance"
+        | "technical_visit"
+        | "repair"
+      technician_specialty:
+        | "installation"
+        | "maintenance"
+        | "support"
+        | "general"
+      technician_status: "active" | "inactive" | "vacation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -612,6 +741,20 @@ export const Constants = {
         "lost",
       ],
       plan_technology: ["fiber", "radio", "cable", "other"],
+      service_order_status: ["open", "in_progress", "completed", "cancelled"],
+      service_order_type: [
+        "installation",
+        "maintenance",
+        "technical_visit",
+        "repair",
+      ],
+      technician_specialty: [
+        "installation",
+        "maintenance",
+        "support",
+        "general",
+      ],
+      technician_status: ["active", "inactive", "vacation"],
     },
   },
 } as const
