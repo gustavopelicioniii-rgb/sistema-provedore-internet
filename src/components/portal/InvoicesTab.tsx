@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import { FileText, Copy, CreditCard, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { generateBoletoPdf } from "@/utils/boletoPdf";
 
 const INVOICE_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   paid: { label: "Pago", variant: "default" },
