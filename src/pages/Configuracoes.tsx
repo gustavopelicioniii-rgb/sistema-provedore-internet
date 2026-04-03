@@ -672,6 +672,10 @@ export default function Configuracoes() {
           <CanaisTab />
         </TabsContent>
 
+        <TabsContent value="respostas" className="space-y-4">
+          <RespostasRapidasTab />
+        </TabsContent>
+
         <TabsContent value="financeiro" className="space-y-4">
           <Card>
             <CardHeader>
