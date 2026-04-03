@@ -378,18 +378,36 @@ export default function Relatorios() {
                     desc="Faturado, recebido e inadimplente do período selecionado"
                     onPdf={exportRevenuePdf}
                     onCsv={exportRevenueCsv}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("receita-mensal.xlsx", ["Mês", "Faturado", "Recebido", "Inadimplente"],
+                        filteredRevenue.map((r) => [r.month, r.faturado.toString(), r.recebido.toString(), r.inadimplente.toString()]), "Receita");
+                      toast.success("Excel exportado!");
+                    }}
                   />
                   <ExportCard
                     icon={Users}
                     title="Base de Clientes"
                     desc="Listagem completa com CPF/CNPJ, status e contato"
                     onCsv={exportCustomersCsv}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("clientes.xlsx", ["Nome", "CPF/CNPJ", "Status", "Telefone", "Email"],
+                        data.customerExport.map((c) => [c.name, c.cpf_cnpj, c.status, c.phone, c.email]), "Clientes");
+                      toast.success("Excel exportado!");
+                    }}
                   />
                   <ExportCard
                     icon={Wrench}
                     title="Produtividade de Técnicos"
                     desc="OS concluídas, pendentes e tempo médio"
                     onPdf={exportTechPdf}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("produtividade-tecnicos.xlsx", ["Técnico", "Concluídas", "Pendentes", "Tempo Médio (dias)"],
+                        data.techProductivity.map((t) => [t.name, t.completed.toString(), t.pending.toString(), t.avgDays.toString()]), "Técnicos");
+                      toast.success("Excel exportado!");
+                    }}
                   />
                   <ExportCard
                     icon={AlertTriangle}
@@ -397,13 +415,16 @@ export default function Relatorios() {
                     desc="Taxa e volume de faturas vencidas por mês"
                     onPdf={() => {
                       if (!data) return;
-                      downloadPdfTable(
-                        "Relatorio de Inadimplencia",
-                        "inadimplencia.pdf",
+                      downloadPdfTable("Relatorio de Inadimplencia", "inadimplencia.pdf",
                         ["Mes", "Taxa (%)", "Faturas Vencidas"],
-                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()])
-                      );
+                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()]));
                       toast.success("PDF exportado!");
+                    }}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("inadimplencia.xlsx", ["Mês", "Taxa (%)", "Faturas Vencidas"],
+                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()]), "Inadimplência");
+                      toast.success("Excel exportado!");
                     }}
                   />
                 </div>
