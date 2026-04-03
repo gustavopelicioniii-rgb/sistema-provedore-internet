@@ -134,34 +134,34 @@ export default function RedeNoc() {
 
       {/* Summary cards */}
       <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <AnimatedCard index={0}><Card><CardContent className="p-4">
+        <AnimatedCard index={0}><MotionCard><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Online</p>
             <Wifi className="size-4 text-success" />
           </div>
           <p className="mt-2 text-2xl font-bold">{onlineCount}</p>
-        </CardContent></Card></AnimatedCard>
-        <AnimatedCard index={1}><Card><CardContent className="p-4">
+        </CardContent></Card></MotionCard></AnimatedCard>
+        <AnimatedCard index={1}><MotionCard><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Offline</p>
             <WifiOff className="size-4 text-destructive" />
           </div>
           <p className="mt-2 text-2xl font-bold">{offlineCount}</p>
-        </CardContent></Card></AnimatedCard>
-        <AnimatedCard index={2}><Card><CardContent className="p-4">
+        </CardContent></Card></MotionCard></AnimatedCard>
+        <AnimatedCard index={2}><MotionCard><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Em Alerta</p>
             <AlertTriangle className="size-4 text-warning" />
           </div>
           <p className="mt-2 text-2xl font-bold">{warningCount}</p>
-        </CardContent></Card></AnimatedCard>
-        <AnimatedCard index={3}><Card><CardContent className="p-4">
+        </CardContent></Card></MotionCard></AnimatedCard>
+        <AnimatedCard index={3}><MotionCard><Card><CardContent className="p-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Clientes Conectados</p>
             <Signal className="size-4 text-primary" />
           </div>
           <p className="mt-2 text-2xl font-bold">{totalClients.toLocaleString("pt-BR")}</p>
-        </CardContent></Card></AnimatedCard>
+        </CardContent></Card></MotionCard></AnimatedCard>
       </StaggerGrid>
 
       {/* Charts */}
