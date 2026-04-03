@@ -61,21 +61,23 @@ export function useCreateCustomer() {
 
       if (!profile?.organization_id) throw new Error("Organização não encontrada");
 
+      const insertData = {
+        organization_id: profile.organization_id,
+        name: data.name,
+        cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
+        rg: data.rg || null,
+        birth_date: data.birth_date || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        whatsapp: data.whatsapp || null,
+        address: (data.address as Record<string, unknown>) || {},
+        notes: data.notes || null,
+        status: data.status || ("active" as const),
+      };
+
       const { data: customer, error } = await supabase
         .from("customers")
-        .insert({
-          organization_id: profile.organization_id,
-          name: data.name,
-          cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
-          rg: data.rg || null,
-          birth_date: data.birth_date || null,
-          email: data.email || null,
-          phone: data.phone || null,
-          whatsapp: data.whatsapp || null,
-          address: (data.address as Record<string, unknown>) || {},
-          notes: data.notes || null,
-          status: data.status || "active",
-        })
+        .insert(insertData)
         .select()
         .single();
 
