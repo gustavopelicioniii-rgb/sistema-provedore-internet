@@ -76,14 +76,28 @@ export default function Clientes() {
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground text-sm">Gerencie seus assinantes e contratos</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" disabled={!customers?.length} onClick={() => {
+            if (!customers) return;
+            const headers = ["Nome", "CPF/CNPJ", "Email", "Telefone", "Status"];
+            const rows = customers.map((c) => [c.name, c.cpf_cnpj, c.email ?? "", c.phone ?? "", statusMap[c.status]?.label ?? c.status]);
+            downloadCsv("clientes.csv", headers, rows);
+          }}>
+            <Download className="mr-2 size-4" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" disabled={!customers?.length} onClick={() => {
+            if (!customers) return;
+            const headers = ["Nome", "CPF/CNPJ", "Email", "Telefone", "Status"];
+            const rows = customers.map((c) => [c.name, c.cpf_cnpj, c.email ?? "", c.phone ?? "", statusMap[c.status]?.label ?? c.status]);
+            downloadPdfTable("Clientes", "clientes.pdf", headers, rows);
+          }}>
+            <FileText className="mr-2 size-4" /> PDF
+          </Button>
           <Button variant="outline" onClick={() => setCsvOpen(true)}>
-            <Upload className="mr-2 size-4" />
-            Importar CSV
+            <Upload className="mr-2 size-4" /> Importar CSV
           </Button>
           <Button onClick={handleNew}>
-            <Plus className="mr-2 size-4" />
-            Novo Cliente
+            <Plus className="mr-2 size-4" /> Novo Cliente
           </Button>
         </div>
       </div>
