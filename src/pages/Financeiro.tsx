@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -19,6 +19,7 @@ import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels }
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -106,10 +107,28 @@ export default function Financeiro() {
           <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
           <p className="text-muted-foreground text-sm">Faturamento, cobranças e fluxo de caixa</p>
         </div>
-        <Button onClick={handleGenerateInvoices} disabled={generating}>
-          {generating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Zap className="mr-2 size-4" />}
-          Gerar Faturas
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" disabled={!data?.recentInvoices?.length} onClick={() => {
+            if (!data) return;
+            const headers = ["Cliente", "Valor", "Vencimento", "Status"];
+            const rows = data.recentInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
+            downloadCsv("faturas.csv", headers, rows);
+          }}>
+            <Download className="mr-2 size-4" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" disabled={!data?.recentInvoices?.length} onClick={() => {
+            if (!data) return;
+            const headers = ["Cliente", "Valor", "Vencimento", "Status"];
+            const rows = data.recentInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
+            downloadPdfTable("Faturas", "faturas.pdf", headers, rows);
+          }}>
+            <FileText className="mr-2 size-4" /> PDF
+          </Button>
+          <Button onClick={handleGenerateInvoices} disabled={generating}>
+            {generating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Zap className="mr-2 size-4" />}
+            Gerar Faturas
+          </Button>
+        </div>
       </div>
 
       {/* Hero KPIs */}
