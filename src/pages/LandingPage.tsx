@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Wifi, Users, DollarSign, BarChart3, Shield, Zap, Clock, HeadphonesIcon,
+  Users, DollarSign, BarChart3, Shield, Zap, Clock, HeadphonesIcon,
   Server, Map, FileText, Truck, CheckCircle, ArrowRight, Star, ChevronRight,
 } from "lucide-react";
 
@@ -70,10 +70,10 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Wifi className="size-5" />
+            <div className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground font-display font-bold text-xs">
+              NP
             </div>
-            <span className="text-xl font-bold tracking-tight">NetPulse</span>
+            <span className="text-xl font-display font-bold tracking-tight">NetPulse</span>
           </div>
           <div className="hidden items-center gap-6 md:flex">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
@@ -108,10 +108,10 @@ export default function LandingPage() {
           <motion.h1
             variants={fadeUp}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl"
+            className="font-display text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl"
           >
             Gerencie seu provedor{" "}
-            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               com inteligência
             </span>
           </motion.h1>
@@ -168,7 +168,7 @@ export default function LandingPage() {
             className="text-center"
           >
             <Badge variant="outline" className="mb-4">Recursos</Badge>
-            <h2 className="text-3xl font-bold tracking-tight">Tudo que seu provedor precisa</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight">Tudo que seu provedor precisa</h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
               Do cadastro de clientes ao monitoramento da rede, o NetPulse cobre toda a operação.
             </p>
@@ -210,7 +210,7 @@ export default function LandingPage() {
             className="text-center"
           >
             <Badge variant="outline" className="mb-4">Planos</Badge>
-            <h2 className="text-3xl font-bold tracking-tight">Escolha o plano ideal</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight">Escolha o plano ideal</h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
               Comece com 14 dias grátis. Sem cartão de crédito.
             </p>
@@ -269,7 +269,7 @@ export default function LandingPage() {
           transition={{ duration: 0.5 }}
           className="mx-auto max-w-2xl px-4 text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight">Pronto para transformar seu provedor?</h2>
+          <h2 className="font-display text-3xl font-bold tracking-tight">Pronto para transformar seu provedor?</h2>
           <p className="mt-4 text-muted-foreground">
             Junte-se a centenas de ISPs que já automatizam sua operação com o NetPulse.
           </p>
@@ -285,10 +285,10 @@ export default function LandingPage() {
       <footer className="border-t py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Wifi className="size-3.5" />
+            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground font-display font-bold text-[10px]">
+              NP
             </div>
-            <span className="text-sm font-semibold">NetPulse</span>
+            <span className="text-sm font-display font-semibold">NetPulse</span>
           </div>
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} NetPulse. Todos os direitos reservados.</p>
         </div>

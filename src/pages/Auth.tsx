@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Wifi, ArrowLeft, Shield, Zap, BarChart3, Users, Server,
+  ArrowLeft, Shield, Zap, BarChart3, Users, Server,
   CheckCircle, Star, Globe,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -104,11 +104,11 @@ export default function Auth() {
               transition={{ duration: 0.5 }}
             >
               <div className="flex items-center gap-3">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/10 shadow-lg">
-                  <Wifi className="size-7" />
+                <div className="flex size-14 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm border border-white/10 shadow-lg font-display font-bold text-lg">
+                  NP
                 </div>
                 <div>
-                  <span className="text-3xl font-bold tracking-tight">NetPulse</span>
+                  <span className="text-3xl font-display font-bold tracking-tight">NetPulse</span>
                   <p className="text-xs text-primary-foreground/50 font-medium tracking-wider uppercase">ISP Management</p>
                 </div>
               </div>
@@ -118,7 +118,7 @@ export default function Auth() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-10 text-3xl font-bold leading-tight"
+              className="mt-10 text-3xl font-display font-bold leading-tight"
             >
               Gerencie seu provedor<br />
               com{" "}
@@ -193,17 +193,17 @@ export default function Auth() {
           {/* Mobile logo */}
           <div className="flex flex-col items-center gap-3 text-center lg:hidden">
             <div className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Wifi className="size-5" />
+              <div className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground font-display font-bold text-xs">
+                NP
               </div>
-              <span className="text-2xl font-bold tracking-tight">NetPulse</span>
+              <span className="text-2xl font-display font-bold tracking-tight">NetPulse</span>
             </div>
             <p className="text-sm text-muted-foreground">Sistema de Gestão para Provedores</p>
           </div>
 
           {/* Header */}
           <div className="lg:text-left text-center">
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-display font-bold tracking-tight">
               {activeTab === "login" ? "Bem-vindo de volta 👋" : "Comece agora"}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
