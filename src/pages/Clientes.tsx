@@ -15,11 +15,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload, ChevronLeft, ChevronRight, Download, FileText } from "lucide-react";
 import CsvImportDialog from "@/components/customers/CsvImportDialog";
 import { useCustomers, useDeleteCustomer, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj } from "@/utils/formatters";
 import CustomerFormDialog from "@/components/customers/CustomerFormDialog";
+import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
 
 const statusMap: Record<string, { label: string; className: string }> = {
   active: { label: "Ativo", className: "bg-success/10 text-success border-success/20" },
