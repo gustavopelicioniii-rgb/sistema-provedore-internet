@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const mainNav = [
-  { title: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { title: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { title: "Clientes", icon: Users, path: "/clientes" },
   { title: "Contratos", icon: ClipboardList, path: "/contratos" },
   { title: "CRM", icon: Kanban, path: "/crm" },

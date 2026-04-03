@@ -32,17 +32,21 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <FullPageSpinner />;
-  }
-
+  if (loading) return <FullPageSpinner />;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
+function PublicHome() {
+  const { user, loading } = useAuth();
+  if (loading) return <FullPageSpinner />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
+
 const AppRoutes = () => (
   <Routes>
+    <Route path="/" element={<PublicHome />} />
     <Route path="/landing" element={<LandingPage />} />
     <Route path="/auth" element={<Auth />} />
     <Route
@@ -52,7 +56,7 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     >
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/clientes" element={<Clientes />} />
       <Route path="/crm" element={<CRM />} />
       <Route path="/atendimento" element={<Atendimento />} />
