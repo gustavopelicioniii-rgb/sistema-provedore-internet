@@ -67,10 +67,16 @@ export default function Clientes() {
           <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground text-sm">Gerencie seus assinantes e contratos</p>
         </div>
-        <Button onClick={handleNew}>
-          <Plus className="mr-2 size-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setCsvOpen(true)}>
+            <Upload className="mr-2 size-4" />
+            Importar CSV
+          </Button>
+          <Button onClick={handleNew}>
+            <Plus className="mr-2 size-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <Card>
