@@ -193,10 +193,10 @@ export default function Auth() {
           {/* Mobile logo */}
           <div className="flex flex-col items-center gap-3 text-center lg:hidden">
             <div className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Wifi className="size-5" />
+              <div className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground font-display font-bold text-xs">
+                NP
               </div>
-              <span className="text-2xl font-bold tracking-tight">NetPulse</span>
+              <span className="text-2xl font-display font-bold tracking-tight">NetPulse</span>
             </div>
             <p className="text-sm text-muted-foreground">Sistema de Gestão para Provedores</p>
           </div>
