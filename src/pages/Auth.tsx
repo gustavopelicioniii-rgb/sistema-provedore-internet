@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FullPageSpinner } from "@/components/ui/spinner";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
