@@ -307,6 +307,10 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
     setShowCanned(false);
   };
 
+  const ch = channelConfig[conversation.channel];
+  const ChIcon = ch.icon;
+  const customerName = (conversation.customers as any)?.name || conversation.channel_contact_id || "Desconhecido";
+
   return (
     <div className="flex flex-1 flex-col">
       {/* Header */}
