@@ -1,3 +1,20 @@
+import * as XLSX from "xlsx";
+
+export function downloadXlsx(filename: string, headers: string[], rows: string[][], sheetName = "Dados") {
+  const data = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  // Auto-fit column widths
+  ws["!cols"] = headers.map((h, i) => {
+    const maxLen = Math.max(h.length, ...rows.map((r) => (r[i] ?? "").length));
+    return { wch: Math.min(maxLen + 2, 40) };
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  triggerDownload(blob, filename);
+}
+
 export function downloadCsv(filename: string, headers: string[], rows: string[][]) {
   const escape = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = [headers.map(escape).join(","), ...rows.map((r) => r.map(escape).join(","))];
