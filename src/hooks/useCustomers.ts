@@ -100,6 +100,7 @@ export function useCreateCustomer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
+      queryClient.invalidateQueries({ queryKey: ["financeiro-data"] });
       toast({ title: "Cliente criado com sucesso!" });
     },
     onError: (error: Error) => {
