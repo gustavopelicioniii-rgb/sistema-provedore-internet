@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -19,7 +19,7 @@ import { formatCurrency, formatDate, invoiceStatusClasses, invoiceStatusLabels, 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { downloadCsv, downloadPdfTable, downloadXlsx } from "@/utils/exportData";
 import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 
 const COLORS = [
@@ -143,6 +143,13 @@ export default function Financeiro() {
             downloadCsv("faturas.csv", headers, rows);
           }}>
             <Download className="mr-2 size-4" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" disabled={!filteredInvoices.length} onClick={() => {
+            const headers = ["Cliente", "Valor", "Vencimento", "Status"];
+            const rows = filteredInvoices.map((i) => [i.customerName, formatCurrency(i.amount), formatDate(i.dueDate), invoiceStatusLabels[i.status]]);
+            downloadXlsx("faturas.xlsx", headers, rows, "Faturas");
+          }}>
+            <Sheet className="mr-2 size-4" /> Excel
           </Button>
           <Button variant="outline" size="sm" disabled={!filteredInvoices.length} onClick={() => {
             const headers = ["Cliente", "Valor", "Vencimento", "Status"];

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BarChart3, TrendingUp, Users, DollarSign, Download, FileText, Wrench, Loader2, AlertTriangle,
+  BarChart3, TrendingUp, Users, DollarSign, Download, FileText, Wrench, Loader2, AlertTriangle, Sheet,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -16,7 +16,7 @@ import { AnimatedCard, StaggerGrid } from "@/components/motion/AnimatedCard";
 import { MotionCard } from "@/components/motion/MotionInteractions";
 import { useReportsData } from "@/hooks/useReportsData";
 import { formatCurrency } from "@/utils/finance";
-import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { downloadCsv, downloadPdfTable, downloadXlsx } from "@/utils/exportData";
 import { toast } from "sonner";
 import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 
@@ -378,18 +378,36 @@ export default function Relatorios() {
                     desc="Faturado, recebido e inadimplente do período selecionado"
                     onPdf={exportRevenuePdf}
                     onCsv={exportRevenueCsv}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("receita-mensal.xlsx", ["Mês", "Faturado", "Recebido", "Inadimplente"],
+                        filteredRevenue.map((r) => [r.month, r.faturado.toString(), r.recebido.toString(), r.inadimplente.toString()]), "Receita");
+                      toast.success("Excel exportado!");
+                    }}
                   />
                   <ExportCard
                     icon={Users}
                     title="Base de Clientes"
                     desc="Listagem completa com CPF/CNPJ, status e contato"
                     onCsv={exportCustomersCsv}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("clientes.xlsx", ["Nome", "CPF/CNPJ", "Status", "Telefone", "Email"],
+                        data.customerExport.map((c) => [c.name, c.cpf_cnpj, c.status, c.phone, c.email]), "Clientes");
+                      toast.success("Excel exportado!");
+                    }}
                   />
                   <ExportCard
                     icon={Wrench}
                     title="Produtividade de Técnicos"
                     desc="OS concluídas, pendentes e tempo médio"
                     onPdf={exportTechPdf}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("produtividade-tecnicos.xlsx", ["Técnico", "Concluídas", "Pendentes", "Tempo Médio (dias)"],
+                        data.techProductivity.map((t) => [t.name, t.completed.toString(), t.pending.toString(), t.avgDays.toString()]), "Técnicos");
+                      toast.success("Excel exportado!");
+                    }}
                   />
                   <ExportCard
                     icon={AlertTriangle}
@@ -397,13 +415,16 @@ export default function Relatorios() {
                     desc="Taxa e volume de faturas vencidas por mês"
                     onPdf={() => {
                       if (!data) return;
-                      downloadPdfTable(
-                        "Relatorio de Inadimplencia",
-                        "inadimplencia.pdf",
+                      downloadPdfTable("Relatorio de Inadimplencia", "inadimplencia.pdf",
                         ["Mes", "Taxa (%)", "Faturas Vencidas"],
-                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()])
-                      );
+                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()]));
                       toast.success("PDF exportado!");
+                    }}
+                    onXlsx={() => {
+                      if (!data) return;
+                      downloadXlsx("inadimplencia.xlsx", ["Mês", "Taxa (%)", "Faturas Vencidas"],
+                        filteredOverdue.map((m) => [m.month, `${m.rate}%`, m.count.toString()]), "Inadimplência");
+                      toast.success("Excel exportado!");
                     }}
                   />
                 </div>
@@ -416,8 +437,8 @@ export default function Relatorios() {
   );
 }
 
-function ExportCard({ icon: Icon, title, desc, onPdf, onCsv }: {
-  icon: React.ElementType; title: string; desc: string; onPdf?: () => void; onCsv?: () => void;
+function ExportCard({ icon: Icon, title, desc, onPdf, onCsv, onXlsx }: {
+  icon: React.ElementType; title: string; desc: string; onPdf?: () => void; onCsv?: () => void; onXlsx?: () => void;
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border p-4">
@@ -432,6 +453,11 @@ function ExportCard({ icon: Icon, title, desc, onPdf, onCsv }: {
         {onPdf && (
           <Button variant="outline" size="sm" onClick={onPdf}>
             <FileText className="size-3.5 mr-1" />PDF
+          </Button>
+        )}
+        {onXlsx && (
+          <Button variant="outline" size="sm" onClick={onXlsx}>
+            <Sheet className="size-3.5 mr-1" />Excel
           </Button>
         )}
         {onCsv && (
