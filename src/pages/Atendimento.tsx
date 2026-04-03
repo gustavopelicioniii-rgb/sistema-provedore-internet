@@ -18,8 +18,8 @@ import {
 import { useTickets, useDeleteTicket, type TicketRecord } from "@/hooks/useTickets";
 import TicketFormDialog from "@/components/tickets/TicketFormDialog";
 import {
-  useConversations, useChatMessages, useSendMessage, useUpdateConversation,
-  type Conversation, type ChatChannel, type ConversationStatus, type ChatMessage,
+  useConversations, useChatMessages, useSendMessage, useUpdateConversation, useCannedResponses,
+  type Conversation, type ChatChannel, type ConversationStatus, type ChatMessage, type CannedResponse,
 } from "@/hooks/useChat";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
