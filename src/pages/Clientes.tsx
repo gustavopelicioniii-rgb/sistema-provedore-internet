@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import CsvImportDialog from "@/components/customers/CsvImportDialog";
 import { useCustomers, useDeleteCustomer, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj } from "@/utils/formatters";
@@ -35,14 +35,22 @@ export default function Clientes() {
   const [editingCustomer, setEditingCustomer] = useState<CustomerRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
 
   const { data: customers, isLoading, error } = useCustomers(debouncedSearch);
   const deleteCustomer = useDeleteCustomer();
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setDebouncedSearch(search), 300);
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
     return () => window.clearTimeout(timeout);
   }, [search]);
+
+  const totalPages = customers ? Math.ceil(customers.length / pageSize) : 0;
+  const paginatedCustomers = customers?.slice(page * pageSize, (page + 1) * pageSize);
 
   const handleEdit = (customer: CustomerRecord) => {
     setEditingCustomer(customer);
@@ -88,12 +96,7 @@ export default function Clientes() {
             </CardTitle>
             <div className="relative flex-1 sm:w-64 sm:flex-initial">
               <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou CPF..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <Input placeholder="Buscar por nome ou CPF..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
         </CardHeader>
@@ -113,73 +116,75 @@ export default function Clientes() {
               </Button>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>CPF/CNPJ</TableHead>
-                  <TableHead className="hidden md:table-cell">Cidade</TableHead>
-                  <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
-                  <TableHead>Score</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((customer) => {
-                  const address = customer.address as CustomerAddress | null;
-                  const status = statusMap[customer.status] || statusMap.active;
-                  const score = customer.financial_score ?? 5;
-
-                  return (
-                    <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(customer)}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatCpfCnpj(customer.cpf_cnpj)}</TableCell>
-                      <TableCell className="hidden md:table-cell">{address?.city || "—"}</TableCell>
-                      <TableCell className="hidden md:table-cell text-muted-foreground">{customer.whatsapp || "—"}</TableCell>
-                      <TableCell>
-                        <span className={`font-semibold ${score >= 7 ? "text-success" : score >= 4 ? "text-warning" : "text-destructive"}`}>
-                          {score.toFixed(1)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={status.className}>
-                          {status.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(event) => event.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleEdit(customer);
-                              }}
-                            >
-                              <Pencil className="mr-2 size-4" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setDeleteId(customer.id);
-                              }}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>CPF/CNPJ</TableHead>
+                    <TableHead className="hidden md:table-cell">Cidade</TableHead>
+                    <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
+                    <TableHead>Score</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedCustomers?.map((customer) => {
+                    const address = customer.address as CustomerAddress | null;
+                    const status = statusMap[customer.status] || statusMap.active;
+                    const score = customer.financial_score ?? 5;
+                    return (
+                      <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleEdit(customer)}>
+                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatCpfCnpj(customer.cpf_cnpj)}</TableCell>
+                        <TableCell className="hidden md:table-cell">{address?.city || "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">{customer.whatsapp || "—"}</TableCell>
+                        <TableCell>
+                          <span className={`font-semibold ${score >= 7 ? "text-success" : score >= 4 ? "text-warning" : "text-destructive"}`}>
+                            {score.toFixed(1)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="size-8"><MoreHorizontal className="size-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
+                                <Pencil className="mr-2 size-4" /> Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(customer.id); }}>
+                                <Trash2 className="mr-2 size-4" /> Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Mostrando {page * pageSize + 1}–{Math.min((page + 1) * pageSize, customers.length)} de {customers.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="icon" className="size-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                    <span className="text-xs px-2">{page + 1} / {totalPages}</span>
+                    <Button variant="outline" size="icon" className="size-8" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                      <ChevronRight className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

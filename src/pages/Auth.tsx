@@ -13,6 +13,7 @@ import {
   CheckCircle, Star, Globe,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 
 const benefits = [
   { icon: Zap, title: "Automações Inteligentes", text: "Reduza churn em até 40% com fluxos automáticos de cobrança e retenção" },
@@ -33,6 +34,7 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") === "signup" ? "signup" : "login");
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -234,7 +236,7 @@ export default function Auth() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="login-password" className="text-sm font-medium">Senha</Label>
-                    <button type="button" className="text-xs text-primary hover:underline">Esqueceu a senha?</button>
+                    <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-primary hover:underline">Esqueceu a senha?</button>
                   </div>
                   <Input
                     id="login-password"
@@ -304,6 +306,8 @@ export default function Auth() {
           </p>
         </motion.div>
       </div>
+
+      <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
     </div>
   );
 }
