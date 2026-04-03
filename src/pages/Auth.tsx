@@ -118,7 +118,7 @@ export default function Auth() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-10 text-3xl font-bold leading-tight"
+              className="mt-10 text-3xl font-display font-bold leading-tight"
             >
               Gerencie seu provedor<br />
               com{" "}
