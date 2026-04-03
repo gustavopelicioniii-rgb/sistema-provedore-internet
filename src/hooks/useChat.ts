@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 
 export type ChatChannel = "whatsapp" | "instagram" | "facebook" | "website" | "telegram" | "email";
 export type ConversationStatus = "open" | "waiting" | "resolved" | "closed";
