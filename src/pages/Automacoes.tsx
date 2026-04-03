@@ -1,16 +1,110 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff } from "lucide-react";
+import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff, FileText, UserCheck, AlertTriangle, CreditCard, Bell, Clock, MessageSquare, Mail } from "lucide-react";
 import { useAutomations, type Automation, type AutomationLog } from "@/hooks/useAutomations";
 import AutomationFormDialog from "@/components/automations/AutomationFormDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface AutomationTemplate {
+  name: string;
+  description: string;
+  category: Automation["category"];
+  trigger_type: Automation["trigger_type"];
+  trigger_config: Record<string, unknown>;
+  action_type: Automation["action_type"];
+  action_config: Record<string, unknown>;
+  icon: React.ElementType;
+}
+
+const templates: AutomationTemplate[] = [
+  {
+    name: "Lembrete de Vencimento (3 dias)",
+    description: "Envia notificação via webhook 3 dias antes do vencimento da fatura",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.due_soon", days_before: 3 },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "payment_reminder", days_before: 3 } },
+    icon: Clock,
+  },
+  {
+    name: "Fatura Vencida — 1ª Cobrança",
+    description: "Dispara webhook no dia do vencimento sem pagamento para iniciar régua de cobrança",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.overdue" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "first_collection", stage: 1 } },
+    icon: Mail,
+  },
+  {
+    name: "Cobrança Recorrente (7 dias)",
+    description: "Envia lembrete via webhook 7 dias após vencimento sem pagamento",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.overdue", days_after: 7 },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "recurring_collection", stage: 2 } },
+    icon: MessageSquare,
+  },
+  {
+    name: "Suspensão Automática (15 dias)",
+    description: "Suspende contrato automaticamente após 15 dias de inadimplência",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.overdue", days_after: 15 },
+    action_type: "internal",
+    action_config: { action: "suspend_contract" },
+    icon: AlertTriangle,
+  },
+  {
+    name: "Boas-vindas ao Novo Assinante",
+    description: "Envia mensagem de boas-vindas quando um novo contrato é ativado",
+    category: "atendimento",
+    trigger_type: "event",
+    trigger_config: { event: "contract.created" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "welcome_message" } },
+    icon: UserCheck,
+  },
+  {
+    name: "Pesquisa NPS pós-atendimento",
+    description: "Envia pesquisa de satisfação quando um ticket é resolvido",
+    category: "atendimento",
+    trigger_type: "event",
+    trigger_config: { event: "ticket.resolved" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "nps_survey" } },
+    icon: Bell,
+  },
+  {
+    name: "Reativação por Pagamento",
+    description: "Reativa contrato automaticamente quando pagamento é confirmado",
+    category: "cobranca",
+    trigger_type: "event",
+    trigger_config: { event: "invoice.paid" },
+    action_type: "internal",
+    action_config: { action: "reactivate_contract" },
+    icon: CreditCard,
+  },
+  {
+    name: "Notificar Nova OS",
+    description: "Dispara webhook quando uma nova ordem de serviço é criada",
+    category: "operacional",
+    trigger_type: "event",
+    trigger_config: { event: "service_order.created" },
+    action_type: "webhook_call",
+    action_config: { method: "POST", payload_template: { type: "new_service_order" } },
+    icon: FileText,
+  },
+];
 
 const categoryLabels: Record<string, { label: string; className: string }> = {
   cobranca: { label: "Cobrança", className: "bg-warning/10 text-warning border-warning/20" },
@@ -44,6 +138,14 @@ export default function Automacoes() {
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
 
   const activeCount = automations.filter((a) => a.enabled).length;
+
+  const activateTemplate = (template: AutomationTemplate) => {
+    const { icon, ...rest } = template;
+    createAutomation.mutate(rest);
+  };
+
+  const isTemplateActive = (template: AutomationTemplate) =>
+    automations.some((a) => a.name === template.name);
 
   const handleSubmit = (values: Partial<Automation>) => {
     if (values.id) {
@@ -140,11 +242,52 @@ export default function Automacoes() {
         </Card>
       </div>
 
-      <Tabs defaultValue="automations">
+      <Tabs defaultValue="templates">
         <TabsList>
+          <TabsTrigger value="templates">Templates ({templates.length})</TabsTrigger>
           <TabsTrigger value="automations">Automações ({automations.length})</TabsTrigger>
           <TabsTrigger value="logs">Logs de Execução ({logs.length})</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="templates" className="mt-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {templates.map((t) => {
+              const cat = categoryLabels[t.category];
+              const alreadyActive = isTemplateActive(t);
+              return (
+                <Card key={t.name} className={alreadyActive ? "border-primary/30 bg-primary/5" : ""}>
+                  <CardContent className="py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 mt-0.5">
+                        <t.icon className="size-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-medium">{t.name}</p>
+                          <Badge variant="outline" className={cat?.className + " text-[10px]"}>{cat?.label}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-3">{t.description}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px]">{triggerLabels[t.trigger_type]}</Badge>
+                          <Badge variant="secondary" className="text-[10px]">{actionLabels[t.action_type]}</Badge>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={alreadyActive ? "outline" : "default"}
+                        disabled={alreadyActive || createAutomation.isPending}
+                        onClick={() => activateTemplate(t)}
+                        className="shrink-0"
+                      >
+                        {alreadyActive ? "✓ Ativado" : "Ativar"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </TabsContent>
 
         <TabsContent value="automations" className="space-y-3 mt-4">
           {automations.length === 0 && (
