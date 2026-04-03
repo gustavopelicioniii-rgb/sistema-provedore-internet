@@ -51,7 +51,7 @@ export default function FuelLogFormDialog({ open, onOpenChange, vehicles, onSubm
       date: data.date,
       liters: Number(data.liters),
       cost: Number(data.cost),
-      fuel_type: data.fuel_type,
+      fuel_type: data.fuel_type as FuelLogInsert["fuel_type"],
       km: data.km ? Number(data.km) : null,
       notes: data.notes || null,
     });
