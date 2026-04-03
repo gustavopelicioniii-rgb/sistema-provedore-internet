@@ -14,6 +14,139 @@ export type Database = {
   }
   public: {
     Tables: {
+      canned_responses: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          organization_id: string
+          shortcut: string
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          shortcut: string
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          shortcut?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canned_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_configs: {
+        Row: {
+          channel: Database["public"]["Enums"]["chat_channel"]
+          config: Json | null
+          created_at: string
+          enabled: boolean
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["chat_channel"]
+          config?: Json | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["chat_channel"]
+          config?: Json | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string | null
+          content_type: string
+          conversation_id: string
+          created_at: string
+          external_message_id: string | null
+          id: string
+          media_url: string | null
+          metadata: Json | null
+          organization_id: string
+          read_at: string | null
+          sender_id: string | null
+          sender_type: string
+        }
+        Insert: {
+          content?: string | null
+          content_type?: string
+          conversation_id: string
+          created_at?: string
+          external_message_id?: string | null
+          id?: string
+          media_url?: string | null
+          metadata?: Json | null
+          organization_id: string
+          read_at?: string | null
+          sender_id?: string | null
+          sender_type: string
+        }
+        Update: {
+          content?: string | null
+          content_type?: string
+          conversation_id?: string
+          created_at?: string
+          external_message_id?: string | null
+          id?: string
+          media_url?: string | null
+          metadata?: Json | null
+          organization_id?: string
+          read_at?: string | null
+          sender_id?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           authentication: Json | null
@@ -77,6 +210,79 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          assigned_to: string | null
+          channel: Database["public"]["Enums"]["chat_channel"]
+          channel_contact_id: string | null
+          channel_conversation_id: string | null
+          created_at: string
+          customer_id: string | null
+          id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          metadata: Json | null
+          organization_id: string
+          status: Database["public"]["Enums"]["conversation_status"]
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          channel: Database["public"]["Enums"]["chat_channel"]
+          channel_contact_id?: string | null
+          channel_conversation_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          metadata?: Json | null
+          organization_id: string
+          status?: Database["public"]["Enums"]["conversation_status"]
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          channel?: Database["public"]["Enums"]["chat_channel"]
+          channel_contact_id?: string | null
+          channel_conversation_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          metadata?: Json | null
+          organization_id?: string
+          status?: Database["public"]["Enums"]["conversation_status"]
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1000,12 +1206,20 @@ export type Database = {
       get_user_organization_id: { Args: never; Returns: string }
     }
     Enums: {
+      chat_channel:
+        | "whatsapp"
+        | "instagram"
+        | "facebook"
+        | "website"
+        | "telegram"
+        | "email"
       contract_status:
         | "active"
         | "suspended"
         | "cancelled"
         | "awaiting_installation"
         | "awaiting_signature"
+      conversation_status: "open" | "waiting" | "resolved" | "closed"
       customer_status: "active" | "suspended" | "defaulting" | "cancelled"
       device_manufacturer:
         | "mikrotik"
@@ -1197,6 +1411,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      chat_channel: [
+        "whatsapp",
+        "instagram",
+        "facebook",
+        "website",
+        "telegram",
+        "email",
+      ],
       contract_status: [
         "active",
         "suspended",
@@ -1204,6 +1426,7 @@ export const Constants = {
         "awaiting_installation",
         "awaiting_signature",
       ],
+      conversation_status: ["open", "waiting", "resolved", "closed"],
       customer_status: ["active", "suspended", "defaulting", "cancelled"],
       device_manufacturer: [
         "mikrotik",
