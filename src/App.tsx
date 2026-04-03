@@ -13,6 +13,8 @@ import Planos from "@/pages/Planos";
 import Contratos from "@/pages/Contratos";
 import Tecnicos from "@/pages/Tecnicos";
 import OrdensServico from "@/pages/OrdensServico";
+import Atendimento from "@/pages/Atendimento";
+import Estoque from "@/pages/Estoque";
 import PlaceholderPage from "@/pages/PlaceholderPage";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -47,7 +49,7 @@ const AppRoutes = () => (
       <Route path="/" element={<Dashboard />} />
       <Route path="/clientes" element={<Clientes />} />
       <Route path="/crm" element={<CRM />} />
-      <Route path="/atendimento" element={<PlaceholderPage title="Atendimento" description="Tickets e service desk unificado" />} />
+      <Route path="/atendimento" element={<Atendimento />} />
       <Route path="/rede" element={<PlaceholderPage title="Rede & NOC" description="Monitoramento de OLTs, concentradores e clientes" />} />
       <Route path="/mapa-ftth" element={<PlaceholderPage title="Mapa FTTH" description="Documentação visual da rede óptica" />} />
       <Route path="/ordens-servico" element={<OrdensServico />} />
@@ -56,7 +58,7 @@ const AppRoutes = () => (
       <Route path="/planos" element={<Planos />} />
       <Route path="/contratos" element={<Contratos />} />
       <Route path="/fiscal" element={<PlaceholderPage title="Fiscal / NF-e" description="Emissão de notas fiscais e obrigações fiscais" />} />
-      <Route path="/estoque" element={<PlaceholderPage title="Estoque" description="Controle de equipamentos, materiais e comodato" />} />
+      <Route path="/estoque" element={<Estoque />} />
       <Route path="/frota" element={<PlaceholderPage title="Frota" description="Gestão de veículos, abastecimento e manutenção" />} />
       <Route path="/portal-assinante" element={<PlaceholderPage title="Portal do Assinante" description="App e portal web para clientes" />} />
       <Route path="/automacoes" element={<PlaceholderPage title="Automações" description="Motor de automações inteligentes — o grande diferencial" />} />

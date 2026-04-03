@@ -149,6 +149,108 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_type: Database["public"]["Enums"]["inventory_item_type"]
+          min_quantity: number
+          name: string
+          notes: string | null
+          organization_id: string
+          quantity: number
+          serial_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["inventory_item_type"]
+          min_quantity?: number
+          name: string
+          notes?: string | null
+          organization_id: string
+          quantity?: number
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["inventory_item_type"]
+          min_quantity?: number
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          quantity?: number
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          item_id: string
+          movement_type: Database["public"]["Enums"]["inventory_movement_type"]
+          notes: string | null
+          organization_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          item_id: string
+          movement_type: Database["public"]["Enums"]["inventory_movement_type"]
+          notes?: string | null
+          organization_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          item_id?: string
+          movement_type?: Database["public"]["Enums"]["inventory_movement_type"]
+          notes?: string | null
+          organization_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -545,6 +647,70 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          customer_id: string | null
+          description: string | null
+          id: string
+          organization_id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          organization_id: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -560,6 +726,14 @@ export type Database = {
         | "awaiting_installation"
         | "awaiting_signature"
       customer_status: "active" | "suspended" | "defaulting" | "cancelled"
+      inventory_item_type:
+        | "onu"
+        | "router"
+        | "cable"
+        | "splitter"
+        | "connector"
+        | "other"
+      inventory_movement_type: "in" | "out" | "loan" | "return"
       invoice_status: "pending" | "paid" | "overdue" | "cancelled"
       lead_source:
         | "referral"
@@ -588,6 +762,8 @@ export type Database = {
         | "support"
         | "general"
       technician_status: "active" | "inactive" | "vacation"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status: "open" | "in_progress" | "waiting" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -723,6 +899,15 @@ export const Constants = {
         "awaiting_signature",
       ],
       customer_status: ["active", "suspended", "defaulting", "cancelled"],
+      inventory_item_type: [
+        "onu",
+        "router",
+        "cable",
+        "splitter",
+        "connector",
+        "other",
+      ],
+      inventory_movement_type: ["in", "out", "loan", "return"],
       invoice_status: ["pending", "paid", "overdue", "cancelled"],
       lead_source: [
         "referral",
@@ -755,6 +940,8 @@ export const Constants = {
         "general",
       ],
       technician_status: ["active", "inactive", "vacation"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: ["open", "in_progress", "waiting", "resolved", "closed"],
     },
   },
 } as const
