@@ -134,7 +134,7 @@ export default function Clientes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((customer) => {
+                {paginatedCustomers?.map((customer) => {
                   const address = customer.address as CustomerAddress | null;
                   const status = statusMap[customer.status] || statusMap.active;
                   const score = customer.financial_score ?? 5;
