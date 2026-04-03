@@ -17,15 +17,7 @@ interface FuelLogFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vehicles: Vehicle[];
-  onSubmit: (data: {
-    vehicle_id: string;
-    date: string;
-    liters: number;
-    cost: number;
-    fuel_type: string;
-    km: number | null;
-    notes: string | null;
-  }) => Promise<void>;
+  onSubmit: (data: Omit<FuelLogInsert, "organization_id">) => Promise<void>;
   isLoading: boolean;
 }
 
