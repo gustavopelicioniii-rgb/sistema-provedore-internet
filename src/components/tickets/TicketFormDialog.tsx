@@ -84,7 +84,7 @@ export default function TicketFormDialog({ open, onOpenChange, editing }: Props)
             <Select value={customerId} onValueChange={setCustomerId}>
               <SelectTrigger><SelectValue placeholder="Selecione um cliente (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {customers?.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
