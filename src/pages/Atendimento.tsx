@@ -383,10 +383,49 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
           </div>
         )}
 
+        {/* Pending file preview */}
+        {pendingFile && (
+          <div className="mb-2 flex items-center gap-2 rounded-lg border bg-muted/50 p-2">
+            {pendingPreview ? (
+              <img src={pendingPreview} alt="Preview" className="size-14 rounded object-cover" />
+            ) : (
+              <div className="flex size-14 items-center justify-center rounded bg-muted">
+                {pendingFile.type.startsWith("audio/") ? <Mic className="size-5 text-muted-foreground" /> :
+                 pendingFile.type.startsWith("video/") ? <File className="size-5 text-muted-foreground" /> :
+                 <FileText className="size-5 text-muted-foreground" />}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{pendingFile.name}</p>
+              <p className="text-[10px] text-muted-foreground">{(pendingFile.size / 1024).toFixed(1)} KB</p>
+            </div>
+            <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={clearPendingFile}>
+              <X className="size-3.5" />
+            </Button>
+          </div>
+        )}
+
         <form
           onSubmit={(e) => { e.preventDefault(); if (!showCanned) handleSend(); }}
           className="flex items-center gap-2"
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            onChange={handleFileSelect}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            disabled={conversation.status === "closed" || uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="size-4" />
+          </Button>
           <div className="relative flex-1">
             <Input
               ref={inputRef}
@@ -398,8 +437,12 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
               disabled={conversation.status === "closed"}
             />
           </div>
-          <Button type="submit" size="icon" disabled={!text.trim() || sendMsg.isPending || conversation.status === "closed"}>
-            <Send className="size-4" />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={(!text.trim() && !pendingFile) || sendMsg.isPending || uploading || conversation.status === "closed"}
+          >
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
           </Button>
         </form>
       </div>
