@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, TrendingDown, TrendingUp, AlertTriangle, ClipboardList, Wifi, Star, Loader2, Package, ArrowUpRight, ArrowDownRight, Minus, Bell } from "lucide-react";
+import { Users, DollarSign, TrendingDown, TrendingUp, AlertTriangle, ClipboardList, Wifi, Star, Loader2, Package, ArrowUpRight, ArrowDownRight, Minus, Bell, Ticket, UserX, Wrench } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line,
@@ -246,6 +246,49 @@ export default function Dashboard() {
             subtitle={`${data.defaultingCustomers} clientes em atraso`} icon={AlertTriangle} color="text-destructive" />
         </AnimatedCard>
       </StaggerGrid>
+
+      {/* Secondary KPIs row */}
+      <div className="grid gap-4 grid-cols-3">
+        <MotionCard>
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-warning/10">
+                <UserX className="size-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Churn Rate</p>
+                <p className="text-2xl font-extrabold">{data.churnRate.toFixed(1)}%</p>
+              </div>
+            </CardContent>
+          </Card>
+        </MotionCard>
+        <MotionCard>
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10">
+                <Ticket className="size-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tickets Abertos</p>
+                <p className="text-2xl font-extrabold">{data.openTickets}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </MotionCard>
+        <MotionCard>
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="flex size-11 items-center justify-center rounded-xl bg-warning/10">
+                <Wrench className="size-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">OS Pendentes</p>
+                <p className="text-2xl font-extrabold">{data.pendingServiceOrders}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </MotionCard>
+      </div>
 
       {/* Rings row */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">

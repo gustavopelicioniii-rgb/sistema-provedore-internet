@@ -21,15 +21,16 @@ export interface DashboardMetricData {
   receivedThisMonth: number;
   defaultingCustomers: number;
   overdueRate: number;
+  churnRate: number;
+  openTickets: number;
+  pendingServiceOrders: number;
   revenueData: Array<{ month: string; clientes: number; receita: number }>;
   invoiceStatusData: Array<{ category: string; count: number }>;
   recentActivities: Array<{ text: string; time: string; type: "success" | "warning" | "destructive" }>;
   alerts: AlertItem[];
-  // Trend sparkline data (last 6 months)
   customerSparkline: number[];
   revenueSparkline: number[];
-  // Trend direction
-  customerTrend: number; // percentage change vs previous month
+  customerTrend: number;
   revenueTrend: number;
   hasData: boolean;
 }
@@ -38,13 +39,14 @@ export function useDashboardData() {
   return useQuery({
     queryKey: ["dashboard-data"],
     queryFn: async (): Promise<DashboardMetricData> => {
-      const [customersResult, contractsResult, plansResult, invoicesResult, inventoryResult, serviceOrdersResult] = await Promise.all([
+      const [customersResult, contractsResult, plansResult, invoicesResult, inventoryResult, serviceOrdersResult, ticketsResult] = await Promise.all([
         supabase.from("customers").select("id, name, created_at, status"),
         supabase.from("contracts").select("id, customer_id, plan_id, created_at, status"),
         supabase.from("plans").select("id, name, price, active"),
         supabase.from("invoices").select("id, customer_id, amount, due_date, paid_date, status, created_at"),
         supabase.from("inventory_items").select("id, name, quantity, min_quantity"),
         supabase.from("service_orders").select("id, status, type, created_at").in("status", ["open", "in_progress"]),
+        supabase.from("tickets").select("id, status").in("status", ["open", "in_progress", "waiting"]),
       ]);
 
       if (customersResult.error) throw customersResult.error;
@@ -53,6 +55,7 @@ export function useDashboardData() {
       if (invoicesResult.error) throw invoicesResult.error;
 
       const inventoryItems = inventoryResult.data ?? [];
+      const openTickets = ticketsResult.data?.length ?? 0;
       const pendingOrders = serviceOrdersResult.data ?? [];
 
       const customers = customersResult.data ?? [];
@@ -87,6 +90,10 @@ export function useDashboardData() {
       const overdueInvoices = invoices.filter((invoice) => invoice.normalizedStatus === "overdue");
       const defaultingCustomers = new Set(overdueInvoices.map((invoice) => invoice.customer_id)).size;
       const overdueRate = invoices.length ? (overdueInvoices.length / invoices.length) * 100 : 0;
+
+      // Churn rate: cancelled contracts / total contracts (%)
+      const cancelledContracts = contracts.filter((c) => c.status === "cancelled").length;
+      const churnRate = contracts.length > 0 ? (cancelledContracts / contracts.length) * 100 : 0;
 
       const months = getLastMonths(6);
       const customerBaseline = customers.filter((customer) => new Date(customer.created_at) < months[0].start).length;
@@ -225,6 +232,9 @@ export function useDashboardData() {
         receivedThisMonth,
         defaultingCustomers,
         overdueRate,
+        churnRate,
+        openTickets,
+        pendingServiceOrders: pendingOrders.length,
         revenueData,
         invoiceStatusData,
         recentActivities,
