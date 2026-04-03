@@ -167,6 +167,54 @@ export function useDashboardData() {
           type: activity.type,
         }));
 
+      // Sparklines from revenueData
+      const customerSparkline = revenueData.map((d) => d.clientes);
+      const revenueSparkline = revenueData.map((d) => d.receita);
+
+      // Trend: compare last two months
+      const customerTrend = customerSparkline.length >= 2 && customerSparkline[customerSparkline.length - 2] > 0
+        ? ((customerSparkline[customerSparkline.length - 1] - customerSparkline[customerSparkline.length - 2]) / customerSparkline[customerSparkline.length - 2]) * 100
+        : 0;
+      const revenueTrend = revenueSparkline.length >= 2 && revenueSparkline[revenueSparkline.length - 2] > 0
+        ? ((revenueSparkline[revenueSparkline.length - 1] - revenueSparkline[revenueSparkline.length - 2]) / revenueSparkline[revenueSparkline.length - 2]) * 100
+        : 0;
+
+      // Alerts
+      const alerts: AlertItem[] = [];
+
+      // Overdue invoices alert
+      if (overdueInvoices.length > 0) {
+        alerts.push({
+          type: "overdue",
+          title: `${overdueInvoices.length} fatura(s) vencida(s)`,
+          detail: `Total: ${formatCurrency(overdueInvoices.reduce((s, i) => s + i.amount, 0))}`,
+          severity: "destructive",
+        });
+      }
+
+      // Low stock alerts
+      inventoryItems
+        .filter((item) => item.quantity <= item.min_quantity)
+        .slice(0, 5)
+        .forEach((item) => {
+          alerts.push({
+            type: "low_stock",
+            title: `Estoque baixo: ${item.name}`,
+            detail: `${item.quantity} un. (mín: ${item.min_quantity})`,
+            severity: "warning",
+          });
+        });
+
+      // Pending service orders
+      if (pendingOrders.length > 0) {
+        alerts.push({
+          type: "pending_os",
+          title: `${pendingOrders.length} OS pendente(s)`,
+          detail: `${pendingOrders.filter((o) => o.status === "open").length} abertas, ${pendingOrders.filter((o) => o.status === "in_progress").length} em andamento`,
+          severity: "warning",
+        });
+      }
+
       return {
         activeCustomers,
         totalCustomers,
@@ -180,6 +228,11 @@ export function useDashboardData() {
         revenueData,
         invoiceStatusData,
         recentActivities,
+        alerts,
+        customerSparkline,
+        revenueSparkline,
+        customerTrend,
+        revenueTrend,
         hasData: customers.length > 0 || contracts.length > 0 || plans.length > 0 || invoices.length > 0,
       };
     },
