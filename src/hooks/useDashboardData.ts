@@ -39,13 +39,14 @@ export function useDashboardData() {
   return useQuery({
     queryKey: ["dashboard-data"],
     queryFn: async (): Promise<DashboardMetricData> => {
-      const [customersResult, contractsResult, plansResult, invoicesResult, inventoryResult, serviceOrdersResult] = await Promise.all([
+      const [customersResult, contractsResult, plansResult, invoicesResult, inventoryResult, serviceOrdersResult, ticketsResult] = await Promise.all([
         supabase.from("customers").select("id, name, created_at, status"),
         supabase.from("contracts").select("id, customer_id, plan_id, created_at, status"),
         supabase.from("plans").select("id, name, price, active"),
         supabase.from("invoices").select("id, customer_id, amount, due_date, paid_date, status, created_at"),
         supabase.from("inventory_items").select("id, name, quantity, min_quantity"),
         supabase.from("service_orders").select("id, status, type, created_at").in("status", ["open", "in_progress"]),
+        supabase.from("tickets").select("id, status").in("status", ["open", "in_progress", "waiting"]),
       ]);
 
       if (customersResult.error) throw customersResult.error;
