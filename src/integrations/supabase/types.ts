@@ -1255,6 +1255,67 @@ export type Database = {
           },
         ]
       }
+      traffic_usage: {
+        Row: {
+          contract_id: string | null
+          created_at: string
+          customer_id: string
+          download_bytes: number
+          id: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          source: string
+          upload_bytes: number
+        }
+        Insert: {
+          contract_id?: string | null
+          created_at?: string
+          customer_id: string
+          download_bytes?: number
+          id?: string
+          organization_id: string
+          period_end: string
+          period_start: string
+          source?: string
+          upload_bytes?: number
+        }
+        Update: {
+          contract_id?: string | null
+          created_at?: string
+          customer_id?: string
+          download_bytes?: number
+          id?: string
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          source?: string
+          upload_bytes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traffic_usage_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traffic_usage_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traffic_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           assigned_to: string | null
