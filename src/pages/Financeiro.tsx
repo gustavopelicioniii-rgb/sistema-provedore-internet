@@ -119,7 +119,7 @@ export default function Financeiro() {
 
       {/* Charts */}
       {!isLoading && !error && data && (
-        <div className="grid gap-4 md:grid-cols-7">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
           <Card className="md:col-span-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Faturado vs Recebido (6 meses)</CardTitle>
