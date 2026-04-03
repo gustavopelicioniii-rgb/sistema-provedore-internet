@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_logs: {
+        Row: {
+          automation_id: string
+          error_message: string | null
+          executed_at: string
+          id: string
+          organization_id: string
+          response_payload: Json | null
+          status: Database["public"]["Enums"]["automation_log_status"]
+          trigger_payload: Json | null
+        }
+        Insert: {
+          automation_id: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          organization_id: string
+          response_payload?: Json | null
+          status?: Database["public"]["Enums"]["automation_log_status"]
+          trigger_payload?: Json | null
+        }
+        Update: {
+          automation_id?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          organization_id?: string
+          response_payload?: Json | null
+          status?: Database["public"]["Enums"]["automation_log_status"]
+          trigger_payload?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          action_config: Json
+          action_type: Database["public"]["Enums"]["automation_action_type"]
+          category: Database["public"]["Enums"]["automation_category"]
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          last_triggered_at: string | null
+          name: string
+          organization_id: string
+          trigger_config: Json
+          trigger_type: Database["public"]["Enums"]["automation_trigger_type"]
+          updated_at: string
+          webhook_secret: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          action_config?: Json
+          action_type?: Database["public"]["Enums"]["automation_action_type"]
+          category?: Database["public"]["Enums"]["automation_category"]
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          last_triggered_at?: string | null
+          name: string
+          organization_id: string
+          trigger_config?: Json
+          trigger_type?: Database["public"]["Enums"]["automation_trigger_type"]
+          updated_at?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          action_config?: Json
+          action_type?: Database["public"]["Enums"]["automation_action_type"]
+          category?: Database["public"]["Enums"]["automation_category"]
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          last_triggered_at?: string | null
+          name?: string
+          organization_id?: string
+          trigger_config?: Json
+          trigger_type?: Database["public"]["Enums"]["automation_trigger_type"]
+          updated_at?: string
+          webhook_secret?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canned_responses: {
         Row: {
           content: string
@@ -1209,6 +1319,10 @@ export type Database = {
       get_user_organization_id: { Args: never; Returns: string }
     }
     Enums: {
+      automation_action_type: "webhook_call" | "whatsapp" | "email" | "internal"
+      automation_category: "cobranca" | "atendimento" | "operacional"
+      automation_log_status: "success" | "error" | "skipped"
+      automation_trigger_type: "webhook" | "schedule" | "event"
       chat_channel:
         | "whatsapp"
         | "instagram"
@@ -1414,6 +1528,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      automation_action_type: ["webhook_call", "whatsapp", "email", "internal"],
+      automation_category: ["cobranca", "atendimento", "operacional"],
+      automation_log_status: ["success", "error", "skipped"],
+      automation_trigger_type: ["webhook", "schedule", "event"],
       chat_channel: [
         "whatsapp",
         "instagram",
