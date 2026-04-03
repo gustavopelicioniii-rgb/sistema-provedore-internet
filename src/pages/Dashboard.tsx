@@ -166,7 +166,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-7">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Evolução de Clientes & Receita</CardTitle>
