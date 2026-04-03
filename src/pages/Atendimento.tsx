@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2,
   MessageSquare, Send, User, Bot, Globe, Phone,
-  Instagram, Facebook, Mail, CheckCheck, Clock, XCircle,
+  Instagram, Facebook, Mail, CheckCheck, Check, Clock, XCircle, AlertCircle,
   Paperclip, Image, Mic, FileText, X, File, Download,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
