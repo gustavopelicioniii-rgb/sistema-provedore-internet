@@ -63,12 +63,13 @@ const convStatusConfig: Record<ConversationStatus, { label: string; icon: React.
 };
 
 // --- Conversation List Item ---
-function ConversationItem({ conv, active, onClick }: { conv: Conversation; active: boolean; onClick: () => void }) {
+function ConversationItem({ conv, active, onClick, unreadCount }: { conv: Conversation; active: boolean; onClick: () => void; unreadCount?: number }) {
   const ch = channelConfig[conv.channel];
   const ChIcon = ch.icon;
   const timeAgo = conv.last_message_at
     ? formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ptBR })
     : "";
+  const hasUnread = (unreadCount ?? 0) > 0;
 
   return (
     <button
@@ -76,17 +77,26 @@ function ConversationItem({ conv, active, onClick }: { conv: Conversation; activ
       className={`w-full text-left px-3 py-3 border-b border-border transition-colors hover:bg-muted/50 ${active ? "bg-muted" : ""}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-muted ${ch.color}`}>
-          <ChIcon className="size-4" />
+        <div className="relative mt-0.5">
+          <div className={`flex size-9 shrink-0 items-center justify-center rounded-full bg-muted ${ch.color}`}>
+            <ChIcon className="size-4" />
+          </div>
+          {hasUnread && (
+            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground animate-pulse">
+              {unreadCount! > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between">
-            <p className="truncate text-sm font-medium">
+            <p className={`truncate text-sm ${hasUnread ? "font-bold" : "font-medium"}`}>
               {(conv.customers as any)?.name || conv.channel_contact_id || "Desconhecido"}
             </p>
             <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
           </div>
-          <p className="truncate text-xs text-muted-foreground mt-0.5">{conv.last_message_preview || "Sem mensagens"}</p>
+          <p className={`truncate text-xs mt-0.5 ${hasUnread ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+            {conv.last_message_preview || "Sem mensagens"}
+          </p>
           <div className="flex items-center gap-1.5 mt-1">
             <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${convStatusConfig[conv.status].className}`}>
               {convStatusConfig[conv.status].label}
