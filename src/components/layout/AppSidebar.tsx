@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink, useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import {
   Sidebar,
   SidebarContent,
@@ -64,7 +65,7 @@ const advancedNav = [
   { title: "Configurações", icon: Settings, path: "/configuracoes" },
 ];
 
-function NavGroup({ label, items }: { label: string; items: typeof mainNav }) {
+function NavGroup({ label, items, badgeMap }: { label: string; items: typeof mainNav; badgeMap?: Record<string, number> }) {
   const location = useLocation();
 
   return (
@@ -72,20 +73,28 @@ function NavGroup({ label, items }: { label: string; items: typeof mainNav }) {
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.path}>
-              <SidebarMenuButton
-                asChild
-                isActive={location.pathname === item.path}
-                tooltip={item.title}
-              >
-                <NavLink to={item.path}>
-                  <item.icon className="size-4" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const badge = badgeMap?.[item.path] || 0;
+            return (
+              <SidebarMenuItem key={item.path}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={location.pathname === item.path}
+                  tooltip={item.title}
+                >
+                  <NavLink to={item.path} className="relative">
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
+                    {badge > 0 && (
+                      <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+                        {badge > 99 ? "99+" : badge}
+                      </span>
+                    )}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
@@ -93,6 +102,12 @@ function NavGroup({ label, items }: { label: string; items: typeof mainNav }) {
 }
 
 export function AppSidebar() {
+  const { data: unread } = useUnreadMessages();
+  const badgeMap: Record<string, number> = {};
+  if (unread && unread.total > 0) {
+    badgeMap["/atendimento"] = unread.total;
+  }
+
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="p-4">
@@ -107,7 +122,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent className="scrollbar-thin">
-        <NavGroup label="Principal" items={mainNav} />
+        <NavGroup label="Principal" items={mainNav} badgeMap={badgeMap} />
         <NavGroup label="Operacional" items={operationalNav} />
         <NavGroup label="Financeiro" items={financeNav} />
         <NavGroup label="Avançado" items={advancedNav} />
