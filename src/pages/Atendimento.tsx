@@ -131,14 +131,63 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
 // --- Chat Panel ---
 function ChatPanel({ conversation }: { conversation: Conversation | null }) {
   const { data: messages, isLoading } = useChatMessages(conversation?.id ?? null);
+  const { data: cannedResponses } = useCannedResponses();
   const sendMsg = useSendMessage();
   const updateConv = useUpdateConversation();
   const [text, setText] = useState("");
+  const [showCanned, setShowCanned] = useState(false);
+  const [cannedFilter, setCannedFilter] = useState("");
+  const [cannedIndex, setCannedIndex] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Detect "/" trigger for canned responses
+  useEffect(() => {
+    if (text.startsWith("/")) {
+      const filter = text.slice(1).toLowerCase();
+      setCannedFilter(filter);
+      setShowCanned(true);
+      setCannedIndex(0);
+    } else {
+      setShowCanned(false);
+      setCannedFilter("");
+    }
+  }, [text]);
+
+  const filteredCanned = cannedResponses?.filter((r) =>
+    !cannedFilter ||
+    r.shortcut.toLowerCase().includes(cannedFilter) ||
+    r.title.toLowerCase().includes(cannedFilter) ||
+    r.content.toLowerCase().includes(cannedFilter)
+  ) ?? [];
+
+  const selectCannedResponse = (response: CannedResponse) => {
+    setText(response.content);
+    setShowCanned(false);
+    setCannedFilter("");
+    inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showCanned || !filteredCanned.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setCannedIndex((i) => Math.min(i + 1, filteredCanned.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setCannedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      selectCannedResponse(filteredCanned[cannedIndex]);
+    } else if (e.key === "Escape") {
+      setShowCanned(false);
+    }
+  };
 
   if (!conversation) {
     return (
@@ -159,6 +208,7 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
     if (!text.trim()) return;
     sendMsg.mutate({ conversation_id: conversation.id, content: text.trim() });
     setText("");
+    setShowCanned(false);
   };
 
   return (
@@ -207,19 +257,47 @@ function ChatPanel({ conversation }: { conversation: Conversation | null }) {
         <div ref={bottomRef} />
       </ScrollArea>
 
-      {/* Input */}
+      {/* Input with canned responses */}
       <div className="border-t px-4 py-3">
+        {/* Canned responses popup */}
+        {showCanned && filteredCanned.length > 0 && (
+          <div className="mb-2 max-h-48 overflow-y-auto rounded-lg border bg-popover shadow-md">
+            <div className="px-3 py-1.5 border-b">
+              <p className="text-[10px] font-medium text-muted-foreground">Respostas rápidas — ↑↓ navegar • Enter selecionar • Esc fechar</p>
+            </div>
+            {filteredCanned.map((r, i) => (
+              <button
+                key={r.id}
+                onClick={() => selectCannedResponse(r)}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-muted/50 ${
+                  i === cannedIndex ? "bg-muted" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 font-mono">/{r.shortcut}</Badge>
+                  <span className="font-medium text-xs">{r.title}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{r.content}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+          onSubmit={(e) => { e.preventDefault(); if (!showCanned) handleSend(); }}
           className="flex items-center gap-2"
         >
-          <Input
-            placeholder="Digite sua mensagem..."
-            className="flex-1"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={conversation.status === "closed"}
-          />
+          <div className="relative flex-1">
+            <Input
+              ref={inputRef}
+              placeholder='Digite "/" para respostas rápidas...'
+              className="flex-1"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={conversation.status === "closed"}
+            />
+          </div>
           <Button type="submit" size="icon" disabled={!text.trim() || sendMsg.isPending || conversation.status === "closed"}>
             <Send className="size-4" />
           </Button>
