@@ -91,6 +91,10 @@ export function useDashboardData() {
       const defaultingCustomers = new Set(overdueInvoices.map((invoice) => invoice.customer_id)).size;
       const overdueRate = invoices.length ? (overdueInvoices.length / invoices.length) * 100 : 0;
 
+      // Churn rate: cancelled contracts / total contracts (%)
+      const cancelledContracts = contracts.filter((c) => c.status === "cancelled").length;
+      const churnRate = contracts.length > 0 ? (cancelledContracts / contracts.length) * 100 : 0;
+
       const months = getLastMonths(6);
       const customerBaseline = customers.filter((customer) => new Date(customer.created_at) < months[0].start).length;
       let runningCustomers = customerBaseline;
