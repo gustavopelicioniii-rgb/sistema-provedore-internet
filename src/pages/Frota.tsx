@@ -38,7 +38,7 @@ const fuelTypes: Record<string, string> = {
 };
 
 export default function Frota() {
-  const { vehicles, fuelLogs, isLoading, createVehicle, updateVehicle, deleteVehicle } = useFleet();
+  const { vehicles, fuelLogs, isLoading, createVehicle, updateVehicle, deleteVehicle, createFuelLog } = useFleet();
   const [formOpen, setFormOpen] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
