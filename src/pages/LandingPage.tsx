@@ -269,7 +269,7 @@ export default function LandingPage() {
           transition={{ duration: 0.5 }}
           className="mx-auto max-w-2xl px-4 text-center"
         >
-          <h2 className="text-3xl font-bold tracking-tight">Pronto para transformar seu provedor?</h2>
+          <h2 className="font-display text-3xl font-bold tracking-tight">Pronto para transformar seu provedor?</h2>
           <p className="mt-4 text-muted-foreground">
             Junte-se a centenas de ISPs que já automatizam sua operação com o NetPulse.
           </p>
