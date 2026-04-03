@@ -91,7 +91,8 @@ export default function Dashboard() {
                           name === "receita" ? "Receita" : "Clientes",
                         ]}
                       />
-                      <Area type="monotone" dataKey="clientes" stroke="hsl(var(--chart-1))" fill="url(#colorClientes)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="clientes" stroke="hsl(var(--chart-1))" fill="url(#colorClientes)" strokeWidth={2} name="clientes" />
+                      <Area type="monotone" dataKey="receita" stroke="hsl(var(--chart-2))" fill="none" strokeWidth={2} strokeDasharray="5 3" name="receita" yAxisId="right" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
