@@ -5,16 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-/**
- * Evolution API Webhook - Receives incoming WhatsApp messages
- * 
- * Configure in Evolution API:
- *   Webhook URL: https://<project-ref>.supabase.co/functions/v1/whatsapp-webhook
- *   Events: MESSAGES_UPSERT
- * 
- * Optional: Set EVOLUTION_WEBHOOK_SECRET to validate webhook signatures.
- */
-
 interface EvolutionMessagePayload {
   event: string;
   instance: string;
@@ -37,47 +27,46 @@ interface EvolutionMessagePayload {
     };
     messageType?: string;
     messageTimestamp?: number;
+    // Status update fields
+    status?: string; // DELIVERY_ACK, READ, PLAYED, ERROR
+    keyId?: string;
+    remoteJid?: string;
   };
 }
 
 function extractContent(msg: EvolutionMessagePayload["data"]["message"]): { content: string | null; contentType: string; mediaUrl: string | null } {
   if (!msg) return { content: null, contentType: "text", mediaUrl: null };
 
-  if (msg.conversation) {
-    return { content: msg.conversation, contentType: "text", mediaUrl: null };
-  }
-  if (msg.extendedTextMessage?.text) {
-    return { content: msg.extendedTextMessage.text, contentType: "text", mediaUrl: null };
-  }
-  if (msg.imageMessage) {
-    return { content: msg.imageMessage.caption || null, contentType: "image", mediaUrl: msg.imageMessage.url || null };
-  }
-  if (msg.audioMessage) {
-    return { content: null, contentType: "audio", mediaUrl: msg.audioMessage.url || null };
-  }
-  if (msg.videoMessage) {
-    return { content: msg.videoMessage.caption || null, contentType: "video", mediaUrl: msg.videoMessage.url || null };
-  }
-  if (msg.documentMessage) {
-    return { content: msg.documentMessage.fileName || msg.documentMessage.caption || null, contentType: "document", mediaUrl: msg.documentMessage.url || null };
-  }
-  if (msg.stickerMessage) {
-    return { content: null, contentType: "sticker", mediaUrl: msg.stickerMessage.url || null };
-  }
-  if (msg.locationMessage) {
-    return {
-      content: `${msg.locationMessage.degreesLatitude},${msg.locationMessage.degreesLongitude}`,
-      contentType: "location",
-      mediaUrl: null,
-    };
-  }
+  if (msg.conversation) return { content: msg.conversation, contentType: "text", mediaUrl: null };
+  if (msg.extendedTextMessage?.text) return { content: msg.extendedTextMessage.text, contentType: "text", mediaUrl: null };
+  if (msg.imageMessage) return { content: msg.imageMessage.caption || null, contentType: "image", mediaUrl: msg.imageMessage.url || null };
+  if (msg.audioMessage) return { content: null, contentType: "audio", mediaUrl: msg.audioMessage.url || null };
+  if (msg.videoMessage) return { content: msg.videoMessage.caption || null, contentType: "video", mediaUrl: msg.videoMessage.url || null };
+  if (msg.documentMessage) return { content: msg.documentMessage.fileName || msg.documentMessage.caption || null, contentType: "document", mediaUrl: msg.documentMessage.url || null };
+  if (msg.stickerMessage) return { content: null, contentType: "sticker", mediaUrl: msg.stickerMessage.url || null };
+  if (msg.locationMessage) return { content: `${msg.locationMessage.degreesLatitude},${msg.locationMessage.degreesLongitude}`, contentType: "location", mediaUrl: null };
 
   return { content: null, contentType: "text", mediaUrl: null };
 }
 
 function normalizePhone(jid: string): string {
-  // remoteJid format: 5511999999999@s.whatsapp.net
   return jid.replace(/@.*$/, "");
+}
+
+function mapEvolutionStatus(status: string): string {
+  switch (status?.toUpperCase()) {
+    case "DELIVERY_ACK":
+    case "SERVER_ACK":
+      return "delivered";
+    case "READ":
+    case "PLAYED":
+      return "read";
+    case "ERROR":
+    case "FAILED":
+      return "failed";
+    default:
+      return "sent";
+  }
 }
 
 Deno.serve(async (req) => {
@@ -85,24 +74,19 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Only accept POST
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
-    // Optional webhook secret validation
     const webhookSecret = Deno.env.get("EVOLUTION_WEBHOOK_SECRET");
     if (webhookSecret) {
       const headerSecret = req.headers.get("x-webhook-secret") || req.headers.get("apikey");
       if (headerSecret !== webhookSecret) {
-        console.error("Webhook secret mismatch");
         return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
@@ -110,7 +94,37 @@ Deno.serve(async (req) => {
     const payload: EvolutionMessagePayload = await req.json();
     console.log("Webhook event:", payload.event, "instance:", payload.instance);
 
-    // Only process incoming messages
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // --- Handle message status updates ---
+    const statusEvents = ["messages.update", "MESSAGES_UPDATE", "message-receipt.update", "MESSAGE_RECEIPT_UPDATE"];
+    if (statusEvents.includes(payload.event)) {
+      const messageId = payload.data.keyId || payload.data.key?.id;
+      const newStatus = payload.data.status;
+
+      if (messageId && newStatus) {
+        const deliveryStatus = mapEvolutionStatus(newStatus);
+        const { error } = await supabase
+          .from("chat_messages")
+          .update({ delivery_status: deliveryStatus })
+          .eq("external_message_id", messageId);
+
+        if (error) {
+          console.error("Error updating delivery status:", error);
+        } else {
+          console.log("Delivery status updated:", messageId, "->", deliveryStatus);
+        }
+      }
+
+      return new Response(JSON.stringify({ ok: true, handled: "status_update" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Handle incoming messages ---
     if (payload.event !== "messages.upsert" && payload.event !== "MESSAGES_UPSERT") {
       return new Response(JSON.stringify({ ok: true, skipped: true, reason: "event_not_handled" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -119,36 +133,28 @@ Deno.serve(async (req) => {
 
     const { key, pushName, message } = payload.data;
 
-    // Skip messages sent by us (fromMe)
     if (key.fromMe) {
       return new Response(JSON.stringify({ ok: true, skipped: true, reason: "from_me" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Skip group messages
     if (key.remoteJid.includes("@g.us")) {
       return new Response(JSON.stringify({ ok: true, skipped: true, reason: "group_message" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     const phone = normalizePhone(key.remoteJid);
     const { content, contentType, mediaUrl } = extractContent(message);
 
-    // 1. Find the organization linked to this Evolution instance via channel_configs
+    // Find org by instance
     const { data: channelConfig } = await supabase
       .from("channel_configs")
       .select("organization_id, config")
       .eq("channel", "whatsapp")
       .eq("enabled", true);
 
-    // Find config matching the instance name
     let orgId: string | null = null;
     if (channelConfig && channelConfig.length > 0) {
       for (const cfg of channelConfig) {
@@ -158,21 +164,18 @@ Deno.serve(async (req) => {
           break;
         }
       }
-      // Fallback: if only one config exists, use it
       if (!orgId && channelConfig.length === 1) {
         orgId = channelConfig[0].organization_id;
       }
     }
 
     if (!orgId) {
-      console.error("No organization found for WhatsApp instance:", payload.instance);
-      return new Response(JSON.stringify({ error: "No organization configured for this instance" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      console.error("No organization found for instance:", payload.instance);
+      return new Response(JSON.stringify({ error: "No organization configured" }), {
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // 2. Try to find existing customer by WhatsApp number
     const { data: customer } = await supabase
       .from("customers")
       .select("id, name")
@@ -180,7 +183,6 @@ Deno.serve(async (req) => {
       .or(`whatsapp.eq.${phone},phone.eq.${phone}`)
       .maybeSingle();
 
-    // 3. Find or create conversation
     const { data: existingConv } = await supabase
       .from("conversations")
       .select("id, status")
@@ -196,16 +198,10 @@ Deno.serve(async (req) => {
 
     if (existingConv) {
       conversationId = existingConv.id;
-
-      // Re-open if waiting
       if (existingConv.status === "waiting") {
-        await supabase
-          .from("conversations")
-          .update({ status: "open", updated_at: new Date().toISOString() })
-          .eq("id", conversationId);
+        await supabase.from("conversations").update({ status: "open", updated_at: new Date().toISOString() }).eq("id", conversationId);
       }
     } else {
-      // Create new conversation
       const { data: newConv, error: convError } = await supabase
         .from("conversations")
         .insert({
@@ -221,14 +217,10 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
 
-      if (convError || !newConv) {
-        console.error("Error creating conversation:", convError);
-        throw new Error("Failed to create conversation");
-      }
+      if (convError || !newConv) throw new Error("Failed to create conversation");
       conversationId = newConv.id;
     }
 
-    // 4. Insert message
     const { error: msgError } = await supabase
       .from("chat_messages")
       .insert({
@@ -236,19 +228,16 @@ Deno.serve(async (req) => {
         organization_id: orgId,
         sender_type: "customer",
         sender_id: customer?.id || null,
-        content: content,
+        content,
         content_type: contentType,
         media_url: mediaUrl,
         external_message_id: key.id,
+        delivery_status: "delivered",
         metadata: { pushName: pushName || null, remoteJid: key.remoteJid },
       });
 
-    if (msgError) {
-      console.error("Error inserting message:", msgError);
-      throw new Error("Failed to insert message");
-    }
+    if (msgError) throw new Error("Failed to insert message");
 
-    // 5. Update conversation preview
     await supabase
       .from("conversations")
       .update({
@@ -257,8 +246,6 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", conversationId);
-
-    console.log("Message processed:", { conversationId, phone, contentType });
 
     return new Response(
       JSON.stringify({ ok: true, conversation_id: conversationId }),

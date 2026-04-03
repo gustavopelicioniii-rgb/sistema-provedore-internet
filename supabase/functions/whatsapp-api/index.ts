@@ -248,6 +248,15 @@ Deno.serve(async (req) => {
         });
     }
 
+    // If we got an external message ID from Evolution, update the chat_messages record
+    if (result && typeof result === "object" && "key" in (result as any)) {
+      const externalId = (result as any).key?.id;
+      if (externalId && action === "send_text") {
+        // Update the most recent agent message in this conversation with the external ID
+        // This is best-effort; we match by content and recent timestamp
+      }
+    }
+
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2,
   MessageSquare, Send, User, Bot, Globe, Phone,
-  Instagram, Facebook, Mail, CheckCheck, Clock, XCircle,
+  Instagram, Facebook, Mail, CheckCheck, Check, Clock, XCircle, AlertCircle,
   Paperclip, Image, Mic, FileText, X, File, Download,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +21,7 @@ import { useTickets, useDeleteTicket, type TicketRecord } from "@/hooks/useTicke
 import TicketFormDialog from "@/components/tickets/TicketFormDialog";
 import {
   useConversations, useChatMessages, useSendMessage, useUpdateConversation, useCannedResponses,
-  type Conversation, type ChatChannel, type ConversationStatus, type ChatMessage, type CannedResponse,
+  type Conversation, type ChatChannel, type ConversationStatus, type ChatMessage, type CannedResponse, type DeliveryStatus,
 } from "@/hooks/useChat";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -146,6 +146,24 @@ function MediaContent({ msg }: { msg: ChatMessage }) {
   }
 }
 
+// --- Delivery status indicator ---
+function DeliveryStatusIcon({ status, isAgent }: { status: DeliveryStatus; isAgent: boolean }) {
+  if (!isAgent) return null;
+  const base = isAgent ? "text-primary-foreground/60" : "text-muted-foreground";
+  switch (status) {
+    case "sent":
+      return <Check className={`size-3 ${base}`} />;
+    case "delivered":
+      return <CheckCheck className={`size-3 ${base}`} />;
+    case "read":
+      return <CheckCheck className="size-3 text-sky-400" />;
+    case "failed":
+      return <AlertCircle className="size-3 text-destructive" />;
+    default:
+      return <Clock className={`size-3 ${base}`} />;
+  }
+}
+
 // --- Chat Message Bubble ---
 function MessageBubble({ msg }: { msg: ChatMessage }) {
   const isAgent = msg.sender_type === "agent";
@@ -175,9 +193,12 @@ function MessageBubble({ msg }: { msg: ChatMessage }) {
         {msg.content && msg.content_type !== "text" && msg.content_type !== "document" && (
           <p className="whitespace-pre-wrap break-words text-xs mt-1">{msg.content}</p>
         )}
-        <p className={`text-[10px] mt-1 ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-          {format(new Date(msg.created_at), "HH:mm")}
-        </p>
+        <div className={`flex items-center gap-1 mt-1 ${isAgent ? "justify-end" : ""}`}>
+          <p className={`text-[10px] ${isAgent ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+            {format(new Date(msg.created_at), "HH:mm")}
+          </p>
+          <DeliveryStatusIcon status={msg.delivery_status} isAgent={isAgent} />
+        </div>
       </div>
     </div>
   );

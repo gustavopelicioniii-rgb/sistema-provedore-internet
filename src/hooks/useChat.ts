@@ -26,6 +26,8 @@ export interface Conversation {
   profiles?: { full_name: string | null } | null;
 }
 
+export type DeliveryStatus = "sent" | "delivered" | "read" | "failed";
+
 export interface ChatMessage {
   id: string;
   conversation_id: string;
@@ -38,6 +40,7 @@ export interface ChatMessage {
   external_message_id: string | null;
   metadata: Record<string, unknown>;
   read_at: string | null;
+  delivery_status: DeliveryStatus;
   created_at: string;
 }
 
