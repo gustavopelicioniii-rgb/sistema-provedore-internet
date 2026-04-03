@@ -182,14 +182,25 @@ export default function LandingPage() {
             className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {features.map((f) => (
-              <motion.div key={f.title} variants={fadeUp} transition={{ duration: 0.4 }}>
-                <Card className="group h-full transition-shadow hover:shadow-md">
+              <motion.div
+                key={f.title}
+                variants={fadeUp}
+                transition={{ duration: 0.4 }}
+                whileHover={{ y: -6, transition: { duration: 0.25, ease: "easeOut" } }}
+              >
+                <Card className="group h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/8 border-transparent hover:border-primary/20">
                   <CardContent className="p-6">
-                    <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                    <motion.div
+                      className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground"
+                      whileHover={{ rotate: [0, -8, 8, 0], transition: { duration: 0.5 } }}
+                    >
                       <f.icon className="size-5" />
-                    </div>
+                    </motion.div>
                     <h3 className="mt-4 font-semibold">{f.title}</h3>
                     <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                    <div className="mt-4 flex items-center gap-1 text-xs font-medium text-primary opacity-0 translate-x-[-4px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                      Saiba mais <ArrowRight className="size-3" />
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
