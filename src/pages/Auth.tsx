@@ -36,7 +36,7 @@ export default function Auth() {
   }, [searchParams]);
 
   if (loading) return <FullPageSpinner />;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
