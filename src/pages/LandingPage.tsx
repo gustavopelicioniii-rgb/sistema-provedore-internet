@@ -129,14 +129,18 @@ export default function LandingPage() {
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
             <Link to="/auth?tab=signup">
-              <Button size="lg" className="px-8 text-base">
-                Começar Grátis por 14 Dias <ArrowRight className="ml-2 size-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Button size="lg" className="px-8 text-base">
+                  Começar Grátis por 14 Dias <ArrowRight className="ml-2 size-4" />
+                </Button>
+              </motion.div>
             </Link>
             <a href="#features">
-              <Button variant="outline" size="lg" className="px-8 text-base">
-                Conhecer Recursos
-              </Button>
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                <Button variant="outline" size="lg" className="px-8 text-base">
+                  Conhecer Recursos
+                </Button>
+              </motion.div>
             </a>
           </motion.div>
 
@@ -182,14 +186,25 @@ export default function LandingPage() {
             className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {features.map((f) => (
-              <motion.div key={f.title} variants={fadeUp} transition={{ duration: 0.4 }}>
-                <Card className="group h-full transition-shadow hover:shadow-md">
+              <motion.div
+                key={f.title}
+                variants={fadeUp}
+                transition={{ duration: 0.4 }}
+                whileHover={{ y: -6, transition: { duration: 0.25, ease: "easeOut" } }}
+              >
+                <Card className="group h-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/8 border-transparent hover:border-primary/20">
                   <CardContent className="p-6">
-                    <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                    <motion.div
+                      className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground"
+                      whileHover={{ rotate: [0, -8, 8, 0], transition: { duration: 0.5 } }}
+                    >
                       <f.icon className="size-5" />
-                    </div>
+                    </motion.div>
                     <h3 className="mt-4 font-semibold">{f.title}</h3>
                     <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                    <div className="mt-4 flex items-center gap-1 text-xs font-medium text-primary opacity-0 translate-x-[-4px] transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                      Saiba mais <ArrowRight className="size-3" />
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -224,8 +239,13 @@ export default function LandingPage() {
             className="mt-12 grid gap-6 md:grid-cols-3"
           >
             {plans.map((plan) => (
-              <motion.div key={plan.name} variants={fadeUp} transition={{ duration: 0.4 }}>
-                <Card className={`relative h-full flex flex-col ${plan.highlight ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary" : ""}`}>
+              <motion.div
+                key={plan.name}
+                variants={fadeUp}
+                transition={{ duration: 0.4 }}
+                whileHover={{ y: -8, transition: { duration: 0.25, ease: "easeOut" } }}
+              >
+                <Card className={`relative h-full flex flex-col transition-all duration-300 hover:shadow-xl ${plan.highlight ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary" : "hover:border-primary/20 hover:shadow-primary/8"}`}>
                   {plan.highlight && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <Badge className="bg-primary text-primary-foreground shadow-sm">Mais Popular</Badge>
@@ -247,9 +267,11 @@ export default function LandingPage() {
                       ))}
                     </ul>
                     <Link to="/auth?tab=signup" className="mt-8 block">
-                      <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
-                        Começar Agora <ChevronRight className="ml-1 size-4" />
-                      </Button>
+                      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
+                          Começar Agora <ChevronRight className="ml-1 size-4" />
+                        </Button>
+                      </motion.div>
                     </Link>
                   </CardContent>
                 </Card>
