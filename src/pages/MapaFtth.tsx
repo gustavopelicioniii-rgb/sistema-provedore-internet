@@ -85,6 +85,7 @@ export default function MapaFtth() {
   const [search, setSearch] = useState("");
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FtthNode["type"] | "all">("all");
+  const [activeTab, setActiveTab] = useState("map");
 
   const filtered = mockNodes.filter((n) => {
     const matchesSearch =
@@ -171,7 +172,7 @@ export default function MapaFtth() {
         ))}
       </div>
 
-      <Tabs defaultValue="map">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="map">
             <MapPin className="mr-2 size-4" /> Visualização
@@ -291,7 +292,10 @@ export default function MapaFtth() {
                             size="icon"
                             className="size-8"
                             title="Ver no mapa"
-                            onClick={() => setFlyTo({ lat: node.lat, lng: node.lng })}
+                            onClick={() => {
+                              setFlyTo({ lat: node.lat, lng: node.lng });
+                              setActiveTab("map");
+                            }}
                           >
                             <MapPin className="size-4" />
                           </Button>
