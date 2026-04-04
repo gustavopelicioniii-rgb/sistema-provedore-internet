@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import bcrypt from "npm:bcryptjs@2.4.3";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const LoginSchema = z.object({
@@ -134,7 +134,7 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
   }
 
   // Verify password
-  const match = await bcrypt.compare(password, cred.password_hash);
+  const match = bcrypt.compareSync(password, cred.password_hash);
   if (!match) {
     return new Response(JSON.stringify({ error: "CPF ou senha inválidos" }), {
       status: 401,
@@ -228,8 +228,8 @@ async function handleRegister(req: Request, adminClient: ReturnType<typeof creat
   const cpfDigits = cpf.replace(/\D/g, "");
 
   // Hash password
-  const salt = await bcrypt.genSalt(10);
-  const password_hash = await bcrypt.hash(password, salt);
+  const salt = bcrypt.genSaltSync(10);
+  const password_hash = bcrypt.hashSync(password, salt);
 
   // Upsert credentials
   const { data, error } = await adminClient
