@@ -947,6 +947,56 @@ export type Database = {
           },
         ]
       }
+      notification_alerts: {
+        Row: {
+          channel: string
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          read: boolean
+          reference_id: string | null
+          reference_type: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          read?: boolean
+          reference_id?: string | null
+          reference_type?: string | null
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          read?: boolean
+          reference_id?: string | null
+          reference_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           address: Json | null
