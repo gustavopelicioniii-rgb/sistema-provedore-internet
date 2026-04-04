@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet, Settings } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -21,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { downloadCsv, downloadPdfTable, downloadXlsx } from "@/utils/exportData";
 import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
+import { FinancialHealthKpis } from "@/components/billing/FinancialHealthKpis";
+import { BillingRulesManager } from "@/components/billing/BillingRulesManager";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -165,143 +168,162 @@ export default function Financeiro() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="py-3 px-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <DateRangeFilter
-              value={filters}
-              onChange={setFilters}
-              statusOptions={statusOptions}
-            />
-            <div className="relative ml-auto">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar cliente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 w-48 pl-8 text-xs"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="health">Saúde Financeira</TabsTrigger>
+          <TabsTrigger value="billing-rules">
+            <Settings className="mr-1 size-3.5" /> Régua de Cobrança
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Hero KPIs */}
-      <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <AnimatedCard index={0}><HeroKpi title="Faturamento" value={formatCurrency(filteredKpis.billing)} icon={DollarSign} color="text-primary" /></AnimatedCard>
-        <AnimatedCard index={1}><HeroKpi title="Recebido" value={formatCurrency(filteredKpis.received)} icon={CheckCircle} color="text-success" /></AnimatedCard>
-        <AnimatedCard index={2}><HeroKpi title="A Receber" value={formatCurrency(filteredKpis.receivable)} icon={TrendingUp} color="text-warning" /></AnimatedCard>
-        <AnimatedCard index={3}><HeroKpi title="Inadimplentes" value={`${filteredKpis.defaulting} clientes`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
-      </StaggerGrid>
-
-      {/* Charts */}
-      {!isLoading && !error && data && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
-          <Card className="md:col-span-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Faturado vs Recebido (6 meses)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.monthlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                      tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={tooltipStyle}
-                      formatter={(value: number) => formatCurrency(value)} />
-                    <Bar dataKey="faturado" name="Faturado" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="recebido" name="Recebido" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+        <TabsContent value="overview" className="space-y-4">
+          {/* Filters */}
+          <Card>
+            <CardContent className="py-3 px-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <DateRangeFilter value={filters} onChange={setFilters} statusOptions={statusOptions} />
+                <div className="relative ml-auto">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                  <Input placeholder="Buscar cliente..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-8 w-48 pl-8 text-xs" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-3">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Faturas por Status</CardTitle>
+          {/* Hero KPIs */}
+          <StaggerGrid className="grid gap-4 grid-cols-2 md:grid-cols-4">
+            <AnimatedCard index={0}><HeroKpi title="Faturamento" value={formatCurrency(filteredKpis.billing)} icon={DollarSign} color="text-primary" /></AnimatedCard>
+            <AnimatedCard index={1}><HeroKpi title="Recebido" value={formatCurrency(filteredKpis.received)} icon={CheckCircle} color="text-success" /></AnimatedCard>
+            <AnimatedCard index={2}><HeroKpi title="A Receber" value={formatCurrency(filteredKpis.receivable)} icon={TrendingUp} color="text-warning" /></AnimatedCard>
+            <AnimatedCard index={3}><HeroKpi title="Inadimplentes" value={`${filteredKpis.defaulting} clientes`} icon={AlertTriangle} color="text-destructive" /></AnimatedCard>
+          </StaggerGrid>
+
+          {/* Charts */}
+          {!isLoading && !error && data && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} className="grid gap-4 md:grid-cols-7">
+              <Card className="md:col-span-4">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Faturado vs Recebido (6 meses)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.monthlyTrend}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="month" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                        <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                          tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
+                        <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => formatCurrency(value)} />
+                        <Bar dataKey="faturado" name="Faturado" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="recebido" name="Recebido" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Faturas por Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={data.statusBreakdown.filter((d) => d.count > 0)} cx="50%" cy="50%"
+                          innerRadius={55} outerRadius={85} paddingAngle={3}
+                          dataKey="count" nameKey="category"
+                          label={({ category, count }) => `${category}: ${count}`}
+                          labelLine={false}
+                        >
+                          {data.statusBreakdown.filter((d) => d.count > 0).map((_, i) => (
+                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Invoices table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Faturas</CardTitle>
+                <Badge variant="secondary" className="text-xs">{filteredInvoices.length} resultados</Badge>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={data.statusBreakdown.filter((d) => d.count > 0)} cx="50%" cy="50%"
-                      innerRadius={55} outerRadius={85} paddingAngle={3}
-                      dataKey="count" nameKey="category"
-                      label={({ category, count }) => `${category}: ${count}`}
-                      labelLine={false}
-                    >
-                      {data.statusBreakdown.filter((d) => d.count > 0).map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : error ? (
+                <div className="py-12 text-center text-sm text-destructive">Não foi possível carregar os dados financeiros.</div>
+              ) : !filteredInvoices.length ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma fatura encontrada com os filtros selecionados.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">{invoice.customerName}</TableCell>
+                        <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                        <TableCell className="text-muted-foreground">{formatDate(invoice.dueDate)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={invoiceStatusClasses[invoice.status]}>
+                            {invoiceStatusLabels[invoice.status]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {(invoice.status === "pending" || invoice.status === "overdue") && (
+                            <Button variant="ghost" size="sm" className="text-success hover:text-success"
+                              onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
+                              <CheckCircle className="mr-1 size-3.5" /> Baixa
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
-        </motion.div>
-      )}
+        </TabsContent>
 
-      {/* Invoices table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Faturas</CardTitle>
-            <Badge variant="secondary" className="text-xs">{filteredInvoices.length} resultados</Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
+        <TabsContent value="health" className="space-y-4">
+          {!isLoading && !error && data ? (
+            <FinancialHealthKpis data={data} />
+          ) : isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
-          ) : error ? (
-            <div className="py-12 text-center text-sm text-destructive">Não foi possível carregar os dados financeiros.</div>
-          ) : !filteredInvoices.length ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Nenhuma fatura encontrada com os filtros selecionados.</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">{invoice.customerName}</TableCell>
-                    <TableCell>{formatCurrency(invoice.amount)}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(invoice.dueDate)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={invoiceStatusClasses[invoice.status]}>
-                        {invoiceStatusLabels[invoice.status]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {(invoice.status === "pending" || invoice.status === "overdue") && (
-                        <Button variant="ghost" size="sm" className="text-success hover:text-success"
-                          onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
-                          <CheckCircle className="mr-1 size-3.5" /> Baixa
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="py-12 text-center text-sm text-destructive">Erro ao carregar dados.</div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        <TabsContent value="billing-rules">
+          <BillingRulesManager />
+        </TabsContent>
+      </Tabs>
 
       {/* Pay dialog */}
       <Dialog open={!!payDialog} onOpenChange={(v) => !v && setPayDialog(null)}>
