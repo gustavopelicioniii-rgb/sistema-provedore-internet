@@ -550,6 +550,62 @@ export type Database = {
           },
         ]
       }
+      ftth_nodes: {
+        Row: {
+          address: string | null
+          capacity: number
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          name: string
+          node_type: Database["public"]["Enums"]["ftth_node_type"]
+          notes: string | null
+          organization_id: string
+          status: Database["public"]["Enums"]["ftth_node_status"]
+          updated_at: string
+          used: number
+        }
+        Insert: {
+          address?: string | null
+          capacity?: number
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          node_type?: Database["public"]["Enums"]["ftth_node_type"]
+          notes?: string | null
+          organization_id: string
+          status?: Database["public"]["Enums"]["ftth_node_status"]
+          updated_at?: string
+          used?: number
+        }
+        Update: {
+          address?: string | null
+          capacity?: number
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          node_type?: Database["public"]["Enums"]["ftth_node_type"]
+          notes?: string | null
+          organization_id?: string
+          status?: Database["public"]["Enums"]["ftth_node_status"]
+          updated_at?: string
+          used?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ftth_nodes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fuel_logs: {
         Row: {
           cost: number
@@ -1528,6 +1584,8 @@ export type Database = {
         | "authorized"
         | "rejected"
         | "cancelled"
+      ftth_node_status: "active" | "full" | "inactive"
+      ftth_node_type: "cto" | "ceo" | "splitter" | "pop"
       fuel_type: "gasoline" | "ethanol" | "diesel" | "flex"
       inventory_item_type:
         | "onu"
@@ -1742,6 +1800,8 @@ export const Constants = {
         "rejected",
         "cancelled",
       ],
+      ftth_node_status: ["active", "full", "inactive"],
+      ftth_node_type: ["cto", "ceo", "splitter", "pop"],
       fuel_type: ["gasoline", "ethanol", "diesel", "flex"],
       inventory_item_type: [
         "onu",
