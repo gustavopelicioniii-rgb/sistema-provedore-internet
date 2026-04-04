@@ -1,0 +1,2 @@
+
+ALTER TABLE public.contracts ADD COLUMN billing_day INTEGER NOT NULL DEFAULT 10;

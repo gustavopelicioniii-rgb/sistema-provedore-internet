@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
   const [customerId, setCustomerId] = useState("");
   const [planId, setPlanId] = useState("");
   const [status, setStatus] = useState<ContractStatus>("awaiting_installation");
+  const [billingDay, setBillingDay] = useState(10);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
 
@@ -45,12 +47,14 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
         setCustomerId(editingContract.customer_id);
         setPlanId(editingContract.plan_id);
         setStatus(editingContract.status);
+        setBillingDay((editingContract as any).billing_day ?? 10);
         setStartDate(editingContract.start_date ? new Date(editingContract.start_date + "T00:00:00") : undefined);
         setEndDate(editingContract.end_date ? new Date(editingContract.end_date + "T00:00:00") : undefined);
       } else {
         setCustomerId("");
         setPlanId("");
         setStatus("awaiting_installation");
+        setBillingDay(10);
         setStartDate(undefined);
         setEndDate(undefined);
       }
@@ -65,6 +69,7 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
       customer_id: customerId,
       plan_id: planId,
       status,
+      billing_day: billingDay,
       start_date: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
       end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
     };
@@ -122,6 +127,13 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label>Dia de Vencimento</Label>
+            <Input type="number" min={1} max={31} value={billingDay}
+              onChange={(e) => setBillingDay(Math.min(31, Math.max(1, parseInt(e.target.value) || 10)))} />
+            <p className="text-xs text-muted-foreground mt-1">Dia do mês para vencimento das faturas (1-31)</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

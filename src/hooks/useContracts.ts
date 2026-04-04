@@ -15,6 +15,7 @@ export interface ContractFormData {
   start_date?: string;
   end_date?: string;
   signed_at?: string;
+  billing_day?: number;
   installation_address?: Record<string, string>;
   authentication?: Record<string, string>;
 }
@@ -68,6 +69,7 @@ export function useCreateContract() {
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         signed_at: form.signed_at || null,
+        billing_day: form.billing_day ?? 10,
         installation_address: (form.installation_address ?? {}) as Json,
         authentication: (form.authentication ?? {}) as Json,
       };
@@ -99,6 +101,7 @@ export function useUpdateContract() {
       if (data.start_date !== undefined) update.start_date = data.start_date || null;
       if (data.end_date !== undefined) update.end_date = data.end_date || null;
       if (data.signed_at !== undefined) update.signed_at = data.signed_at || null;
+      if (data.billing_day !== undefined) (update as any).billing_day = data.billing_day;
       if (data.installation_address !== undefined) update.installation_address = (data.installation_address ?? {}) as Json;
       if (data.authentication !== undefined) update.authentication = (data.authentication ?? {}) as Json;
 
