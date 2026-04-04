@@ -228,8 +228,8 @@ async function handleRegister(req: Request, adminClient: ReturnType<typeof creat
   const cpfDigits = cpf.replace(/\D/g, "");
 
   // Hash password
-  const salt = genSaltSync(10);
-  const password_hash = hashSync(password, salt);
+  const salt = bcrypt.genSaltSync(10);
+  const password_hash = bcrypt.hashSync(password, salt);
 
   // Upsert credentials
   const { data, error } = await adminClient
