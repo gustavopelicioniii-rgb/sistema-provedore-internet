@@ -134,7 +134,7 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
   }
 
   // Verify password
-  const match = compareSync(password, cred.password_hash);
+  const match = bcrypt.compareSync(password, cred.password_hash);
   if (!match) {
     return new Response(JSON.stringify({ error: "CPF ou senha inválidos" }), {
       status: 401,
