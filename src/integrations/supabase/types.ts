@@ -124,6 +124,123 @@ export type Database = {
           },
         ]
       }
+      bank_reconciliations: {
+        Row: {
+          created_at: string
+          file_format: string
+          file_name: string
+          id: string
+          imported_at: string
+          matched_count: number
+          notes: string | null
+          organization_id: string
+          status: Database["public"]["Enums"]["reconciliation_status"]
+          total_amount: number | null
+          unmatched_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_format?: string
+          file_name: string
+          id?: string
+          imported_at?: string
+          matched_count?: number
+          notes?: string | null
+          organization_id: string
+          status?: Database["public"]["Enums"]["reconciliation_status"]
+          total_amount?: number | null
+          unmatched_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_format?: string
+          file_name?: string
+          id?: string
+          imported_at?: string
+          matched_count?: number
+          notes?: string | null
+          organization_id?: string
+          status?: Database["public"]["Enums"]["reconciliation_status"]
+          total_amount?: number | null
+          unmatched_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          fitid: string | null
+          id: string
+          matched_invoice_id: string | null
+          memo: string | null
+          organization_id: string
+          reconciliation_id: string
+          status: Database["public"]["Enums"]["bank_transaction_status"]
+          transaction_date: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          fitid?: string | null
+          id?: string
+          matched_invoice_id?: string | null
+          memo?: string | null
+          organization_id: string
+          reconciliation_id: string
+          status?: Database["public"]["Enums"]["bank_transaction_status"]
+          transaction_date: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          fitid?: string | null
+          id?: string
+          matched_invoice_id?: string | null
+          memo?: string | null
+          organization_id?: string
+          reconciliation_id?: string
+          status?: Database["public"]["Enums"]["bank_transaction_status"]
+          transaction_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_matched_invoice_id_fkey"
+            columns: ["matched_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "bank_reconciliations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_rule_executions: {
         Row: {
           billing_rule_id: string
@@ -1365,6 +1482,44 @@ export type Database = {
           },
         ]
       }
+      sla_configs: {
+        Row: {
+          created_at: string
+          id: string
+          max_resolution_minutes: number
+          max_response_minutes: number
+          organization_id: string
+          priority: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_resolution_minutes?: number
+          max_response_minutes?: number
+          organization_id: string
+          priority?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_resolution_minutes?: number
+          max_response_minutes?: number
+          organization_id?: string
+          priority?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriber_credentials: {
         Row: {
           cpf: string
@@ -1409,6 +1564,118 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_availability: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          organization_id: string
+          start_time: string
+          technician_id: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          organization_id: string
+          start_time?: string
+          technician_id: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          organization_id?: string
+          start_time?: string
+          technician_id?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_availability_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_availability_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_schedules: {
+        Row: {
+          created_at: string
+          date: string
+          end_time: string
+          id: string
+          notes: string | null
+          organization_id: string
+          service_order_id: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["schedule_status"]
+          technician_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          service_order_id?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["schedule_status"]
+          technician_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          service_order_id?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["schedule_status"]
+          technician_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_schedules_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_schedules_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
             referencedColumns: ["id"]
           },
         ]
@@ -1466,10 +1733,12 @@ export type Database = {
           created_at: string
           customer_id: string | null
           description: string | null
+          first_response_at: string | null
           id: string
           organization_id: string
           priority: Database["public"]["Enums"]["ticket_priority"]
           resolved_at: string | null
+          sla_breached: boolean
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
           updated_at: string
@@ -1479,10 +1748,12 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           description?: string | null
+          first_response_at?: string | null
           id?: string
           organization_id: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolved_at?: string | null
+          sla_breached?: boolean
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
           updated_at?: string
@@ -1492,10 +1763,12 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           description?: string | null
+          first_response_at?: string | null
           id?: string
           organization_id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolved_at?: string | null
+          sla_breached?: boolean
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string
           updated_at?: string
@@ -1585,6 +1858,38 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           assigned_to: string | null
@@ -1655,12 +1960,21 @@ export type Database = {
         Returns: Record<string, unknown>
       }
       get_user_organization_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "manager" | "technician" | "financial" | "support"
       automation_action_type: "webhook_call" | "whatsapp" | "email" | "internal"
       automation_category: "cobranca" | "atendimento" | "operacional"
       automation_log_status: "success" | "error" | "skipped"
       automation_trigger_type: "webhook" | "schedule" | "event"
+      bank_transaction_status: "unmatched" | "matched" | "ignored"
       chat_channel:
         | "whatsapp"
         | "instagram"
@@ -1726,6 +2040,8 @@ export type Database = {
         | "won"
         | "lost"
       plan_technology: "fiber" | "radio" | "cable" | "other"
+      reconciliation_status: "pending" | "processing" | "completed" | "error"
+      schedule_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       service_order_status: "open" | "in_progress" | "completed" | "cancelled"
       service_order_type:
         | "installation"
@@ -1868,10 +2184,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "manager", "technician", "financial", "support"],
       automation_action_type: ["webhook_call", "whatsapp", "email", "internal"],
       automation_category: ["cobranca", "atendimento", "operacional"],
       automation_log_status: ["success", "error", "skipped"],
       automation_trigger_type: ["webhook", "schedule", "event"],
+      bank_transaction_status: ["unmatched", "matched", "ignored"],
       chat_channel: [
         "whatsapp",
         "instagram",
@@ -1945,6 +2263,8 @@ export const Constants = {
         "lost",
       ],
       plan_technology: ["fiber", "radio", "cable", "other"],
+      reconciliation_status: ["pending", "processing", "completed", "error"],
+      schedule_status: ["scheduled", "in_progress", "completed", "cancelled"],
       service_order_status: ["open", "in_progress", "completed", "cancelled"],
       service_order_type: [
         "installation",
