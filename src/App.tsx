@@ -26,6 +26,7 @@ import PortalAssinante from "@/pages/PortalAssinante";
 import Automacoes from "@/pages/Automacoes";
 import Relatorios from "@/pages/Relatorios";
 import Configuracoes from "@/pages/Configuracoes";
+import Agenda from "@/pages/Agenda";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import LandingPage from "@/pages/LandingPage";
@@ -74,6 +75,7 @@ const AppRoutes = React.forwardRef<HTMLDivElement>(function AppRoutes(_props, _r
         <Route path="/mapa-ftth" element={<MapaFtth />} />
         <Route path="/ordens-servico" element={<OrdensServico />} />
         <Route path="/tecnicos" element={<Tecnicos />} />
+        <Route path="/agenda" element={<Agenda />} />
         <Route path="/financeiro" element={<Financeiro />} />
         <Route path="/planos" element={<Planos />} />
         <Route path="/contratos" element={<Contratos />} />

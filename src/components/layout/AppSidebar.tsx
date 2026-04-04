@@ -16,6 +16,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  CalendarDays,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink, useLocation } from "react-router-dom";
@@ -48,6 +49,7 @@ const operationalNav = [
   { title: "Mapa FTTH", icon: Map, path: "/mapa-ftth" },
   { title: "Ordens de Serviço", icon: ClipboardList, path: "/ordens-servico" },
   { title: "Técnicos", icon: Wrench, path: "/tecnicos" },
+  { title: "Agenda", icon: CalendarDays, path: "/agenda" },
 ];
 
 const financeNav = [
