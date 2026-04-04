@@ -65,19 +65,23 @@ export function InvoicesTab() {
     }
   };
 
-  const handleDownloadPdf = (inv: any) => {
+  const handleDownloadPdf = async (inv: any) => {
     const st = INVOICE_STATUS[inv.status] ?? { label: inv.status, variant: "outline" as const };
-    generateBoletoPdf({
-      id: inv.id,
-      customerName: (inv.customers as any)?.name ?? "—",
-      amount: inv.amount,
-      dueDate: inv.due_date,
-      status: inv.status,
-      statusLabel: st.label,
-      barcode: inv.barcode,
-      pixQrcode: inv.pix_qrcode,
-    });
-    toast({ title: "Boleto PDF baixado!" });
+    try {
+      await generateBoletoPdf({
+        id: inv.id,
+        customerName: (inv.customers as any)?.name ?? "—",
+        amount: inv.amount,
+        dueDate: inv.due_date,
+        status: inv.status,
+        statusLabel: st.label,
+        barcode: inv.barcode,
+        pixQrcode: inv.pix_qrcode,
+      });
+      toast({ title: "Boleto PDF baixado!" });
+    } catch {
+      toast({ title: "Erro ao gerar PDF", variant: "destructive" });
+    }
   };
 
   if (isLoading) {
