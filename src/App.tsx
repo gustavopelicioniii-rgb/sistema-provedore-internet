@@ -26,6 +26,7 @@ import PortalAssinante from "@/pages/PortalAssinante";
 import Automacoes from "@/pages/Automacoes";
 import Relatorios from "@/pages/Relatorios";
 import Configuracoes from "@/pages/Configuracoes";
+import Agenda from "@/pages/Agenda";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import LandingPage from "@/pages/LandingPage";
