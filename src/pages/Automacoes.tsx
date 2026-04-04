@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff, FileText, UserCheck, AlertTriangle, CreditCard, Bell, Clock, MessageSquare, Mail, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Zap, Trash2, Pencil, Copy, ExternalLink, CheckCircle2, XCircle, SkipForward, Eye, EyeOff, FileText, UserCheck, AlertTriangle, CreditCard, Bell, Clock, MessageSquare, Mail, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAutomations, type Automation, type AutomationLog } from "@/hooks/useAutomations";
 import AutomationFormDialog from "@/components/automations/AutomationFormDialog";
+import AiAutomationAssistant from "@/components/automations/AiAutomationAssistant";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -138,6 +139,7 @@ export default function Automacoes() {
   const [editing, setEditing] = useState<Automation | null>(null);
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  const [aiOpen, setAiOpen] = useState(false);
 
   const toggleLogExpand = (id: string) => {
     setExpandedLogs((prev) => {
@@ -205,9 +207,14 @@ export default function Automacoes() {
           <h1 className="text-2xl font-bold tracking-tight">Automações</h1>
           <p className="text-muted-foreground text-sm">Crie automações reais com webhooks universais e integre com n8n, Zapier ou Make</p>
         </div>
-        <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
-          <Plus className="mr-2 size-4" />Nova Automação
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-2 size-4" />Criar com IA
+          </Button>
+          <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
+            <Plus className="mr-2 size-4" />Nova Automação
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -467,6 +474,12 @@ export default function Automacoes() {
         onOpenChange={setFormOpen}
         onSubmit={handleSubmit}
         automation={editing}
+      />
+
+      <AiAutomationAssistant
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        onCreateAutomation={(values) => createAutomation.mutate(values as Partial<Automation>)}
       />
     </div>
   );
