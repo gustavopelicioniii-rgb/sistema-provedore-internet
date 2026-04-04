@@ -57,6 +57,8 @@ const AppRoutes = React.forwardRef<HTMLDivElement>(function AppRoutes(_props, _r
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/portal/login" element={<SubscriberAuthProvider><PortalLogin /></SubscriberAuthProvider>} />
+      <Route path="/portal" element={<SubscriberAuthProvider><PortalDashboard /></SubscriberAuthProvider>} />
       <Route
         element={
           <ProtectedRoute>
