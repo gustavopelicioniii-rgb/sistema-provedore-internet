@@ -101,6 +101,7 @@ export function useUpdateContract() {
       if (data.start_date !== undefined) update.start_date = data.start_date || null;
       if (data.end_date !== undefined) update.end_date = data.end_date || null;
       if (data.signed_at !== undefined) update.signed_at = data.signed_at || null;
+      if (data.billing_day !== undefined) (update as any).billing_day = data.billing_day;
       if (data.installation_address !== undefined) update.installation_address = (data.installation_address ?? {}) as Json;
       if (data.authentication !== undefined) update.authentication = (data.authentication ?? {}) as Json;
 
