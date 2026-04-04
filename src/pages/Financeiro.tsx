@@ -24,6 +24,7 @@ import { downloadCsv, downloadPdfTable, downloadXlsx } from "@/utils/exportData"
 import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeFilter";
 import { FinancialHealthKpis } from "@/components/billing/FinancialHealthKpis";
 import { BillingRulesManager } from "@/components/billing/BillingRulesManager";
+import { BankReconciliationTab } from "@/components/billing/BankReconciliationTab";
 
 const COLORS = [
   "hsl(var(--chart-1))",
