@@ -292,7 +292,10 @@ export default function MapaFtth() {
                             size="icon"
                             className="size-8"
                             title="Ver no mapa"
-                            onClick={() => setFlyTo({ lat: node.lat, lng: node.lng })}
+                            onClick={() => {
+                              setFlyTo({ lat: node.lat, lng: node.lng });
+                              setActiveTab("map");
+                            }}
                           >
                             <MapPin className="size-4" />
                           </Button>
