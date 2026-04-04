@@ -69,6 +69,7 @@ export function useCreateContract() {
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         signed_at: form.signed_at || null,
+        billing_day: form.billing_day ?? 10,
         installation_address: (form.installation_address ?? {}) as Json,
         authentication: (form.authentication ?? {}) as Json,
       };
