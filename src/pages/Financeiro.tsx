@@ -176,6 +176,9 @@ export default function Financeiro() {
           <TabsTrigger value="billing-rules">
             <Settings className="mr-1 size-3.5" /> Régua de Cobrança
           </TabsTrigger>
+          <TabsTrigger value="bank">
+            <FileText className="mr-1 size-3.5" /> Conciliação Bancária
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
