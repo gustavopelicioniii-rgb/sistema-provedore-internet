@@ -26,6 +26,7 @@ import type { NetworkDevice, NetworkDeviceInsert } from "@/hooks/useNetworkDevic
 import NetworkDeviceFormDialog from "@/components/network/NetworkDeviceFormDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { NocAlerts } from "@/components/network/NocAlerts";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
