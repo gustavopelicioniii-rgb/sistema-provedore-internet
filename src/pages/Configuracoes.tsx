@@ -1073,6 +1073,14 @@ export default function Configuracoes() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="permissoes" className="space-y-4">
+          <RbacManager />
+        </TabsContent>
+
+        <TabsContent value="sla" className="space-y-4">
+          <SlaConfigManager />
+        </TabsContent>
       </Tabs>
     </div>
   );
