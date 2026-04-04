@@ -475,6 +475,12 @@ export default function Automacoes() {
         onSubmit={handleSubmit}
         automation={editing}
       />
+
+      <AiAutomationAssistant
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        onCreateAutomation={(values) => createAutomation.mutate(values as Partial<Automation>)}
+      />
     </div>
   );
 }
