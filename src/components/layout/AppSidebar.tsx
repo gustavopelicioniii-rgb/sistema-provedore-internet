@@ -16,6 +16,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  CalendarDays,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { NavLink, useLocation } from "react-router-dom";
