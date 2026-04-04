@@ -1194,6 +1194,54 @@ export type Database = {
           },
         ]
       }
+      subscriber_credentials: {
+        Row: {
+          cpf: string
+          created_at: string
+          customer_id: string
+          id: string
+          last_login_at: string | null
+          organization_id: string
+          password_hash: string
+          updated_at: string
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          last_login_at?: string | null
+          organization_id: string
+          password_hash: string
+          updated_at?: string
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          last_login_at?: string | null
+          organization_id?: string
+          password_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriber_credentials_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriber_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technicians: {
         Row: {
           created_at: string
