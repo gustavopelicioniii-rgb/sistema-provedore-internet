@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Loader2, Trash2, Bell, Ban, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { supabase as sbClient } from "@/integrations/supabase/client";
 
 const actionLabels: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   notify: { label: "Notificar", icon: Bell, color: "text-blue-500" },
