@@ -895,6 +895,8 @@ export default function Configuracoes() {
           <TabsTrigger value="notificacoes"><Bell className="size-4 mr-1.5" />Notificações</TabsTrigger>
           <TabsTrigger value="respostas"><Zap className="size-4 mr-1.5" />Respostas Rápidas</TabsTrigger>
           <TabsTrigger value="aparencia"><Palette className="size-4 mr-1.5" />Aparência</TabsTrigger>
+          <TabsTrigger value="permissoes"><Shield className="size-4 mr-1.5" />Permissões</TabsTrigger>
+          <TabsTrigger value="sla">SLA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="empresa" className="space-y-4">
