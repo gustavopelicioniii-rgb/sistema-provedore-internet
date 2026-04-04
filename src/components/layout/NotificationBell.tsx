@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   useRealtimeNotifications,
   RealtimeNotification,
 } from "@/hooks/useRealtimeNotifications";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const typeColors: Record<string, string> = {
@@ -27,13 +28,54 @@ export function NotificationBell() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleNotification = useCallback((n: RealtimeNotification) => {
-    setNotifications((prev) => [n, ...prev].slice(0, 50));
+    setNotifications((prev) => {
+      const exists = prev.some((p) => p.id === n.id);
+      if (exists) return prev;
+      return [n, ...prev].slice(0, 50);
+    });
   }, []);
 
   useRealtimeNotifications(handleNotification);
 
-  const markAllRead = () => {
+  // Load persisted alerts on mount
+  useEffect(() => {
+    const loadAlerts = async () => {
+      const { data } = await supabase
+        .from("notification_alerts")
+        .select("*")
+        .eq("channel", "in_app")
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (data && data.length > 0) {
+        const mapped: RealtimeNotification[] = data.map((row: any) => ({
+          id: row.id,
+          type: row.reference_type === "invoice_due" ? "invoice" as const : "ticket" as const,
+          title: row.title,
+          description: row.description || "",
+          createdAt: new Date(row.created_at),
+          read: row.read,
+        }));
+        setNotifications((prev) => {
+          const ids = new Set(prev.map((p) => p.id));
+          const newOnes = mapped.filter((m) => !ids.has(m.id));
+          return [...prev, ...newOnes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 50);
+        });
+      }
+    };
+    loadAlerts();
+  }, []);
+
+  const markAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    // Mark persisted alerts as read
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    if (unreadIds.length > 0) {
+      await supabase
+        .from("notification_alerts")
+        .update({ read: true })
+        .in("id", unreadIds);
+    }
   };
 
   return (
