@@ -85,6 +85,7 @@ export default function MapaFtth() {
   const [search, setSearch] = useState("");
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null);
   const [activeFilter, setActiveFilter] = useState<FtthNode["type"] | "all">("all");
+  const [activeTab, setActiveTab] = useState("map");
 
   const filtered = mockNodes.filter((n) => {
     const matchesSearch =
