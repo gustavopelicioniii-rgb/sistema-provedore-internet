@@ -37,6 +37,7 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
   const [customerId, setCustomerId] = useState("");
   const [planId, setPlanId] = useState("");
   const [status, setStatus] = useState<ContractStatus>("awaiting_installation");
+  const [billingDay, setBillingDay] = useState(10);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
 
