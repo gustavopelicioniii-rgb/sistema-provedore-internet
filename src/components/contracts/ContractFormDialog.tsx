@@ -69,6 +69,7 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
       customer_id: customerId,
       plan_id: planId,
       status,
+      billing_day: billingDay,
       start_date: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
       end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
     };
