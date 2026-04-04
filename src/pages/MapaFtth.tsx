@@ -172,7 +172,7 @@ export default function MapaFtth() {
         ))}
       </div>
 
-      <Tabs defaultValue="map">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="map">
             <MapPin className="mr-2 size-4" /> Visualização
