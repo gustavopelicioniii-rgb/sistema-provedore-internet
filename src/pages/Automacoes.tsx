@@ -139,6 +139,7 @@ export default function Automacoes() {
   const [editing, setEditing] = useState<Automation | null>(null);
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  const [aiOpen, setAiOpen] = useState(false);
 
   const toggleLogExpand = (id: string) => {
     setExpandedLogs((prev) => {
