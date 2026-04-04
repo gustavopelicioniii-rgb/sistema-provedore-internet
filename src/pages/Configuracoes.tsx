@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff, Plus, Pencil, Trash2, Zap, RefreshCw, QrCode, Power, PowerOff, Wifi, WifiOff, CheckCircle2, XCircle, Smartphone } from "lucide-react";
+import { RbacManager, SlaConfigManager } from "@/components/settings/RbacAndSlaManagers";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
