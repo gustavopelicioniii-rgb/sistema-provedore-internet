@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff, Plus, Pencil, Trash2, Zap } from "lucide-react";
+import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff, Plus, Pencil, Trash2, Zap, RefreshCw, QrCode, Power, PowerOff, Wifi, WifiOff, CheckCircle2, XCircle, Smartphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
