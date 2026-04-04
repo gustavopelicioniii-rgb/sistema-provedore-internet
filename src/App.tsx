@@ -29,7 +29,10 @@ import Configuracoes from "@/pages/Configuracoes";
 import Auth from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import LandingPage from "@/pages/LandingPage";
+import PortalLogin from "@/pages/PortalLogin";
+import PortalDashboard from "@/pages/PortalDashboard";
 import NotFound from "@/pages/NotFound";
+import { SubscriberAuthProvider } from "@/hooks/useSubscriberAuth";
 
 const queryClient = new QueryClient();
 
