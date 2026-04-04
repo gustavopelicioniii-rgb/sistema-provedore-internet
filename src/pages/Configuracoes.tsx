@@ -471,9 +471,288 @@ function RespostasRapidasTab() {
 }
 
 
+// ── WhatsApp Instance Manager (Evolution API v2) ──
+function WhatsAppInstanceManager() {
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [instanceData, setInstanceData] = useState<any>(null);
+  const [qrDialog, setQrDialog] = useState(false);
+  const [qrData, setQrData] = useState<any>(null);
+  const [createDialog, setCreateDialog] = useState(false);
+  const [newInstanceName, setNewInstanceName] = useState("");
+  const [newInstanceNumber, setNewInstanceNumber] = useState("");
+  const { toast } = useToast();
+
+  const callWhatsAppApi = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-api`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ action, params }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "API error");
+    }
+    return data.data;
+  }, []);
+
+  const checkStatus = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await callWhatsAppApi("instance_connection_state");
+      setStatus(result?.instance?.state || result?.state || "unknown");
+      setInstanceData(result);
+    } catch (e: any) {
+      setStatus("error");
+      toast({ title: "Erro ao verificar status", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  }, [callWhatsAppApi, toast]);
+
+  const handleConnect = async () => {
+    setLoading(true);
+    try {
+      const result = await callWhatsAppApi("instance_connect");
+      setQrData(result);
+      setQrDialog(true);
+    } catch (e: any) {
+      toast({ title: "Erro ao conectar", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const handleCreate = async () => {
+    if (!newInstanceName.trim()) {
+      toast({ title: "Informe o nome da instância", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
+      const params: Record<string, unknown> = {
+        instanceName: newInstanceName.trim(),
+        webhookUrl,
+      };
+      if (newInstanceNumber.trim()) {
+        params.number = newInstanceNumber.trim();
+      }
+      const result = await callWhatsAppApi("instance_create", params);
+      toast({ title: "Instância criada com sucesso!" });
+      setCreateDialog(false);
+      setNewInstanceName("");
+      setNewInstanceNumber("");
+
+      // If QR code returned, show it
+      if (result?.qrcode || result?.pairingCode) {
+        setQrData(result);
+        setQrDialog(true);
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao criar instância", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const handleRestart = async () => {
+    setLoading(true);
+    try {
+      await callWhatsAppApi("instance_restart");
+      toast({ title: "Instância reiniciada!" });
+      setTimeout(checkStatus, 2000);
+    } catch (e: any) {
+      toast({ title: "Erro ao reiniciar", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await callWhatsAppApi("instance_logout");
+      toast({ title: "Desconectado do WhatsApp" });
+      setStatus("close");
+    } catch (e: any) {
+      toast({ title: "Erro ao desconectar", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const handleFetchInstances = async () => {
+    setLoading(true);
+    try {
+      const result = await callWhatsAppApi("instance_fetch");
+      setInstanceData(result);
+      toast({ title: `${Array.isArray(result) ? result.length : 0} instância(s) encontrada(s)` });
+    } catch (e: any) {
+      toast({ title: "Erro ao buscar instâncias", description: e.message, variant: "destructive" });
+    }
+    setLoading(false);
+  };
+
+  const statusColor = status === "open" ? "text-emerald-500" : status === "close" ? "text-destructive" : "text-muted-foreground";
+  const statusLabel = status === "open" ? "Conectado" : status === "close" ? "Desconectado" : status === "error" ? "Erro" : status || "—";
+  const StatusIcon = status === "open" ? CheckCircle2 : status === "close" ? XCircle : WifiOff;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+              <Smartphone className="size-4" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Gerenciamento da Instância</CardTitle>
+              <CardDescription className="text-xs">
+                Controle sua conexão WhatsApp via Evolution API v2
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <StatusIcon className={`size-4 ${statusColor}`} />
+            <span className={`text-xs font-medium ${statusColor}`}>{statusLabel}</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        <Separator />
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={checkStatus} disabled={loading}>
+            {loading ? <Loader2 className="size-3 animate-spin mr-1.5" /> : <Wifi className="size-3 mr-1.5" />}
+            Verificar Status
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleConnect} disabled={loading}>
+            <QrCode className="size-3 mr-1.5" />QR Code / Parear
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setCreateDialog(true)} disabled={loading}>
+            <Plus className="size-3 mr-1.5" />Nova Instância
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleFetchInstances} disabled={loading}>
+            <RefreshCw className="size-3 mr-1.5" />Listar Instâncias
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleRestart} disabled={loading}>
+            <Power className="size-3 mr-1.5" />Reiniciar
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleLogout} disabled={loading} className="text-destructive hover:text-destructive">
+            <PowerOff className="size-3 mr-1.5" />Desconectar
+          </Button>
+        </div>
+
+        {/* Instance list display */}
+        {instanceData && Array.isArray(instanceData) && instanceData.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Instâncias encontradas:</p>
+            <div className="grid gap-2">
+              {instanceData.map((inst: any, i: number) => (
+                <div key={i} className="flex items-center justify-between rounded-md border p-2.5 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="size-3.5 text-muted-foreground" />
+                    <span className="font-medium">{inst.instance?.instanceName || inst.instanceName || `Instância ${i + 1}`}</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {inst.instance?.status || inst.status || "unknown"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+
+      {/* QR Code / Pairing Dialog */}
+      <Dialog open={qrDialog} onOpenChange={setQrDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><QrCode className="size-5" />Conectar WhatsApp</DialogTitle>
+            <DialogDescription>Escaneie o QR Code ou use o código de pareamento no WhatsApp</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrData?.base64 && (
+              <img
+                src={qrData.base64.startsWith("data:") ? qrData.base64 : `data:image/png;base64,${qrData.base64}`}
+                alt="QR Code WhatsApp"
+                className="w-64 h-64 rounded-lg border"
+              />
+            )}
+            {qrData?.pairingCode && (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Código de Pareamento:</p>
+                <code className="text-2xl font-bold tracking-widest text-primary">{qrData.pairingCode}</code>
+              </div>
+            )}
+            {qrData?.code && !qrData?.base64 && !qrData?.pairingCode && (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Código:</p>
+                <code className="text-sm break-all bg-muted p-2 rounded">{qrData.code}</code>
+              </div>
+            )}
+            {!qrData?.base64 && !qrData?.pairingCode && !qrData?.code && (
+              <p className="text-sm text-muted-foreground">Nenhum QR Code disponível. Verifique se a instância foi criada.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setQrDialog(false); checkStatus(); }}>
+              Fechar e Verificar Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Instance Dialog */}
+      <Dialog open={createDialog} onOpenChange={setCreateDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar Nova Instância</DialogTitle>
+            <DialogDescription>Crie uma instância da Evolution API para conectar o WhatsApp</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Nome da Instância</Label>
+              <Input
+                value={newInstanceName}
+                onChange={(e) => setNewInstanceName(e.target.value)}
+                placeholder="minha-instancia"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Número do WhatsApp (opcional)</Label>
+              <Input
+                value={newInstanceNumber}
+                onChange={(e) => setNewInstanceNumber(e.target.value)}
+                placeholder="5511999999999"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Se informado, usa pareamento por código em vez de QR Code.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialog(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={loading}>
+              {loading ? <><Loader2 className="size-3 animate-spin mr-1.5" />Criando...</> : "Criar Instância"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 function CanaisTab() {
   const { data: configs, isLoading } = useChannelConfigs();
   const channels: ChatChannel[] = ["whatsapp", "instagram", "facebook", "website", "telegram", "email"];
+  const whatsappConfig = configs?.find((c) => c.channel === "whatsapp");
+  const hasWhatsappConfigured = whatsappConfig?.enabled && (whatsappConfig.config as any)?.api_url;
 
   if (isLoading) {
     return (
@@ -501,12 +780,15 @@ function CanaisTab() {
         })}
       </div>
 
+      {/* WhatsApp Instance Manager — only shows when WhatsApp is configured */}
+      {hasWhatsappConfigured && <WhatsAppInstanceManager />}
+
       <Card>
         <CardContent className="p-4">
           <p className="text-xs text-muted-foreground">
             <strong>WhatsApp:</strong> Configure a URL do webhook na Evolution API como:{" "}
             <code className="bg-muted px-1.5 py-0.5 rounded text-[11px]">
-              https://nqkhnkwudrsjuuhspknq.supabase.co/functions/v1/whatsapp-webhook
+              {import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook
             </code>
           </p>
         </CardContent>
