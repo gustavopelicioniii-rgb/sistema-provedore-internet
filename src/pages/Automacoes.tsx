@@ -207,9 +207,14 @@ export default function Automacoes() {
           <h1 className="text-2xl font-bold tracking-tight">Automações</h1>
           <p className="text-muted-foreground text-sm">Crie automações reais com webhooks universais e integre com n8n, Zapier ou Make</p>
         </div>
-        <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
-          <Plus className="mr-2 size-4" />Nova Automação
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-2 size-4" />Criar com IA
+          </Button>
+          <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
+            <Plus className="mr-2 size-4" />Nova Automação
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
