@@ -124,6 +124,118 @@ export type Database = {
           },
         ]
       }
+      billing_rule_executions: {
+        Row: {
+          billing_rule_id: string
+          customer_id: string
+          error_message: string | null
+          executed_at: string
+          id: string
+          invoice_id: string
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          billing_rule_id: string
+          customer_id: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          invoice_id: string
+          organization_id: string
+          status?: string
+        }
+        Update: {
+          billing_rule_id?: string
+          customer_id?: string
+          error_message?: string | null
+          executed_at?: string
+          id?: string
+          invoice_id?: string
+          organization_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_rule_executions_billing_rule_id_fkey"
+            columns: ["billing_rule_id"]
+            isOneToOne: false
+            referencedRelation: "billing_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_rule_executions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_rule_executions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_rule_executions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_rules: {
+        Row: {
+          action: string
+          channel: string
+          created_at: string
+          days_offset: number
+          enabled: boolean
+          id: string
+          organization_id: string
+          priority: number
+          rule_name: string
+          template_message: string | null
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          channel?: string
+          created_at?: string
+          days_offset?: number
+          enabled?: boolean
+          id?: string
+          organization_id: string
+          priority?: number
+          rule_name: string
+          template_message?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          channel?: string
+          created_at?: string
+          days_offset?: number
+          enabled?: boolean
+          id?: string
+          organization_id?: string
+          priority?: number
+          rule_name?: string
+          template_message?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canned_responses: {
         Row: {
           content: string
