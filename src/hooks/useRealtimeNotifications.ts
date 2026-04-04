@@ -115,6 +115,30 @@ export function useRealtimeNotifications(onNotification?: NotificationListener) 
           queryClient.invalidateQueries({ queryKey: ["tickets"] });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notification_alerts" },
+        (payload) => {
+          const row = payload.new as any;
+          if (row.channel === "in_app") {
+            const n: RealtimeNotification = {
+              id: row.id,
+              type: row.reference_type === "invoice_due" ? "invoice" : "ticket",
+              title: row.title,
+              description: row.description || "",
+              createdAt: new Date(row.created_at),
+              read: false,
+            };
+            if (row.type === "warning") {
+              toast.warning(n.title, { description: n.description });
+            } else {
+              toast.info(n.title, { description: n.description });
+            }
+            emit(n);
+            queryClient.invalidateQueries({ queryKey: ["notification-alerts"] });
+          }
+        }
+      )
       .subscribe();
 
     return () => {
