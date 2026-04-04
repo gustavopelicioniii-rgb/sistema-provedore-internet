@@ -22,6 +22,7 @@ const routeNames: Record<string, string> = {
   "/mapa-ftth": "Mapa FTTH",
   "/ordens-servico": "Ordens de Serviço",
   "/tecnicos": "Técnicos",
+  "/agenda": "Agenda de Técnicos",
   "/financeiro": "Financeiro",
   "/fiscal": "Fiscal / NF-e",
   "/estoque": "Estoque",
