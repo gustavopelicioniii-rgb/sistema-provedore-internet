@@ -129,6 +129,13 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
             </Select>
           </div>
 
+          <div>
+            <Label>Dia de Vencimento</Label>
+            <Input type="number" min={1} max={31} value={billingDay}
+              onChange={(e) => setBillingDay(Math.min(31, Math.max(1, parseInt(e.target.value) || 10)))} />
+            <p className="text-xs text-muted-foreground mt-1">Dia do mês para vencimento das faturas (1-31)</p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label>Data início</Label>
