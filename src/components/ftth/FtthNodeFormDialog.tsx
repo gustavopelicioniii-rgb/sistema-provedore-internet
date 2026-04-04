@@ -1,11 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import L from "leaflet";
+import { MapPin } from "lucide-react";
 import type { FtthNode } from "@/hooks/useFtthNodes";
+
+const pickerIcon = L.divIcon({
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
+    <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="#6366f1" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="14" cy="14" r="6" fill="#fff"/>
+    <text x="14" y="17" text-anchor="middle" font-size="9" font-weight="bold" fill="#6366f1">+</text>
+  </svg>`,
+  className: "",
+  iconSize: [28, 40],
+  iconAnchor: [14, 40],
+});
+
+function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onPick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([lat, lng], map.getZoom());
+  }, [lat, lng, map]);
+  return null;
+}
 
 interface Props {
   open: boolean;
@@ -59,6 +90,11 @@ export default function FtthNodeFormDialog({ open, onOpenChange, node, onSubmit,
       setNotes("");
     }
   }, [node, open]);
+
+  const handlePick = useCallback((newLat: number, newLng: number) => {
+    setLat(parseFloat(newLat.toFixed(6)));
+    setLng(parseFloat(newLng.toFixed(6)));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +152,31 @@ export default function FtthNodeFormDialog({ open, onOpenChange, node, onSubmit,
                   <SelectItem value="inactive">Inativo</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Mini-map picker */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <MapPin className="size-3.5" />
+              Localização — clique no mapa para definir
+            </Label>
+            <div className="rounded-md overflow-hidden border border-border h-[200px]">
+              <MapContainer
+                center={[lat, lng]}
+                zoom={14}
+                scrollWheelZoom
+                style={{ height: "100%", width: "100%" }}
+                className="z-0"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <ClickHandler onPick={handlePick} />
+                <RecenterMap lat={lat} lng={lng} />
+                <Marker position={[lat, lng]} icon={pickerIcon} />
+              </MapContainer>
             </div>
           </div>
 
