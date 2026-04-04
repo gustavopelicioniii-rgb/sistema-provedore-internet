@@ -54,9 +54,17 @@ const emptyForm: RuleForm = {
 };
 
 export function BillingRulesManager() {
-  const { organizationId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: organizationId } = useQuery({
+    queryKey: ["user-org-id"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_user_organization_id");
+      if (error) throw error;
+      return data as string;
+    },
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<RuleForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
