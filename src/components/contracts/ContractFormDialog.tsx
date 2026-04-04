@@ -47,12 +47,14 @@ export default function ContractFormDialog({ open, onOpenChange, editingContract
         setCustomerId(editingContract.customer_id);
         setPlanId(editingContract.plan_id);
         setStatus(editingContract.status);
+        setBillingDay((editingContract as any).billing_day ?? 10);
         setStartDate(editingContract.start_date ? new Date(editingContract.start_date + "T00:00:00") : undefined);
         setEndDate(editingContract.end_date ? new Date(editingContract.end_date + "T00:00:00") : undefined);
       } else {
         setCustomerId("");
         setPlanId("");
         setStatus("awaiting_installation");
+        setBillingDay(10);
         setStartDate(undefined);
         setEndDate(undefined);
       }
