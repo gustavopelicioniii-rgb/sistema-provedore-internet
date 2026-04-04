@@ -23,7 +23,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify the user is authenticated
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -35,7 +34,6 @@ serve(async (req) => {
       });
     }
 
-    // Get user's organization
     const adminClient = createClient(supabaseUrl, serviceKey);
     const { data: profile } = await adminClient
       .from("profiles")
@@ -52,10 +50,23 @@ serve(async (req) => {
 
     const orgId = profile.organization_id;
 
-    // Get active contracts with plan prices
+    // Parse optional params
+    let targetMonth: number | undefined;
+    let targetYear: number | undefined;
+    try {
+      const body = await req.json();
+      targetMonth = body?.month;
+      targetYear = body?.year;
+    } catch { /* no body is fine */ }
+
+    const now = new Date();
+    const refMonth = targetMonth ?? now.getMonth() + 2; // next month (1-indexed)
+    const refYear = targetYear ?? now.getFullYear();
+
+    // Get active contracts with plan prices and billing_day
     const { data: contracts, error: contractsError } = await adminClient
       .from("contracts")
-      .select("id, customer_id, plan_id, plans(price)")
+      .select("id, customer_id, plan_id, billing_day, plans(price)")
       .eq("organization_id", orgId)
       .eq("status", "active");
 
@@ -66,33 +77,52 @@ serve(async (req) => {
       });
     }
 
-    // Calculate due date: day 10 of next month
-    const now = new Date();
-    const dueDate = new Date(now.getFullYear(), now.getMonth() + 1, 10);
-    const dueDateStr = dueDate.toISOString().split("T")[0];
+    // Build invoices with per-contract billing_day
+    const newInvoices: Array<{
+      organization_id: string;
+      customer_id: string;
+      contract_id: string;
+      amount: number;
+      due_date: string;
+      status: "pending";
+    }> = [];
 
-    // Check which contracts already have invoices for this due date
     const contractIds = contracts.map((c) => c.id);
+
+    // Get all existing invoices for this org in the target month range to avoid duplicates
+    const monthStart = `${refYear}-${String(refMonth).padStart(2, "0")}-01`;
+    const nextMonth = refMonth === 12 ? 1 : refMonth + 1;
+    const nextYear = refMonth === 12 ? refYear + 1 : refYear;
+    const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
     const { data: existingInvoices } = await adminClient
       .from("invoices")
-      .select("contract_id")
+      .select("contract_id, due_date")
       .eq("organization_id", orgId)
-      .eq("due_date", dueDateStr)
+      .gte("due_date", monthStart)
+      .lt("due_date", monthEnd)
       .in("contract_id", contractIds);
 
     const existingContractIds = new Set((existingInvoices ?? []).map((i) => i.contract_id));
 
-    // Create invoices for contracts that don't have one yet
-    const newInvoices = contracts
-      .filter((c) => !existingContractIds.has(c.id))
-      .map((c) => ({
+    for (const contract of contracts) {
+      if (existingContractIds.has(contract.id)) continue;
+
+      const billingDay = contract.billing_day || 10;
+      // Clamp to last day of month
+      const lastDay = new Date(refYear, refMonth, 0).getDate();
+      const day = Math.min(billingDay, lastDay);
+      const dueDateStr = `${refYear}-${String(refMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+      newInvoices.push({
         organization_id: orgId,
-        customer_id: c.customer_id,
-        contract_id: c.id,
-        amount: (c.plans as any)?.price ?? 0,
+        customer_id: contract.customer_id,
+        contract_id: contract.id,
+        amount: (contract.plans as any)?.price ?? 0,
         due_date: dueDateStr,
-        status: "pending" as const,
-      }));
+        status: "pending",
+      });
+    }
 
     if (!newInvoices.length) {
       return new Response(JSON.stringify({ message: "Todas as faturas já foram geradas para este período", created: 0 }), {
@@ -103,11 +133,18 @@ serve(async (req) => {
     const { error: insertError } = await adminClient.from("invoices").insert(newInvoices);
     if (insertError) throw insertError;
 
+    // Group by due date for summary
+    const byDate = new Map<string, number>();
+    newInvoices.forEach((inv) => {
+      byDate.set(inv.due_date, (byDate.get(inv.due_date) || 0) + 1);
+    });
+    const summary = Array.from(byDate.entries()).map(([date, count]) => `${count} fatura(s) para ${date}`).join(", ");
+
     return new Response(
       JSON.stringify({
-        message: `${newInvoices.length} fatura(s) gerada(s) com sucesso para vencimento em ${dueDateStr}`,
+        message: `${newInvoices.length} fatura(s) gerada(s) com sucesso. ${summary}`,
         created: newInvoices.length,
-        due_date: dueDateStr,
+        details: Object.fromEntries(byDate),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
