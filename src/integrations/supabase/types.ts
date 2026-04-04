@@ -375,6 +375,7 @@ export type Database = {
       contracts: {
         Row: {
           authentication: Json | null
+          billing_day: number
           created_at: string
           customer_id: string
           end_date: string | null
@@ -389,6 +390,7 @@ export type Database = {
         }
         Insert: {
           authentication?: Json | null
+          billing_day?: number
           created_at?: string
           customer_id: string
           end_date?: string | null
@@ -403,6 +405,7 @@ export type Database = {
         }
         Update: {
           authentication?: Json | null
+          billing_day?: number
           created_at?: string
           customer_id?: string
           end_date?: string | null
