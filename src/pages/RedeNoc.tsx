@@ -218,6 +218,9 @@ export default function RedeNoc() {
         </motion.div>
       )}
 
+      {/* Recent NOC Alerts */}
+      <NocAlerts />
+
       {/* Filters + Devices table */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
