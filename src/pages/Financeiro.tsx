@@ -327,6 +327,10 @@ export default function Financeiro() {
         <TabsContent value="billing-rules">
           <BillingRulesManager />
         </TabsContent>
+
+        <TabsContent value="bank">
+          <BankReconciliationTab />
+        </TabsContent>
       </Tabs>
 
       {/* Pay dialog */}
