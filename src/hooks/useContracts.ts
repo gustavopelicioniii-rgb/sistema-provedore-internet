@@ -15,6 +15,7 @@ export interface ContractFormData {
   start_date?: string;
   end_date?: string;
   signed_at?: string;
+  billing_day?: number;
   installation_address?: Record<string, string>;
   authentication?: Record<string, string>;
 }
