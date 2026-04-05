@@ -2,21 +2,32 @@ import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Wifi, Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { MapPin, Wifi, Search, Zap, Phone, Mail, User, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { formatCurrency } from "@/utils/finance";
+import { toast } from "sonner";
 
 const markerColors: Record<string, string> = {
   cto: "#6366f1",
   ceo: "#10b981",
   splitter: "#f59e0b",
   pop: "#ef4444",
+};
+
+const coverageRadius: Record<string, number> = {
+  cto: 300,
+  ceo: 500,
+  splitter: 200,
+  pop: 1000,
 };
 
 function createIcon(type: string, status: string) {
@@ -53,6 +64,90 @@ function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// Lead capture form component
+function LeadCaptureForm({ orgId, orgName }: { orgId: string; orgName: string }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !phone.trim()) {
+      toast.error("Preencha nome e telefone.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("leads").insert({
+        organization_id: orgId,
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim() || null,
+        notes: message.trim() || `Contato via mapa de cobertura - ${orgName}`,
+        source: "website" as any,
+        stage: "new" as any,
+      });
+      if (error) throw error;
+      setSubmitted(true);
+      toast.success("Solicitação enviada com sucesso!");
+    } catch {
+      toast.error("Erro ao enviar. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <Card className="border-emerald-500/30 bg-emerald-500/5">
+        <CardContent className="p-6 text-center space-y-2">
+          <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 mx-auto">
+            <Send className="size-5 text-emerald-500" />
+          </div>
+          <p className="font-semibold text-emerald-700 dark:text-emerald-400">Solicitação enviada!</p>
+          <p className="text-sm text-muted-foreground">Entraremos em contato em breve.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Phone className="size-4" /> Quero Contratar
+        </CardTitle>
+        <CardDescription>Preencha seus dados e entraremos em contato</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Nome *</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome completo" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Telefone / WhatsApp *</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">E-mail</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" type="email" />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Mensagem (opcional)</Label>
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Gostaria de saber mais sobre..." rows={2} />
+        </div>
+        <Button onClick={handleSubmit} disabled={submitting} className="w-full">
+          {submitting ? "Enviando..." : "Solicitar Contato"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Cobertura() {
   const { slug } = useParams<{ slug: string }>();
   const [checkResult, setCheckResult] = useState<{ viable: boolean; distance: number; nodeName: string } | null>(null);
@@ -82,6 +177,22 @@ export default function Cobertura() {
         .eq("organization_id", org!.id)
         .in("status", ["active", "full"])
         .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!org?.id,
+  });
+
+  // Fetch plans for this org (public)
+  const { data: plans = [] } = useQuery({
+    queryKey: ["public-plans", org?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plans")
+        .select("id, name, price, download_speed, upload_speed, technology")
+        .eq("organization_id", org!.id)
+        .eq("active", true)
+        .order("price");
       if (error) throw error;
       return data;
     },
@@ -174,6 +285,34 @@ export default function Cobertura() {
       </header>
 
       <main className="max-w-6xl mx-auto p-4 space-y-6">
+        {/* Plans section */}
+        {plans.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Zap className="size-4" /> Planos Disponíveis
+            </h2>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <Card key={plan.id} className="relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
+                  <CardContent className="p-4 space-y-2">
+                    <p className="font-bold text-base">{plan.name}</p>
+                    <p className="text-2xl font-extrabold text-primary">
+                      {formatCurrency(plan.price)}
+                      <span className="text-xs font-normal text-muted-foreground">/mês</span>
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <p>⬇️ Download: <strong>{plan.download_speed} Mbps</strong></p>
+                      <p>⬆️ Upload: <strong>{plan.upload_speed} Mbps</strong></p>
+                      <p>📡 Tecnologia: <strong>{plan.technology === "fiber" ? "Fibra Óptica" : plan.technology}</strong></p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Viability check */}
         <Card>
           <CardContent className="p-4">
@@ -217,7 +356,7 @@ export default function Cobertura() {
           </CardContent>
         </Card>
 
-        {/* Map */}
+        {/* Map with coverage circles */}
         <Card>
           <CardContent className="p-0 overflow-hidden rounded-lg">
             <MapContainer center={center} zoom={14} scrollWheelZoom style={{ height: "500px", width: "100%" }} className="z-0">
@@ -227,26 +366,41 @@ export default function Cobertura() {
               />
               {nodes.map((node) => {
                 const pct = node.capacity > 0 ? Math.round((node.used / node.capacity) * 100) : 0;
+                const color = node.status === "inactive" ? "#94a3b8" : (markerColors[node.node_type] ?? "#94a3b8");
+                const radius = coverageRadius[node.node_type] ?? 300;
                 return (
-                  <Marker key={node.id} position={[node.lat, node.lng]} icon={createIcon(node.node_type, node.status)}>
-                    <Popup>
-                      <div className="min-w-[160px]">
-                        <p className="font-bold text-sm mb-1">{node.name}</p>
-                        {node.address && <p className="text-xs text-gray-500 mb-2">{node.address}</p>}
-                        <div className="text-xs space-y-0.5">
-                          <p><strong>Tipo:</strong> {typeLabels[node.node_type] ?? node.node_type}</p>
-                          <p><strong>Status:</strong> {statusLabels[node.status] ?? node.status}</p>
-                          <p><strong>Ocupação:</strong> {pct}%</p>
+                  <span key={node.id}>
+                    <Circle
+                      center={[node.lat, node.lng]}
+                      radius={radius}
+                      pathOptions={{
+                        color,
+                        fillColor: color,
+                        fillOpacity: 0.08,
+                        weight: 1,
+                        opacity: 0.3,
+                      }}
+                    />
+                    <Marker position={[node.lat, node.lng]} icon={createIcon(node.node_type, node.status)}>
+                      <Popup>
+                        <div className="min-w-[160px]">
+                          <p className="font-bold text-sm mb-1">{node.name}</p>
+                          {node.address && <p className="text-xs text-gray-500 mb-2">{node.address}</p>}
+                          <div className="text-xs space-y-0.5">
+                            <p><strong>Tipo:</strong> {typeLabels[node.node_type] ?? node.node_type}</p>
+                            <p><strong>Status:</strong> {statusLabels[node.status] ?? node.status}</p>
+                            <p><strong>Ocupação:</strong> {pct}%</p>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-gray-200 mt-2 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
                         </div>
-                        <div className="h-1.5 w-full rounded-full bg-gray-200 mt-2 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500"}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
+                      </Popup>
+                    </Marker>
+                  </span>
                 );
               })}
             </MapContainer>
@@ -262,6 +416,9 @@ export default function Cobertura() {
             </span>
           ))}
         </div>
+
+        {/* Lead Capture Form */}
+        <LeadCaptureForm orgId={org.id} orgName={org.name} />
 
         <p className="text-center text-xs text-muted-foreground pb-4">
           © {new Date().getFullYear()} {org.name} — Mapa de cobertura
