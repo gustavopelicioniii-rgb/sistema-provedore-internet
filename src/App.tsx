@@ -33,6 +33,7 @@ import LandingPage from "@/pages/LandingPage";
 import PortalLogin from "@/pages/PortalLogin";
 import PortalDashboard from "@/pages/PortalDashboard";
 import NotFound from "@/pages/NotFound";
+import Cobertura from "@/pages/Cobertura";
 import { SubscriberAuthProvider } from "@/hooks/useSubscriberAuth";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const AppRoutes = React.forwardRef<HTMLDivElement>(function AppRoutes(_props, _r
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/portal/login" element={<SubscriberAuthProvider><PortalLogin /></SubscriberAuthProvider>} />
       <Route path="/portal" element={<SubscriberAuthProvider><PortalDashboard /></SubscriberAuthProvider>} />
+      <Route path="/cobertura/:slug" element={<Cobertura />} />
       <Route
         element={
           <ProtectedRoute>
