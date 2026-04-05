@@ -84,7 +84,7 @@ function NavGroup({ label, items, badgeMap }: { label: string; items: typeof mai
                   isActive={location.pathname === item.path}
                   tooltip={item.title}
                 >
-                  <NavLink to={item.path} className="relative">
+                  <NavLink to={item.path} className="relative" data-sidebar-item={item.title}>
                     <item.icon className="size-4" />
                     <span>{item.title}</span>
                     {badge > 0 && (
