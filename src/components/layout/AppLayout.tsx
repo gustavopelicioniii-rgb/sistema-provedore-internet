@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/motion/PageTransition";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -65,6 +66,7 @@ export function AppLayout() {
             </PageTransition>
           </AnimatePresence>
         </main>
+        <OnboardingTour />
       </SidebarInset>
     </SidebarProvider>
   );
