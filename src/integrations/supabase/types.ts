@@ -1959,6 +1959,7 @@ export type Database = {
         }
         Returns: Record<string, unknown>
       }
+      get_org_id_by_slug: { Args: { p_slug: string }; Returns: string }
       get_user_organization_id: { Args: never; Returns: string }
       has_role: {
         Args: {
