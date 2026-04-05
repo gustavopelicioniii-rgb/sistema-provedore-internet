@@ -40,15 +40,15 @@ export function useCreateAuditLog() {
       
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await supabase.from("audit_logs").insert({
+      const { error } = await supabase.from("audit_logs").insert([{
         organization_id: profile.organization_id,
         user_id: user?.id ?? null,
         user_name: profile.full_name ?? user?.email ?? "Sistema",
         action: log.action,
         entity_type: log.entity_type,
         entity_id: log.entity_id ?? null,
-        details: log.details ?? {},
-      });
+        details: (log.details ?? {}) as any,
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
