@@ -66,6 +66,7 @@ export function AppLayout() {
             </PageTransition>
           </AnimatePresence>
         </main>
+        <OnboardingTour />
       </SidebarInset>
     </SidebarProvider>
   );
