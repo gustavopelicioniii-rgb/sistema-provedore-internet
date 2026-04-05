@@ -195,9 +195,10 @@ export default function Relatorios() {
       </StaggerGrid>
 
       <Tabs defaultValue="receita" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="receita">Receita</TabsTrigger>
           <TabsTrigger value="inadimplencia">Inadimplência</TabsTrigger>
+          <TabsTrigger value="aging">Aging Report</TabsTrigger>
           <TabsTrigger value="tecnicos">Técnicos</TabsTrigger>
           <TabsTrigger value="planos">Planos</TabsTrigger>
           <TabsTrigger value="exportar">Exportar</TabsTrigger>
@@ -260,6 +261,68 @@ export default function Relatorios() {
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        {/* Aging Report Tab */}
+        <TabsContent value="aging">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Aging Report — Inadimplência por Faixa de Atraso</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data?.agingReport && data.agingReport.some((b) => b.count > 0) ? (
+                  <>
+                    <div className="h-[300px] mb-6">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data.agingReport}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="label" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                          <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                          <Tooltip contentStyle={tooltipStyle} formatter={(v: number, name: string) => [
+                            name === "amount" ? formatCurrency(v) : v,
+                            name === "amount" ? "Valor" : "Qtd Faturas",
+                          ]} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="count" name="Faturas" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="amount" name="Valor (R$)" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Faixa de Atraso</TableHead>
+                          <TableHead className="text-center">Faturas</TableHead>
+                          <TableHead className="text-right">Valor Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.agingReport.map((bucket) => (
+                          <TableRow key={bucket.label}>
+                            <TableCell className="font-medium">{bucket.label}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className={bucket.count > 0 ? "bg-destructive/10 text-destructive border-destructive/20" : ""}>
+                                {bucket.count}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(bucket.amount)}</TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="font-bold">
+                          <TableCell>Total</TableCell>
+                          <TableCell className="text-center">{data.agingReport.reduce((s, b) => s + b.count, 0)}</TableCell>
+                          <TableCell className="text-right font-mono">{formatCurrency(data.agingReport.reduce((s, b) => s + b.amount, 0))}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma fatura vencida encontrada. Ótima notícia! ✅</p>
+                )}
               </CardContent>
             </Card>
           </motion.div>

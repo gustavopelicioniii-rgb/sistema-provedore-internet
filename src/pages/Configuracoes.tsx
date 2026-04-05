@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff, Plus, Pencil, Trash2, Zap, RefreshCw, QrCode, Power, PowerOff, Wifi, WifiOff, CheckCircle2, XCircle, Smartphone } from "lucide-react";
+import { Building2, Bell, CreditCard, Shield, Palette, MessageSquare, Phone, Instagram, Facebook, Globe, Send, Mail, Loader2, Eye, EyeOff, Plus, Pencil, Trash2, Zap, RefreshCw, QrCode, Power, PowerOff, Wifi, WifiOff, CheckCircle2, XCircle, Smartphone, Activity, ScrollText, Server, Plug } from "lucide-react";
 import { RbacManager, SlaConfigManager } from "@/components/settings/RbacAndSlaManagers";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,9 @@ import {
   useCannedResponses, useCreateCannedResponse, useUpdateCannedResponse, useDeleteCannedResponse,
   type CannedResponse,
 } from "@/hooks/useChat";
+import { useAuditLogs } from "@/hooks/useAuditLogs";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface OrgSettings {
   due_day?: string;
@@ -798,6 +801,206 @@ function CanaisTab() {
   );
 }
 
+// --- Integrations Status Panel ---
+function IntegrationsPanel() {
+  const { data: configs, isLoading } = useChannelConfigs();
+
+  const integrations = [
+    {
+      name: "WhatsApp (Evolution API)",
+      icon: Phone,
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-500/10",
+      check: () => {
+        const waCfg = configs?.find((c) => c.channel === "whatsapp");
+        return waCfg?.enabled && (waCfg.config as any)?.api_url;
+      },
+    },
+    {
+      name: "Gateway de Pagamento",
+      icon: CreditCard,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      check: () => false, // No gateway config table yet
+    },
+    {
+      name: "MikroTik (RouterOS)",
+      icon: Server,
+      color: "text-sky-500",
+      bgColor: "bg-sky-500/10",
+      check: () => false, // Depends on network_devices having mikrotik
+    },
+    {
+      name: "E-mail (SMTP)",
+      icon: Mail,
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+      check: () => {
+        const emailCfg = configs?.find((c) => c.channel === "email");
+        return emailCfg?.enabled && (emailCfg.config as any)?.smtp_host;
+      },
+    },
+    {
+      name: "Telegram Bot",
+      icon: Send,
+      color: "text-sky-500",
+      bgColor: "bg-sky-500/10",
+      check: () => {
+        const tgCfg = configs?.find((c) => c.channel === "telegram");
+        return tgCfg?.enabled && (tgCfg.config as any)?.bot_token;
+      },
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Plug className="size-4" /> Status das Integrações
+          </CardTitle>
+          <CardDescription>Visão geral de todas as integrações configuradas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {integrations.map((integ) => {
+              const active = integ.check();
+              return (
+                <div key={integ.name} className="flex items-center gap-3 rounded-lg border p-3">
+                  <div className={`flex size-9 items-center justify-center rounded-lg ${integ.bgColor} ${integ.color}`}>
+                    <integ.icon className="size-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{integ.name}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {active ? (
+                      <>
+                        <CheckCircle2 className="size-4 text-emerald-500" />
+                        <span className="text-xs font-medium text-emerald-500">Ativo</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="size-4 text-muted-foreground" />
+                        <span className="text-xs font-medium text-muted-foreground">Inativo</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-xs text-muted-foreground">
+            Configure as chaves de API e credenciais na aba <strong>Canais</strong>. As integrações de pagamento e rede são configuradas via funções de backend.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// --- Audit Log Viewer ---
+function AuditLogViewer() {
+  const { data: logs, isLoading } = useAuditLogs(100);
+
+  const actionLabels: Record<string, string> = {
+    create: "Criou",
+    update: "Atualizou",
+    delete: "Excluiu",
+    login: "Fez login",
+    export: "Exportou",
+  };
+
+  const entityLabels: Record<string, string> = {
+    customer: "Cliente",
+    contract: "Contrato",
+    invoice: "Fatura",
+    plan: "Plano",
+    technician: "Técnico",
+    service_order: "Ordem de Serviço",
+    ticket: "Ticket",
+    settings: "Configurações",
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ScrollText className="size-4" /> Logs de Auditoria
+          </CardTitle>
+          <CardDescription>Registro imutável de ações críticas no sistema</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!logs?.length ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <ScrollText className="size-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground">Nenhum log de auditoria registrado ainda.</p>
+            </div>
+          ) : (
+            <div className="max-h-[500px] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Quando</TableHead>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Ação</TableHead>
+                    <TableHead>Entidade</TableHead>
+                    <TableHead className="hidden md:table-cell">Detalhes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">{log.user_name || "Sistema"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {actionLabels[log.action] || log.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {entityLabels[log.entity_type] || log.entity_type}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-xs truncate">
+                        {log.details && Object.keys(log.details).length > 0
+                          ? JSON.stringify(log.details).slice(0, 80)
+                          : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function Configuracoes() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -895,9 +1098,11 @@ export default function Configuracoes() {
           <TabsTrigger value="financeiro"><CreditCard className="size-4 mr-1.5" />Financeiro</TabsTrigger>
           <TabsTrigger value="notificacoes"><Bell className="size-4 mr-1.5" />Notificações</TabsTrigger>
           <TabsTrigger value="respostas"><Zap className="size-4 mr-1.5" />Respostas Rápidas</TabsTrigger>
+          <TabsTrigger value="integracoes"><Plug className="size-4 mr-1.5" />Integrações</TabsTrigger>
           <TabsTrigger value="aparencia"><Palette className="size-4 mr-1.5" />Aparência</TabsTrigger>
           <TabsTrigger value="permissoes"><Shield className="size-4 mr-1.5" />Permissões</TabsTrigger>
           <TabsTrigger value="sla">SLA</TabsTrigger>
+          <TabsTrigger value="auditoria"><ScrollText className="size-4 mr-1.5" />Auditoria</TabsTrigger>
         </TabsList>
 
         <TabsContent value="empresa" className="space-y-4">
@@ -1081,6 +1286,14 @@ export default function Configuracoes() {
 
         <TabsContent value="sla" className="space-y-4">
           <SlaConfigManager />
+        </TabsContent>
+
+        <TabsContent value="integracoes" className="space-y-4">
+          <IntegrationsPanel />
+        </TabsContent>
+
+        <TabsContent value="auditoria" className="space-y-4">
+          <AuditLogViewer />
         </TabsContent>
       </Tabs>
     </div>

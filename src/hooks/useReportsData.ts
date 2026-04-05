@@ -21,12 +21,18 @@ export interface PlanDistribution {
   count: number;
 }
 
+export interface AgingBucket {
+  label: string;
+  count: number;
+  amount: number;
+}
+
 export interface ReportsData {
   monthlyRevenue: MonthlyRevenue[];
   overdueByMonth: Array<{ month: string; rate: number; count: number }>;
   techProductivity: TechnicianProductivity[];
   planDistribution: PlanDistribution[];
-  // For export
+  agingReport: AgingBucket[];
   customerExport: Array<{ name: string; cpf_cnpj: string; status: string; phone: string; email: string }>;
 }
 
@@ -124,6 +130,38 @@ export function useReportsData() {
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count);
 
+      // Aging report - overdue invoices by days overdue
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const overdueInvoices = invoices.filter((i) => i.normalizedStatus === "overdue");
+      
+      const buckets: AgingBucket[] = [
+        { label: "0-30 dias", count: 0, amount: 0 },
+        { label: "31-60 dias", count: 0, amount: 0 },
+        { label: "61-90 dias", count: 0, amount: 0 },
+        { label: "90+ dias", count: 0, amount: 0 },
+      ];
+
+      overdueInvoices.forEach((inv) => {
+        const dueDate = new Date(`${inv.due_date}T00:00:00`);
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / 86400000);
+        if (daysOverdue <= 30) {
+          buckets[0].count++;
+          buckets[0].amount += inv.amount;
+        } else if (daysOverdue <= 60) {
+          buckets[1].count++;
+          buckets[1].amount += inv.amount;
+        } else if (daysOverdue <= 90) {
+          buckets[2].count++;
+          buckets[2].amount += inv.amount;
+        } else {
+          buckets[3].count++;
+          buckets[3].amount += inv.amount;
+        }
+      });
+
+      const agingReport = buckets;
+
       // Customer export data
       const statusLabels: Record<string, string> = { active: "Ativo", suspended: "Suspenso", defaulting: "Inadimplente", cancelled: "Cancelado" };
       const customerExport = customers.map((c) => ({
@@ -134,7 +172,7 @@ export function useReportsData() {
         email: c.email || "",
       }));
 
-      return { monthlyRevenue, overdueByMonth, techProductivity, planDistribution, customerExport };
+      return { monthlyRevenue, overdueByMonth, techProductivity, planDistribution, agingReport, customerExport };
     },
   });
 }
