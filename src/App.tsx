@@ -33,6 +33,7 @@ import LandingPage from "@/pages/LandingPage";
 import PortalLogin from "@/pages/PortalLogin";
 import PortalDashboard from "@/pages/PortalDashboard";
 import NotFound from "@/pages/NotFound";
+import Cobertura from "@/pages/Cobertura";
 import { SubscriberAuthProvider } from "@/hooks/useSubscriberAuth";
 
 const queryClient = new QueryClient();
