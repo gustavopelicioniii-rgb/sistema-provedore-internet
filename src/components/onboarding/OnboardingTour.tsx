@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   LayoutDashboard,
   Users,
@@ -12,6 +11,7 @@ import {
   Zap,
   BarChart3,
   ChevronRight,
+  ChevronLeft,
   CheckCircle2,
   Rocket,
   X,
@@ -33,8 +33,11 @@ interface OnboardingStep {
   title: string;
   description: string;
   highlights: string[];
-  action: string;
   targetPath: string;
+  /** CSS selector to spotlight. If not found, falls back to bottom-right tooltip */
+  spotlightSelector?: string;
+  /** Tooltip placement relative to spotlight */
+  placement?: "bottom" | "right" | "left" | "top";
 }
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -42,306 +45,267 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     id: "welcome",
     icon: Rocket,
     title: "Bem-vindo ao sistema!",
-    description:
-      "Este é o seu ERP completo para gestão de provedor de internet. Vamos conhecer cada módulo — você será direcionado para cada tela enquanto explicamos como funciona.",
+    description: "Vamos fazer um tour rápido por cada módulo. Você verá cada tela enquanto explicamos.",
     highlights: [],
-    action: "Começar o tour",
     targetPath: "/dashboard",
+    placement: "bottom",
   },
   {
     id: "dashboard",
     icon: LayoutDashboard,
     title: "Dashboard",
-    description:
-      "Este é o painel central do seu provedor. Aqui você monitora tudo em tempo real.",
+    description: "Painel central com todos os KPIs em tempo real.",
     highlights: [
-      "KPIs de MRR, clientes ativos e inadimplência",
+      "MRR, clientes ativos e inadimplência",
       "Gráficos de crescimento e receita",
-      "Alertas consolidados (faturas, SLA, estoque)",
-      "Visão geral de tickets e ordens de serviço",
+      "Alertas consolidados",
     ],
-    action: "Próximo módulo",
     targetPath: "/dashboard",
+    spotlightSelector: "[data-sidebar-item='Dashboard']",
+    placement: "right",
   },
   {
     id: "clientes",
     icon: Users,
     title: "Gestão de Clientes",
-    description:
-      "Gerencie toda a base de assinantes do seu provedor nesta tela.",
+    description: "Gerencie toda a base de assinantes.",
     highlights: [
-      "Cadastro com validação de CPF/CNPJ automática",
-      "Busca de endereço via CEP (ViaCEP)",
-      "Importação em massa via arquivo CSV",
-      "Filtros por status, tags e score financeiro",
+      "Validação de CPF/CNPJ automática",
+      "Importação em massa via CSV",
+      "Filtros por status e score financeiro",
     ],
-    action: "Próximo módulo",
     targetPath: "/clientes",
+    spotlightSelector: "[data-sidebar-item='Clientes']",
+    placement: "right",
   },
   {
     id: "contratos",
     icon: ClipboardList,
     title: "Contratos",
-    description:
-      "Crie e gerencie contratos vinculados a clientes e planos.",
+    description: "Crie contratos vinculados a clientes e planos.",
     highlights: [
-      "Geração automática de contrato em PDF",
-      "Vínculo com plano e dia de vencimento",
-      "Controle de vigência e status do contrato",
-      "Dados de autenticação PPPoE integrados",
+      "Geração de contrato em PDF",
+      "Vínculo com plano e vencimento",
+      "Dados de autenticação PPPoE",
     ],
-    action: "Próximo módulo",
     targetPath: "/contratos",
+    spotlightSelector: "[data-sidebar-item='Contratos']",
+    placement: "right",
   },
   {
     id: "crm",
     icon: Kanban,
     title: "CRM — Pipeline de Vendas",
-    description:
-      "Acompanhe leads e oportunidades em um quadro Kanban visual.",
+    description: "Acompanhe leads em um quadro Kanban.",
     highlights: [
-      "Quadro Kanban com drag & drop",
-      "Etapas: Novo Lead → Contato → Proposta → Fechado",
-      "Atribuição a vendedores e valor estimado",
-      "Conversão automática de lead em cliente",
+      "Drag & drop entre etapas",
+      "Conversão de lead em cliente",
+      "Atribuição a vendedores",
     ],
-    action: "Próximo módulo",
     targetPath: "/crm",
+    spotlightSelector: "[data-sidebar-item='CRM']",
+    placement: "right",
   },
   {
     id: "atendimento",
     icon: Headset,
     title: "Atendimento & Tickets",
-    description:
-      "Central de suporte com tickets, chat e integração WhatsApp.",
+    description: "Central de suporte omnichannel.",
     highlights: [
-      "Tickets com controle de SLA (resposta e resolução)",
-      "Chat omnichannel (WhatsApp, webchat, interno)",
+      "Tickets com SLA configurável",
+      "Chat WhatsApp integrado",
       "Respostas rápidas pré-configuradas",
-      "Indicadores visuais de SLA em tempo real",
     ],
-    action: "Próximo módulo",
     targetPath: "/atendimento",
+    spotlightSelector: "[data-sidebar-item='Atendimento']",
+    placement: "right",
   },
   {
     id: "rede",
     icon: Radio,
     title: "Rede & NOC",
-    description:
-      "Monitore todos os equipamentos de rede do seu provedor.",
+    description: "Monitore equipamentos de rede.",
     highlights: [
-      "Cadastro de roteadores, OLTs, switches e APs",
-      "Monitoramento de CPU, memória e uptime",
-      "Alertas automáticos de queda e alta carga",
-      "Integração com MikroTik e SNMP",
+      "CPU, memória e uptime dos devices",
+      "Alertas de queda automáticos",
+      "Integração MikroTik e SNMP",
     ],
-    action: "Próximo módulo",
     targetPath: "/rede",
+    spotlightSelector: "[data-sidebar-item='Rede & NOC']",
+    placement: "right",
   },
   {
     id: "mapa-ftth",
     icon: Map,
     title: "Mapa FTTH",
-    description:
-      "Visualize a infraestrutura óptica no mapa interativo.",
+    description: "Infraestrutura óptica no mapa.",
     highlights: [
-      "Nós de OLT, CTO, CEO e splitters no mapa",
-      "Capacidade e ocupação de cada nó",
-      "Raio de cobertura visual",
-      "Planejamento de expansão de rede",
+      "OLT, CTO, CEO e splitters",
+      "Capacidade e ocupação",
+      "Raio de cobertura",
     ],
-    action: "Próximo módulo",
     targetPath: "/mapa-ftth",
+    spotlightSelector: "[data-sidebar-item='Mapa FTTH']",
+    placement: "right",
   },
   {
     id: "ordens-servico",
     icon: ClipboardList,
     title: "Ordens de Serviço",
-    description:
-      "Gerencie instalações, manutenções e visitas técnicas.",
+    description: "Gerencie instalações e manutenções.",
     highlights: [
-      "Tipos: instalação, reparo, mudança de endereço",
-      "Atribuição automática a técnicos disponíveis",
-      "Acompanhamento de status em tempo real",
-      "Endereço e detalhes do serviço integrados",
+      "Instalação, reparo e mudança",
+      "Atribuição a técnicos",
+      "Status em tempo real",
     ],
-    action: "Próximo módulo",
     targetPath: "/ordens-servico",
+    spotlightSelector: "[data-sidebar-item='Ordens de Serviço']",
+    placement: "right",
   },
   {
     id: "tecnicos",
     icon: Wrench,
     title: "Técnicos",
-    description:
-      "Cadastre e gerencie a equipe técnica do provedor.",
+    description: "Gerencie a equipe técnica.",
     highlights: [
-      "Cadastro com especialidade e região",
-      "Controle de disponibilidade por dia da semana",
-      "Histórico de ordens atribuídas",
-      "Status ativo/inativo/férias",
+      "Especialidade e região",
+      "Disponibilidade por dia",
+      "Histórico de ordens",
     ],
-    action: "Próximo módulo",
     targetPath: "/tecnicos",
+    spotlightSelector: "[data-sidebar-item='Técnicos']",
+    placement: "right",
   },
   {
     id: "agenda",
     icon: CalendarDays,
-    title: "Agenda de Técnicos",
-    description:
-      "Visualize e organize a agenda de toda a equipe técnica.",
+    title: "Agenda",
+    description: "Organize a agenda da equipe.",
     highlights: [
-      "Calendário visual por técnico e dia",
-      "Agendamento vinculado a ordens de serviço",
-      "Evita conflitos de horário automaticamente",
-      "Visão diária, semanal e mensal",
+      "Calendário visual por técnico",
+      "Evita conflitos de horário",
+      "Visão diária e semanal",
     ],
-    action: "Próximo módulo",
     targetPath: "/agenda",
+    spotlightSelector: "[data-sidebar-item='Agenda']",
+    placement: "right",
   },
   {
     id: "financeiro",
     icon: DollarSign,
     title: "Financeiro",
-    description:
-      "Controle completo das finanças do seu provedor.",
+    description: "Controle completo das finanças.",
     highlights: [
-      "Faturas geradas automaticamente por contrato",
-      "Cobranças via boleto e PIX com QR Code",
-      "Conciliação bancária (importação OFX/CSV)",
-      "Régua de cobrança multicanal automatizada",
+      "Faturas automáticas por contrato",
+      "Boleto e PIX com QR Code",
+      "Conciliação bancária",
     ],
-    action: "Próximo módulo",
     targetPath: "/financeiro",
-  },
-  {
-    id: "planos",
-    icon: Radio,
-    title: "Planos de Internet",
-    description:
-      "Configure os planos oferecidos pelo seu provedor.",
-    highlights: [
-      "Download/upload em Mbps configuráveis",
-      "Preço, tecnologia (fibra, rádio, cabo)",
-      "Fidelidade em meses (opcional)",
-      "Ativar/desativar planos rapidamente",
-    ],
-    action: "Próximo módulo",
-    targetPath: "/planos",
+    spotlightSelector: "[data-sidebar-item='Financeiro']",
+    placement: "right",
   },
   {
     id: "fiscal",
     icon: FileText,
     title: "Fiscal / NF-e",
-    description:
-      "Emita e gerencie notas fiscais eletrônicas.",
+    description: "Emita notas fiscais eletrônicas.",
     highlights: [
-      "Emissão de NF-e e NFS-e",
-      "Integração com SEFAZ",
-      "Download de XML e PDF da nota",
-      "Controle de status: emitida, cancelada, rejeitada",
+      "NF-e e NFS-e com SEFAZ",
+      "Download XML e PDF",
+      "Controle de status",
     ],
-    action: "Próximo módulo",
     targetPath: "/fiscal",
+    spotlightSelector: "[data-sidebar-item='Fiscal / NF-e']",
+    placement: "right",
   },
   {
     id: "estoque",
     icon: Package,
     title: "Estoque",
-    description:
-      "Gerencie materiais, equipamentos e movimentações.",
+    description: "Materiais, equipamentos e movimentações.",
     highlights: [
-      "Itens com número de série e MAC",
-      "Controle de quantidade mínima com alerta",
-      "Movimentações: entrada, saída, transferência",
-      "Vínculo com cliente na saída de material",
+      "Número de série e MAC",
+      "Alerta de quantidade mínima",
+      "Entrada, saída e transferência",
     ],
-    action: "Próximo módulo",
     targetPath: "/estoque",
+    spotlightSelector: "[data-sidebar-item='Estoque']",
+    placement: "right",
   },
   {
     id: "frota",
     icon: Car,
     title: "Frota",
-    description:
-      "Controle veículos, abastecimentos e manutenções.",
+    description: "Veículos e abastecimentos.",
     highlights: [
-      "Cadastro de veículos com placa e modelo",
-      "Registro de abastecimentos com custo/litro",
-      "Controle de quilometragem",
-      "Histórico completo por veículo",
+      "Cadastro com placa e modelo",
+      "Custo por litro e km",
+      "Histórico por veículo",
     ],
-    action: "Próximo módulo",
     targetPath: "/frota",
-  },
-  {
-    id: "portal-assinante",
-    icon: Smartphone,
-    title: "Portal do Assinante",
-    description:
-      "Área exclusiva para seus clientes acessarem informações.",
-    highlights: [
-      "Login independente por CPF e senha",
-      "Visualização de faturas e 2ª via de boleto",
-      "Abertura de chamados de suporte",
-      "Teste de velocidade e consumo de dados",
-    ],
-    action: "Próximo módulo",
-    targetPath: "/portal-assinante",
+    spotlightSelector: "[data-sidebar-item='Frota']",
+    placement: "right",
   },
   {
     id: "automacoes",
     icon: Zap,
     title: "Automações",
-    description:
-      "Motor de automação inteligente para processos do provedor.",
+    description: "Motor de automação inteligente.",
     highlights: [
-      "Régua de cobrança: D-3, D+1, D+7, D+15",
-      "Templates prontos: boas-vindas, suspensão",
-      "Integração com n8n e webhooks universais",
-      "Assistente IA para criar automações por texto",
+      "Régua de cobrança D-3 a D+15",
+      "Templates prontos",
+      "Webhooks e integração n8n",
     ],
-    action: "Próximo módulo",
     targetPath: "/automacoes",
+    spotlightSelector: "[data-sidebar-item='Automações']",
+    placement: "right",
   },
   {
     id: "relatorios",
     icon: BarChart3,
     title: "Relatórios & BI",
-    description:
-      "Analise o desempenho do seu provedor com dados precisos.",
+    description: "Analise dados e exporte relatórios.",
     highlights: [
-      "Relatórios de receita, inadimplência e churn",
-      "Gráficos interativos com filtro de período",
-      "Exportação para Excel (XLSX)",
-      "Aging report de faturas em atraso",
+      "Receita, inadimplência e churn",
+      "Gráficos interativos",
+      "Exportação para Excel",
     ],
-    action: "Próximo módulo",
     targetPath: "/relatorios",
+    spotlightSelector: "[data-sidebar-item='Relatórios & BI']",
+    placement: "right",
   },
   {
     id: "configuracoes",
     icon: Settings,
     title: "Configurações",
-    description:
-      "Personalize o sistema de acordo com suas necessidades.",
+    description: "Personalize o sistema.",
     highlights: [
-      "Dados da organização e logo",
-      "Permissões e papéis de usuários (RBAC)",
-      "Configuração de SLAs por prioridade",
-      "Status de integrações e chaves de API",
+      "Dados da organização",
+      "Permissões RBAC",
+      "Integrações e SLAs",
     ],
-    action: "Finalizar tour 🎉",
     targetPath: "/configuracoes",
+    spotlightSelector: "[data-sidebar-item='Configurações']",
+    placement: "right",
   },
 ];
 
 const STORAGE_KEY = "onboarding_completed";
 
+function getElementRect(selector?: string): DOMRect | null {
+  if (!selector) return null;
+  const el = document.querySelector(selector);
+  if (!el) return null;
+  return el.getBoundingClientRect();
+}
+
 export function OnboardingTour() {
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [spotlightRect, setSpotlightRect] = useState<DOMRect | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const rafRef = useRef<number>();
 
   useEffect(() => {
     const completed = localStorage.getItem(STORAGE_KEY);
@@ -350,7 +314,7 @@ export function OnboardingTour() {
     }
   }, []);
 
-  // Navigate to the step's target page when step changes
+  // Navigate to step's page
   useEffect(() => {
     if (!visible) return;
     const step = ONBOARDING_STEPS[currentStep];
@@ -358,6 +322,28 @@ export function OnboardingTour() {
       navigate(step.targetPath);
     }
   }, [currentStep, visible, navigate, location.pathname]);
+
+  // Track spotlight element position
+  useEffect(() => {
+    if (!visible) return;
+    const step = ONBOARDING_STEPS[currentStep];
+
+    const updateRect = () => {
+      const rect = getElementRect(step.spotlightSelector);
+      setSpotlightRect(rect);
+      rafRef.current = requestAnimationFrame(updateRect);
+    };
+
+    // Small delay to let navigation settle
+    const timeout = setTimeout(() => {
+      updateRect();
+    }, 300);
+
+    return () => {
+      clearTimeout(timeout);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [currentStep, visible]);
 
   const handleNext = useCallback(() => {
     if (currentStep >= ONBOARDING_STEPS.length - 1) {
@@ -369,6 +355,12 @@ export function OnboardingTour() {
     }
   }, [currentStep, navigate]);
 
+  const handlePrev = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep((s) => s - 1);
+    }
+  }, [currentStep]);
+
   const handleSkip = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, "true");
     setVisible(false);
@@ -378,145 +370,187 @@ export function OnboardingTour() {
 
   const step = ONBOARDING_STEPS[currentStep];
   const Icon = step.icon;
-  const progress = ((currentStep + 1) / ONBOARDING_STEPS.length) * 100;
   const isLast = currentStep === ONBOARDING_STEPS.length - 1;
+  const isFirst = currentStep === 0;
+  const pad = 6;
+
+  // Tooltip position based on spotlight
+  const getTooltipStyle = (): React.CSSProperties => {
+    if (!spotlightRect) {
+      // Center fallback
+      return {
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      };
+    }
+
+    const placement = step.placement || "right";
+
+    switch (placement) {
+      case "right":
+        return {
+          top: Math.max(16, spotlightRect.top - 20),
+          left: spotlightRect.right + 16,
+        };
+      case "left":
+        return {
+          top: Math.max(16, spotlightRect.top - 20),
+          right: window.innerWidth - spotlightRect.left + 16,
+        };
+      case "bottom":
+        return {
+          top: spotlightRect.bottom + 16,
+          left: Math.max(16, spotlightRect.left),
+        };
+      case "top":
+        return {
+          bottom: window.innerHeight - spotlightRect.top + 16,
+          left: Math.max(16, spotlightRect.left),
+        };
+      default:
+        return {
+          top: spotlightRect.bottom + 16,
+          left: spotlightRect.left,
+        };
+    }
+  };
 
   return (
-    <AnimatePresence>
-      {visible && (
+    <>
+      {/* Overlay with spotlight cutout using CSS clip-path */}
+      <div
+        className="fixed inset-0 z-[100] pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "rgba(0,0,0,0.55)",
+          clipPath: spotlightRect
+            ? `polygon(
+                0% 0%, 0% 100%, 
+                ${spotlightRect.left - pad}px 100%, 
+                ${spotlightRect.left - pad}px ${spotlightRect.top - pad}px, 
+                ${spotlightRect.right + pad}px ${spotlightRect.top - pad}px, 
+                ${spotlightRect.right + pad}px ${spotlightRect.bottom + pad}px, 
+                ${spotlightRect.left - pad}px ${spotlightRect.bottom + pad}px, 
+                ${spotlightRect.left - pad}px 100%, 
+                100% 100%, 100% 0%
+              )`
+            : undefined,
+          transition: "clip-path 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      />
+
+      {/* Spotlight border glow */}
+      {spotlightRect && (
+        <div
+          className="fixed z-[101] rounded-lg border-2 border-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)] pointer-events-none"
+          style={{
+            top: spotlightRect.top - pad,
+            left: spotlightRect.left - pad,
+            width: spotlightRect.width + pad * 2,
+            height: spotlightRect.height + pad * 2,
+            transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        />
+      )}
+
+      {/* Tooltip card */}
+      <AnimatePresence mode="wait">
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          key={step.id}
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+          transition={{ duration: 0.25 }}
+          className="fixed z-[102] w-80 rounded-xl border bg-card p-5 shadow-2xl"
+          style={getTooltipStyle()}
         >
-          <motion.div
-            key={step.id}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: -20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg mx-4 rounded-2xl border bg-card p-8 shadow-2xl"
+          {/* Close */}
+          <button
+            onClick={handleSkip}
+            className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           >
-            {/* Skip button */}
+            <X className="size-3.5" />
+          </button>
+
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-center size-10 rounded-lg bg-primary/10 shrink-0">
+              <Icon className="size-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold leading-tight">{step.title}</h3>
+              <span className="text-[10px] text-muted-foreground">
+                {currentStep + 1}/{ONBOARDING_STEPS.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Description */}
+          <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+            {step.description}
+          </p>
+
+          {/* Highlights */}
+          {step.highlights.length > 0 && (
+            <ul className="space-y-1.5 mb-4">
+              {step.highlights.map((h, i) => (
+                <li key={i} className="flex items-start gap-1.5 text-xs">
+                  <CheckCircle2 className="size-3.5 text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground/90">{h}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Progress dots */}
+          <div className="flex gap-0.5 mb-3 flex-wrap">
+            {ONBOARDING_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  i === currentStep
+                    ? "w-4 bg-primary"
+                    : i < currentStep
+                      ? "w-1 bg-primary/40"
+                      : "w-1 bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex items-center gap-2">
+            {!isFirst && (
+              <Button variant="ghost" size="sm" onClick={handlePrev} className="gap-1 text-xs h-8 px-2">
+                <ChevronLeft className="size-3" /> Voltar
+              </Button>
+            )}
+            <div className="flex-1" />
             <button
               onClick={handleSkip}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              aria-label="Pular tour"
+              className="text-[10px] text-muted-foreground hover:text-foreground mr-1"
             >
-              <X className="size-4" />
+              Pular
             </button>
-
-            {/* Step counter */}
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-medium text-muted-foreground">
-                {currentStep + 1} de {ONBOARDING_STEPS.length}
-              </span>
-              <button
-                onClick={handleSkip}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Pular tour
-              </button>
-            </div>
-
-            {/* Progress bar */}
-            <Progress value={progress} className="h-1.5 mb-6" />
-
-            {/* Icon + Title row */}
-            <div className="flex items-center gap-4 mb-4">
-              <motion.div
-                key={step.id + "-icon"}
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", damping: 15, stiffness: 200, delay: 0.1 }}
-                className="flex items-center justify-center size-14 rounded-xl bg-primary/10 shrink-0"
-              >
-                <Icon className="size-7 text-primary" />
-              </motion.div>
-              <div>
-                <h2 className="text-lg font-bold tracking-tight">{step.title}</h2>
-                <p className="text-xs text-muted-foreground">
-                  {step.targetPath && step.targetPath !== "/dashboard" && (
-                    <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{step.targetPath}</span>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Description */}
-            <motion.div
-              key={step.id + "-content"}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="space-y-4 mb-6"
-            >
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {step.description}
-              </p>
-
-              {/* Feature highlights */}
-              {step.highlights.length > 0 && (
-                <ul className="space-y-2">
-                  {step.highlights.map((h, i) => (
-                    <motion.li
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + i * 0.07 }}
-                      className="flex items-start gap-2 text-sm"
-                    >
-                      <CheckCircle2 className="size-4 text-primary mt-0.5 shrink-0" />
-                      <span className="text-foreground">{h}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              )}
-            </motion.div>
-
-            {/* Dots */}
-            <div className="flex justify-center gap-1 mb-5 flex-wrap">
-              {ONBOARDING_STEPS.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === currentStep
-                      ? "w-5 bg-primary"
-                      : i < currentStep
-                        ? "w-1.5 bg-primary/50"
-                        : "w-1.5 bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
-
-            {/* Action button */}
-            <Button
-              onClick={handleNext}
-              className="w-full gap-2"
-              size="lg"
-            >
+            <Button size="sm" onClick={handleNext} className="gap-1 text-xs h-8">
               {isLast ? (
                 <>
-                  <CheckCircle2 className="size-4" />
-                  {step.action}
+                  <CheckCircle2 className="size-3" /> Concluir
                 </>
               ) : (
                 <>
-                  {step.action}
-                  <ChevronRight className="size-4" />
+                  Próximo <ChevronRight className="size-3" />
                 </>
               )}
             </Button>
-          </motion.div>
+          </div>
         </motion.div>
-      )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   );
 }
 
-/** Call this to reset onboarding (e.g., from settings) */
 export function resetOnboarding() {
   localStorage.removeItem(STORAGE_KEY);
 }
