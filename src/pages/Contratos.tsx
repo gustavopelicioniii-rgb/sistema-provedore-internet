@@ -11,7 +11,7 @@ import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, FileSignature, FileDown,
 import { useContracts, useDeleteContract, useUpdateContract, STATUS_META, type ContractRecord, type ContractWithRelations, type ContractStatus } from "@/hooks/useContracts";
 import { generateContractPdf } from "@/utils/contractPdf";
 import { formatCurrency, formatDate } from "@/utils/finance";
-import { exportToCSV, exportToXLSX } from "@/utils/exportData";
+import { downloadCsv, downloadXlsx } from "@/utils/exportData";
 import ContractFormDialog from "@/components/contracts/ContractFormDialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -105,8 +105,13 @@ export default function Contratos() {
       Fim: c.end_date ?? "",
       "Dia Vencimento": c.billing_day,
     }));
-    if (format === "csv") exportToCSV(rows, "contratos");
-    else exportToXLSX(rows, "contratos");
+    const headers = ["Cliente", "Plano", "Valor", "Status", "Início", "Fim", "Dia Vencimento"];
+    const data = rows.map((r) => [
+      String(r.Cliente), String(r.Plano), String(r.Valor), String(r.Status),
+      String(r.Início), String(r.Fim), String(r["Dia Vencimento"]),
+    ]);
+    if (format === "csv") downloadCsv("contratos.csv", headers, data);
+    else downloadXlsx("contratos.xlsx", headers, data);
     toast({ title: `Exportado em ${format.toUpperCase()} com sucesso!` });
   };
 
