@@ -33,6 +33,7 @@ export default function PlanFormDialog({ open, onOpenChange, editingPlan }: Plan
   const [technology, setTechnology] = useState<PlanTechnology>("fiber");
   const [loyalty, setLoyalty] = useState("");
   const [active, setActive] = useState(true);
+  const [earlyDiscount, setEarlyDiscount] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -44,6 +45,7 @@ export default function PlanFormDialog({ open, onOpenChange, editingPlan }: Plan
         setTechnology(editingPlan.technology);
         setLoyalty((editingPlan.loyalty_months ?? 0).toString());
         setActive(editingPlan.active);
+        setEarlyDiscount(((editingPlan as any).early_payment_discount ?? 0).toString());
       } else {
         setName("");
         setDownload("");
@@ -52,6 +54,7 @@ export default function PlanFormDialog({ open, onOpenChange, editingPlan }: Plan
         setTechnology("fiber");
         setLoyalty("0");
         setActive(true);
+        setEarlyDiscount("0");
       }
     }
   }, [open, editingPlan]);
@@ -124,6 +127,12 @@ export default function PlanFormDialog({ open, onOpenChange, editingPlan }: Plan
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label>Desconto antecipação (%)</Label>
+            <Input type="number" step="0.1" min="0" max="100" value={earlyDiscount} onChange={(e) => setEarlyDiscount(e.target.value)} placeholder="5" />
+            <p className="text-xs text-muted-foreground mt-1">Desconto para pagamento antes do vencimento</p>
           </div>
 
           <div className="flex items-center gap-3">
