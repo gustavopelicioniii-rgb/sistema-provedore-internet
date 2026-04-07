@@ -17,6 +17,7 @@ export interface PlanFormData {
   technology: PlanTechnology;
   loyalty_months?: number;
   active?: boolean;
+  early_payment_discount?: number;
 }
 
 export const TECH_LABELS: Record<PlanTechnology, string> = {
@@ -130,6 +131,7 @@ export function useCreatePlan() {
         technology: form.technology,
         loyalty_months: form.loyalty_months ?? 0,
         active: form.active ?? true,
+        early_payment_discount: form.early_payment_discount ?? 0,
       };
       const { data, error } = await supabase.from("plans").insert([insert]).select().single();
       if (error) throw error;
@@ -160,6 +162,7 @@ export function useUpdatePlan() {
       if (data.technology !== undefined) update.technology = data.technology;
       if (data.loyalty_months !== undefined) update.loyalty_months = data.loyalty_months;
       if (data.active !== undefined) update.active = data.active;
+      if (data.early_payment_discount !== undefined) (update as any).early_payment_discount = data.early_payment_discount;
 
       const { data: plan, error } = await supabase.from("plans").update(update).eq("id", id).select().single();
       if (error) throw error;
