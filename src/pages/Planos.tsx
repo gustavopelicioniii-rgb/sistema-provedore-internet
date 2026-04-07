@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, Wifi, ArrowDown, ArrowUp, Search, Signal, Zap, Cable, Radio, Eye, EyeOff, Package } from "lucide-react";
-import { usePlans, useDeletePlan, useUpdatePlan, TECH_LABELS, type PlanRecord, type PlanTechnology } from "@/hooks/usePlans";
+import { usePlans, useDeletePlan, useTogglePlanActive, usePlanContractsCount, TECH_LABELS, type PlanRecord, type PlanTechnology } from "@/hooks/usePlans";
 import { formatCurrency } from "@/utils/finance";
 import PlanFormDialog from "@/components/plans/PlanFormDialog";
 import { AnimatePresence, motion } from "framer-motion";
