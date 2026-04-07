@@ -47,6 +47,73 @@ export function usePlans() {
   });
 }
 
+export function usePlanContractsCount(planId: string | null) {
+  return useQuery({
+    queryKey: ["plan-contracts-count", planId],
+    enabled: !!planId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("contracts")
+        .select("*", { head: true, count: "exact" })
+        .eq("plan_id", planId!)
+        .in("status", ["active", "awaiting_installation", "awaiting_signature"]);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}
+
+export function useTogglePlanActive() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ plan, suspendContracts }: { plan: PlanRecord; suspendContracts?: boolean }) => {
+      const newActive = !plan.active;
+
+      // Update plan
+      const { error } = await supabase.from("plans").update({ active: newActive }).eq("id", plan.id);
+      if (error) throw error;
+
+      // If deactivating and user chose to suspend contracts
+      if (!newActive && suspendContracts) {
+        const { error: contractError } = await supabase
+          .from("contracts")
+          .update({ status: "suspended" as ContractStatus })
+          .eq("plan_id", plan.id)
+          .in("status", ["active", "awaiting_installation", "awaiting_signature"]);
+        if (contractError) throw contractError;
+      }
+
+      // If reactivating, reactivate suspended contracts of this plan
+      if (newActive) {
+        const { error: contractError } = await supabase
+          .from("contracts")
+          .update({ status: "active" as ContractStatus })
+          .eq("plan_id", plan.id)
+          .eq("status", "suspended");
+        if (contractError) throw contractError;
+      }
+
+      return newActive;
+    },
+    onSuccess: (newActive) => {
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-data"] });
+      toast({
+        title: newActive ? "Plano ativado!" : "Plano desativado!",
+        description: newActive
+          ? "Contratos suspensos deste plano foram reativados."
+          : "Contratos vinculados foram atualizados.",
+      });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Erro ao alterar plano", description: err.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useCreatePlan() {
   const qc = useQueryClient();
   const { toast } = useToast();
