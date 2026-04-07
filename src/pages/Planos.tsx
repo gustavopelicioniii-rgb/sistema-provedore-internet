@@ -30,14 +30,17 @@ const techColors: Record<PlanTechnology, string> = {
 export default function Planos() {
   const { data: plans = [], isLoading, error } = usePlans();
   const deletePlan = useDeletePlan();
-  const updatePlan = useUpdatePlan();
+  const togglePlanActive = useTogglePlanActive();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [togglePlan, setTogglePlan] = useState<PlanRecord | null>(null);
   const [search, setSearch] = useState("");
   const [techFilter, setTechFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { data: affectedContracts = 0 } = usePlanContractsCount(togglePlan?.id ?? null);
 
   const handleEdit = (plan: PlanRecord) => {
     setEditingPlan(plan);
@@ -50,7 +53,18 @@ export default function Planos() {
   };
 
   const handleToggleActive = (plan: PlanRecord) => {
-    updatePlan.mutate({ id: plan.id, data: { active: !plan.active } });
+    if (plan.active) {
+      setTogglePlan(plan);
+    } else {
+      togglePlanActive.mutate({ plan, suspendContracts: false });
+    }
+  };
+
+  const confirmToggle = (suspendContracts: boolean) => {
+    if (togglePlan) {
+      togglePlanActive.mutate({ plan: togglePlan, suspendContracts });
+      setTogglePlan(null);
+    }
   };
 
   const filtered = plans.filter((p) => {
