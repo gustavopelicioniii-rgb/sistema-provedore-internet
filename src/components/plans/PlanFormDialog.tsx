@@ -71,6 +71,7 @@ export default function PlanFormDialog({ open, onOpenChange, editingPlan }: Plan
       technology,
       loyalty_months: parseInt(loyalty) || 0,
       active,
+      early_payment_discount: parseFloat(earlyDiscount) || 0,
     };
 
     if (isEditing) {
