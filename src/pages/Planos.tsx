@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, Wifi, ArrowDown, ArrowUp, Search, Signal, Zap, Cable, Radio, Eye, EyeOff, Package } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, Wifi, ArrowDown, ArrowUp, Search, Signal, Zap, Cable, Radio, Eye, EyeOff, Package, Percent } from "lucide-react";
 import { usePlans, useDeletePlan, useTogglePlanActive, usePlanContractsCount, TECH_LABELS, type PlanRecord, type PlanTechnology } from "@/hooks/usePlans";
 import { formatCurrency } from "@/utils/finance";
 import PlanFormDialog from "@/components/plans/PlanFormDialog";
@@ -187,9 +187,10 @@ export default function Planos() {
                     <TableHead>Download</TableHead>
                     <TableHead>Upload</TableHead>
                     <TableHead>Tecnologia</TableHead>
-                    <TableHead>Fidelidade</TableHead>
-                    <TableHead className="text-right">Preço</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
+                     <TableHead>Fidelidade</TableHead>
+                     <TableHead>Desc. Antecipação</TableHead>
+                     <TableHead className="text-right">Preço</TableHead>
+                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -231,6 +232,16 @@ export default function Planos() {
                             <span>{plan.loyalty_months} meses</span>
                           ) : (
                             <span className="text-muted-foreground/50">Sem fidelidade</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {((plan as any).early_payment_discount ?? 0) > 0 ? (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 gap-1">
+                              <Percent className="size-3" />
+                              {(plan as any).early_payment_discount}%
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground/50">—</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
