@@ -307,12 +307,29 @@ export default function Financeiro() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {(invoice.status === "pending" || invoice.status === "overdue") && (
-                            <Button variant="ghost" size="sm" className="text-success hover:text-success"
-                              onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
-                              <CheckCircle className="mr-1 size-3.5" /> Baixa
-                            </Button>
-                          )}
+                          <div className="flex gap-1">
+                            {(invoice.status === "pending" || invoice.status === "overdue") && (
+                              <>
+                                <Button variant="ghost" size="sm" className="text-success hover:text-success"
+                                  onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
+                                  <CheckCircle className="mr-1 size-3.5" /> Baixa
+                                </Button>
+                                <Button variant="ghost" size="sm"
+                                  onClick={async () => {
+                                    const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+                                    setInstallmentInvoice({
+                                      id: invoice.id,
+                                      amount: invoice.amount,
+                                      dueDate: invoice.dueDate,
+                                      customerName: invoice.customerName,
+                                      organizationId: p?.organization_id ?? "",
+                                    });
+                                  }}>
+                                  <SplitSquareVertical className="mr-1 size-3.5" /> Parcelar
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
