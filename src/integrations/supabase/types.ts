@@ -539,6 +539,7 @@ export type Database = {
       contracts: {
         Row: {
           authentication: Json | null
+          auto_debit: boolean | null
           billing_day: number
           created_at: string
           customer_id: string
@@ -554,6 +555,7 @@ export type Database = {
         }
         Insert: {
           authentication?: Json | null
+          auto_debit?: boolean | null
           billing_day?: number
           created_at?: string
           customer_id: string
@@ -569,6 +571,7 @@ export type Database = {
         }
         Update: {
           authentication?: Json | null
+          auto_debit?: boolean | null
           billing_day?: number
           created_at?: string
           customer_id?: string
@@ -672,6 +675,60 @@ export type Database = {
           },
           {
             foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_analyses: {
+        Row: {
+          analyzed_at: string
+          cpf_cnpj: string
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          result: string
+          score: number | null
+          source: string
+        }
+        Insert: {
+          analyzed_at?: string
+          cpf_cnpj: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          result?: string
+          score?: number | null
+          source?: string
+        }
+        Update: {
+          analyzed_at?: string
+          cpf_cnpj?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          result?: string
+          score?: number | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_analyses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_analyses_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1041,6 +1098,69 @@ export type Database = {
           },
         ]
       }
+      invoice_installments: {
+        Row: {
+          amount: number
+          barcode: string | null
+          created_at: string
+          due_date: string
+          gateway_id: string | null
+          id: string
+          installment_number: number
+          invoice_id: string
+          organization_id: string
+          paid_date: string | null
+          pix_qrcode: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          barcode?: string | null
+          created_at?: string
+          due_date: string
+          gateway_id?: string | null
+          id?: string
+          installment_number?: number
+          invoice_id: string
+          organization_id: string
+          paid_date?: string | null
+          pix_qrcode?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          barcode?: string | null
+          created_at?: string
+          due_date?: string
+          gateway_id?: string | null
+          id?: string
+          installment_number?: number
+          invoice_id?: string
+          organization_id?: string
+          paid_date?: string | null
+          pix_qrcode?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_installments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_installments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           amount: number
@@ -1048,9 +1168,11 @@ export type Database = {
           contract_id: string | null
           created_at: string
           customer_id: string
+          discount_amount: number | null
           due_date: string
           gateway_id: string | null
           id: string
+          installment_count: number | null
           organization_id: string
           paid_date: string | null
           payment_method: string | null
@@ -1064,9 +1186,11 @@ export type Database = {
           contract_id?: string | null
           created_at?: string
           customer_id: string
+          discount_amount?: number | null
           due_date: string
           gateway_id?: string | null
           id?: string
+          installment_count?: number | null
           organization_id: string
           paid_date?: string | null
           payment_method?: string | null
@@ -1080,9 +1204,11 @@ export type Database = {
           contract_id?: string | null
           created_at?: string
           customer_id?: string
+          discount_amount?: number | null
           due_date?: string
           gateway_id?: string | null
           id?: string
+          installment_count?: number | null
           organization_id?: string
           paid_date?: string | null
           payment_method?: string | null
@@ -1373,6 +1499,7 @@ export type Database = {
           active: boolean
           created_at: string
           download_speed: number
+          early_payment_discount: number | null
           id: string
           loyalty_months: number | null
           name: string
@@ -1386,6 +1513,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           download_speed: number
+          early_payment_discount?: number | null
           id?: string
           loyalty_months?: number | null
           name: string
@@ -1399,6 +1527,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           download_speed?: number
+          early_payment_discount?: number | null
           id?: string
           loyalty_months?: number | null
           name?: string
