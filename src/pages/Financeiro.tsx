@@ -381,6 +381,20 @@ export default function Financeiro() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Installment dialog */}
+      <InstallmentDialog
+        open={!!installmentInvoice}
+        onOpenChange={(v) => !v && setInstallmentInvoice(null)}
+        invoice={installmentInvoice}
+      />
+
+      {/* Carnê digital dialog */}
+      <CarneDigitalDialog
+        open={carneOpen}
+        onOpenChange={setCarneOpen}
+        organizationId={orgId}
+      />
     </div>
   );
 }
