@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import type { ContractStatus } from "@/hooks/useContracts";
 import { useToast } from "@/hooks/use-toast";
 
 export type PlanTechnology = Database["public"]["Enums"]["plan_technology"];
