@@ -68,6 +68,7 @@ export function AppLayout() {
           </AnimatePresence>
         </main>
         <OnboardingTour />
+        <AiChatWidget />
       </SidebarInset>
     </SidebarProvider>
   );
