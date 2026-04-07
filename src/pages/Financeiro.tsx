@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet, Settings } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet, Settings, SplitSquareVertical, BookOpen } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -25,6 +25,8 @@ import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeF
 import { FinancialHealthKpis } from "@/components/billing/FinancialHealthKpis";
 import { BillingRulesManager } from "@/components/billing/BillingRulesManager";
 import { BankReconciliationTab } from "@/components/billing/BankReconciliationTab";
+import { InstallmentDialog } from "@/components/billing/InstallmentDialog";
+import { CarneDigitalDialog } from "@/components/billing/CarneDigitalDialog";
 
 const COLORS = [
   "hsl(var(--chart-1))",
@@ -79,6 +81,9 @@ export default function Financeiro() {
   const [paying, setPaying] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useFilterState(6);
+  const [installmentInvoice, setInstallmentInvoice] = useState<any>(null);
+  const [carneOpen, setCarneOpen] = useState(false);
+  const [orgId, setOrgId] = useState("");
 
   const filteredInvoices = useMemo(() => {
     if (!data) return [];
@@ -165,6 +170,12 @@ export default function Financeiro() {
           <Button onClick={handleGenerateInvoices} disabled={generating}>
             {generating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Zap className="mr-2 size-4" />}
             Gerar Faturas
+          </Button>
+          <Button variant="outline" onClick={async () => {
+            const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+            if (p?.organization_id) { setOrgId(p.organization_id); setCarneOpen(true); }
+          }}>
+            <BookOpen className="mr-2 size-4" /> Carnê Digital
           </Button>
         </div>
       </div>
@@ -296,12 +307,29 @@ export default function Financeiro() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {(invoice.status === "pending" || invoice.status === "overdue") && (
-                            <Button variant="ghost" size="sm" className="text-success hover:text-success"
-                              onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
-                              <CheckCircle className="mr-1 size-3.5" /> Baixa
-                            </Button>
-                          )}
+                          <div className="flex gap-1">
+                            {(invoice.status === "pending" || invoice.status === "overdue") && (
+                              <>
+                                <Button variant="ghost" size="sm" className="text-success hover:text-success"
+                                  onClick={() => { setPaidDate(new Date().toISOString().slice(0, 10)); setPayDialog({ id: invoice.id, name: invoice.customerName }); }}>
+                                  <CheckCircle className="mr-1 size-3.5" /> Baixa
+                                </Button>
+                                <Button variant="ghost" size="sm"
+                                  onClick={async () => {
+                                    const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+                                    setInstallmentInvoice({
+                                      id: invoice.id,
+                                      amount: invoice.amount,
+                                      dueDate: invoice.dueDate,
+                                      customerName: invoice.customerName,
+                                      organizationId: p?.organization_id ?? "",
+                                    });
+                                  }}>
+                                  <SplitSquareVertical className="mr-1 size-3.5" /> Parcelar
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -353,6 +381,20 @@ export default function Financeiro() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Installment dialog */}
+      <InstallmentDialog
+        open={!!installmentInvoice}
+        onOpenChange={(v) => !v && setInstallmentInvoice(null)}
+        invoice={installmentInvoice}
+      />
+
+      {/* Carnê digital dialog */}
+      <CarneDigitalDialog
+        open={carneOpen}
+        onOpenChange={setCarneOpen}
+        organizationId={orgId}
+      />
     </div>
   );
 }
