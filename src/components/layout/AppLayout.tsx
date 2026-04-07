@@ -7,6 +7,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import AiChatWidget from "@/components/ai/AiChatWidget";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -67,6 +68,7 @@ export function AppLayout() {
           </AnimatePresence>
         </main>
         <OnboardingTour />
+        <AiChatWidget />
       </SidebarInset>
     </SidebarProvider>
   );
