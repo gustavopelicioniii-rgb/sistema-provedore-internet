@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Pencil, Trash2, Loader2, Wifi, ArrowDown, ArrowUp, Search, Signal, Zap, Cable, Radio, Eye, EyeOff, Package } from "lucide-react";
-import { usePlans, useDeletePlan, useUpdatePlan, TECH_LABELS, type PlanRecord, type PlanTechnology } from "@/hooks/usePlans";
+import { usePlans, useDeletePlan, useTogglePlanActive, usePlanContractsCount, TECH_LABELS, type PlanRecord, type PlanTechnology } from "@/hooks/usePlans";
 import { formatCurrency } from "@/utils/finance";
 import PlanFormDialog from "@/components/plans/PlanFormDialog";
 import { AnimatePresence, motion } from "framer-motion";
@@ -30,14 +30,17 @@ const techColors: Record<PlanTechnology, string> = {
 export default function Planos() {
   const { data: plans = [], isLoading, error } = usePlans();
   const deletePlan = useDeletePlan();
-  const updatePlan = useUpdatePlan();
+  const togglePlanActive = useTogglePlanActive();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PlanRecord | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [togglePlan, setTogglePlan] = useState<PlanRecord | null>(null);
   const [search, setSearch] = useState("");
   const [techFilter, setTechFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { data: affectedContracts = 0 } = usePlanContractsCount(togglePlan?.id ?? null);
 
   const handleEdit = (plan: PlanRecord) => {
     setEditingPlan(plan);
@@ -50,7 +53,18 @@ export default function Planos() {
   };
 
   const handleToggleActive = (plan: PlanRecord) => {
-    updatePlan.mutate({ id: plan.id, data: { active: !plan.active } });
+    if (plan.active) {
+      setTogglePlan(plan);
+    } else {
+      togglePlanActive.mutate({ plan, suspendContracts: false });
+    }
+  };
+
+  const confirmToggle = (suspendContracts: boolean) => {
+    if (togglePlan) {
+      togglePlanActive.mutate({ plan: togglePlan, suspendContracts });
+      setTogglePlan(null);
+    }
   };
 
   const filtered = plans.filter((p) => {
@@ -279,6 +293,7 @@ export default function Planos() {
 
       <PlanFormDialog open={formOpen} onOpenChange={setFormOpen} editingPlan={editingPlan} />
 
+      {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -294,6 +309,44 @@ export default function Planos() {
               onClick={() => { if (deleteId) { deletePlan.mutate(deleteId); setDeleteId(null); } }}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle plan active confirmation */}
+      <AlertDialog open={!!togglePlan} onOpenChange={(open) => !open && setTogglePlan(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar plano "{togglePlan?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              {affectedContracts > 0 ? (
+                <>
+                  <p>
+                    Este plano possui <strong>{affectedContracts}</strong> contrato{affectedContracts !== 1 ? "s" : ""} ativo{affectedContracts !== 1 ? "s" : ""}.
+                  </p>
+                  <p>Deseja suspender automaticamente os contratos vinculados?</p>
+                </>
+              ) : (
+                <p>Nenhum contrato ativo vinculado a este plano.</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            {affectedContracts > 0 && (
+              <AlertDialogAction
+                onClick={() => confirmToggle(false)}
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                Desativar sem suspender contratos
+              </AlertDialogAction>
+            )}
+            <AlertDialogAction
+              onClick={() => confirmToggle(affectedContracts > 0)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {affectedContracts > 0 ? "Desativar e suspender contratos" : "Desativar plano"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
