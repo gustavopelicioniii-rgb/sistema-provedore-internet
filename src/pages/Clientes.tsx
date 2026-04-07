@@ -15,12 +15,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload, ChevronLeft, ChevronRight, Download, FileText } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Upload, ChevronLeft, ChevronRight, Download, FileText, BarChart3 } from "lucide-react";
 import CsvImportDialog from "@/components/customers/CsvImportDialog";
 import { useCustomers, useDeleteCustomer, type CustomerAddress, type CustomerRecord } from "@/hooks/useCustomers";
 import { formatCpfCnpj } from "@/utils/formatters";
 import CustomerFormDialog from "@/components/customers/CustomerFormDialog";
 import { downloadCsv, downloadPdfTable } from "@/utils/exportData";
+import { CreditAnalysisDialog } from "@/components/billing/CreditAnalysisDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusMap: Record<string, { label: string; className: string }> = {
   active: { label: "Ativo", className: "bg-success/10 text-success border-success/20" },
@@ -37,6 +39,7 @@ export default function Clientes() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [csvOpen, setCsvOpen] = useState(false);
   const [page, setPage] = useState(0);
+  const [creditCustomer, setCreditCustomer] = useState<any>(null);
   const pageSize = 20;
 
   const { data: customers, isLoading, error } = useCustomers(debouncedSearch);
@@ -172,6 +175,19 @@ export default function Clientes() {
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(customer); }}>
                                 <Pencil className="mr-2 size-4" /> Editar
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={async (e) => {
+                                e.stopPropagation();
+                                const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+                                setCreditCustomer({
+                                  id: customer.id,
+                                  name: customer.name,
+                                  cpf_cnpj: customer.cpf_cnpj,
+                                  financial_score: customer.financial_score,
+                                  organizationId: p?.organization_id ?? "",
+                                });
+                              }}>
+                                <BarChart3 className="mr-2 size-4" /> Análise de Crédito
+                              </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(customer.id); }}>
                                 <Trash2 className="mr-2 size-4" /> Excluir
                               </DropdownMenuItem>
@@ -206,6 +222,11 @@ export default function Clientes() {
 
       <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} editingCustomer={editingCustomer} />
       <CsvImportDialog open={csvOpen} onOpenChange={setCsvOpen} />
+      <CreditAnalysisDialog
+        open={!!creditCustomer}
+        onOpenChange={(v) => !v && setCreditCustomer(null)}
+        customer={creditCustomer}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
