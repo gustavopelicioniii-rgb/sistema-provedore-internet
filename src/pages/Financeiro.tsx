@@ -81,6 +81,9 @@ export default function Financeiro() {
   const [paying, setPaying] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useFilterState(6);
+  const [installmentInvoice, setInstallmentInvoice] = useState<any>(null);
+  const [carneOpen, setCarneOpen] = useState(false);
+  const [orgId, setOrgId] = useState("");
 
   const filteredInvoices = useMemo(() => {
     if (!data) return [];
@@ -167,6 +170,12 @@ export default function Financeiro() {
           <Button onClick={handleGenerateInvoices} disabled={generating}>
             {generating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Zap className="mr-2 size-4" />}
             Gerar Faturas
+          </Button>
+          <Button variant="outline" onClick={async () => {
+            const { data: p } = await supabase.from("profiles").select("organization_id").maybeSingle();
+            if (p?.organization_id) { setOrgId(p.organization_id); setCarneOpen(true); }
+          }}>
+            <BookOpen className="mr-2 size-4" /> Carnê Digital
           </Button>
         </div>
       </div>
