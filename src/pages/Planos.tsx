@@ -293,6 +293,7 @@ export default function Planos() {
 
       <PlanFormDialog open={formOpen} onOpenChange={setFormOpen} editingPlan={editingPlan} />
 
+      {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -308,6 +309,44 @@ export default function Planos() {
               onClick={() => { if (deleteId) { deletePlan.mutate(deleteId); setDeleteId(null); } }}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle plan active confirmation */}
+      <AlertDialog open={!!togglePlan} onOpenChange={(open) => !open && setTogglePlan(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar plano "{togglePlan?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              {affectedContracts > 0 ? (
+                <>
+                  <p>
+                    Este plano possui <strong>{affectedContracts}</strong> contrato{affectedContracts !== 1 ? "s" : ""} ativo{affectedContracts !== 1 ? "s" : ""}.
+                  </p>
+                  <p>Deseja suspender automaticamente os contratos vinculados?</p>
+                </>
+              ) : (
+                <p>Nenhum contrato ativo vinculado a este plano.</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            {affectedContracts > 0 && (
+              <AlertDialogAction
+                onClick={() => confirmToggle(false)}
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                Desativar sem suspender contratos
+              </AlertDialogAction>
+            )}
+            <AlertDialogAction
+              onClick={() => confirmToggle(affectedContracts > 0)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {affectedContracts > 0 ? "Desativar e suspender contratos" : "Desativar plano"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
