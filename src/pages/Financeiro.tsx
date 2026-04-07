@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet, Settings } from "lucide-react";
+import { DollarSign, TrendingUp, AlertTriangle, CheckCircle, Loader2, Zap, Download, FileText, Search, Sheet, Settings, SplitSquareVertical, BookOpen } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -25,6 +25,8 @@ import { DateRangeFilter, useFilterState } from "@/components/filters/DateRangeF
 import { FinancialHealthKpis } from "@/components/billing/FinancialHealthKpis";
 import { BillingRulesManager } from "@/components/billing/BillingRulesManager";
 import { BankReconciliationTab } from "@/components/billing/BankReconciliationTab";
+import { InstallmentDialog } from "@/components/billing/InstallmentDialog";
+import { CarneDigitalDialog } from "@/components/billing/CarneDigitalDialog";
 
 const COLORS = [
   "hsl(var(--chart-1))",
