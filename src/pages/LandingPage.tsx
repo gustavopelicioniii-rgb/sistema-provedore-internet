@@ -79,7 +79,10 @@ export default function LandingPage() {
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planos</a>
             <Link to="/portal/login">
-              <Button variant="ghost" size="sm">Entrar</Button>
+              <Button variant="ghost" size="sm">Portal do Assinante</Button>
+            </Link>
+            <Link to="/auth">
+              <Button variant="outline" size="sm">Painel Admin</Button>
             </Link>
             <Link to="/auth?tab=signup">
               <Button size="sm">Criar Conta <ArrowRight className="ml-1 size-3.5" /></Button>
