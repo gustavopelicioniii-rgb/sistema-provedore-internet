@@ -33,13 +33,9 @@ export default function Auth() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotOpen, setForgotOpen] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupName, setSignupName] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
 
 
   if (loading) return <FullPageSpinner />;
