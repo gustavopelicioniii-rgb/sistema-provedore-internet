@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Wifi, WifiOff, Signal, Router, RefreshCw, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { usePortalApi } from "@/hooks/usePortalApi";
 
 interface OnuStatus {
   online: boolean;
@@ -14,71 +14,37 @@ interface OnuStatus {
   error?: string;
 }
 
+interface ConnectionData {
+  status: string;
+  authentication: Record<string, string> | null;
+  plans: { name: string; download_speed: number; upload_speed: number } | null;
+}
+
 export function ConnectionStatus() {
   const { toast } = useToast();
+  const { portalFetch } = usePortalApi();
   const [onuStatus, setOnuStatus] = useState<OnuStatus | null>(null);
   const [checkingOnu, setCheckingOnu] = useState(false);
 
   const { data: contract } = useQuery({
     queryKey: ["portal-connection-status"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("contracts")
-        .select("status, plans(name, download_speed, upload_speed), authentication")
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => portalFetch<ConnectionData | null>("connection"),
   });
 
   const isOnline = contract?.status === "active";
-  const plan = contract?.plans as any;
-  const auth = contract?.authentication as any;
+  const plan = contract?.plans;
+  const auth = contract?.authentication;
 
   const handleCheckOnu = async () => {
     setCheckingOnu(true);
     try {
-      // Find an OLT device to query
-      const { data: devices } = await supabase
-        .from("network_devices")
-        .select("id")
-        .eq("device_type", "olt")
-        .eq("status", "online")
-        .limit(1);
-
-      if (!devices?.length) {
-        setOnuStatus({ online: false, error: "Nenhuma OLT online encontrada" });
-        return;
-      }
-
-      const { data: session } = await supabase.auth.getSession();
       const onuId = auth?.onu_id || auth?.serial_number;
-
       if (!onuId) {
         setOnuStatus({ online: false, error: "ONU não vinculada ao contrato" });
         return;
       }
-
-      const resp = await supabase.functions.invoke("olt-api", {
-        body: {
-          action: "get_onu_signal",
-          params: { device_id: devices[0].id, onu_id: onuId },
-        },
-        headers: { Authorization: `Bearer ${session.session?.access_token}` },
-      });
-
-      if (resp.error) {
-        // OLT relay not configured - show helpful message
-        setOnuStatus({ online: false, error: "Agente SNMP/TL1 não configurado" });
-      } else {
-        const signalData = resp.data?.data;
-        setOnuStatus({
-          online: true,
-          signal: signalData?.rx_power || signalData?.signal || "OK",
-          uptime: signalData?.uptime,
-        });
-      }
+      // ONU check would require a dedicated portal endpoint
+      setOnuStatus({ online: false, error: "Verificação de ONU via portal em implementação" });
     } catch (e: any) {
       setOnuStatus({ online: false, error: e.message || "Erro ao consultar ONU" });
     } finally {
@@ -126,7 +92,6 @@ export function ConnectionStatus() {
           </div>
         </div>
 
-        {/* ONU Status Result */}
         {onuStatus && (
           <div className="rounded-lg border p-3 space-y-1">
             <p className="text-xs font-medium text-muted-foreground">Status da ONU</p>

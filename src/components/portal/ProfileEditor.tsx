@@ -1,59 +1,49 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { usePortalApi } from "@/hooks/usePortalApi";
+import { useSubscriberAuth } from "@/hooks/useSubscriberAuth";
 import { User, Save, Loader2 } from "lucide-react";
+
+interface CustomerProfile {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  cpf_cnpj: string;
+}
 
 export function ProfileEditor() {
   const { toast } = useToast();
+  const { customer } = useSubscriberAuth();
+  const { portalFetch } = usePortalApi();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["portal-profile"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Não autenticado");
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, avatar_url")
-        .eq("id", user.id)
-        .single();
-
-      return {
-        email: user.email ?? "",
-        full_name: data?.full_name ?? "",
-        phone: user.user_metadata?.phone ?? "",
-      };
-    },
+    queryFn: () => portalFetch<CustomerProfile>("profile"),
   });
 
-  const [form, setForm] = useState<{ full_name: string; phone: string } | null>(null);
-  const current = form ?? { full_name: profile?.full_name ?? "", phone: profile?.phone ?? "" };
+  const [form, setForm] = useState<{ phone: string; whatsapp: string } | null>(null);
+  const current = form ?? {
+    phone: profile?.phone ?? "",
+    whatsapp: profile?.whatsapp ?? "",
+  };
 
   const updateProfile = useMutation({
-    mutationFn: async (vals: { full_name: string; phone: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Não autenticado");
-
-      const { error: profileErr } = await supabase
-        .from("profiles")
-        .update({ full_name: vals.full_name })
-        .eq("id", user.id);
-      if (profileErr) throw profileErr;
-
-      const { error: metaErr } = await supabase.auth.updateUser({
-        data: { phone: vals.phone },
+    mutationFn: async (vals: { phone: string; whatsapp: string }) => {
+      await portalFetch("update-profile", {
+        method: "POST",
+        body: { phone: vals.phone, whatsapp: vals.whatsapp },
       });
-      if (metaErr) throw metaErr;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portal-profile"] });
-      toast({ title: "Perfil atualizado com sucesso!" });
+      toast({ title: "Dados atualizados com sucesso!" });
       setForm(null);
     },
     onError: (e: Error) => {
@@ -80,18 +70,19 @@ export function ProfileEditor() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label>Email</Label>
-          <Input value={profile?.email ?? ""} disabled className="bg-muted" />
-          <p className="text-xs text-muted-foreground">O email não pode ser alterado por aqui.</p>
+          <Label>Nome</Label>
+          <Input value={profile?.name ?? customer?.name ?? ""} disabled className="bg-muted" />
         </div>
 
         <div className="space-y-2">
-          <Label>Nome completo</Label>
-          <Input
-            value={current.full_name}
-            onChange={(e) => setForm({ ...current, full_name: e.target.value })}
-            placeholder="Seu nome"
-          />
+          <Label>CPF/CNPJ</Label>
+          <Input value={profile?.cpf_cnpj ?? customer?.cpf ?? ""} disabled className="bg-muted" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Email</Label>
+          <Input value={profile?.email ?? ""} disabled className="bg-muted" />
+          <p className="text-xs text-muted-foreground">Para alterar o email, entre em contato com o suporte.</p>
         </div>
 
         <div className="space-y-2">
@@ -99,6 +90,15 @@ export function ProfileEditor() {
           <Input
             value={current.phone}
             onChange={(e) => setForm({ ...current, phone: e.target.value })}
+            placeholder="(00) 00000-0000"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>WhatsApp</Label>
+          <Input
+            value={current.whatsapp}
+            onChange={(e) => setForm({ ...current, whatsapp: e.target.value })}
             placeholder="(00) 00000-0000"
           />
         </div>

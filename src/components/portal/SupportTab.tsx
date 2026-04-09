@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { usePortalApi } from "@/hooks/usePortalApi";
 import { LifeBuoy } from "lucide-react";
 
 const TICKET_STATUS: Record<string, string> = {
@@ -19,38 +19,35 @@ const TICKET_STATUS: Record<string, string> = {
   closed: "Fechado",
 };
 
-export function SupportTab() {
-  const { data: tickets, isLoading } = useQuery({
-    queryKey: ["portal-tickets"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tickets")
-        .select("id, subject, description, priority, status, created_at, resolved_at, customers(name)")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+interface PortalTicket {
+  id: string;
+  subject: string;
+  description: string | null;
+  priority: string;
+  status: string;
+  created_at: string;
+  resolved_at: string | null;
+}
 
+export function SupportTab() {
+  const { portalFetch } = usePortalApi();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
 
+  const { data: tickets, isLoading } = useQuery({
+    queryKey: ["portal-tickets"],
+    queryFn: () => portalFetch<PortalTicket[]>("tickets"),
+  });
+
   const createTicket = useMutation({
     mutationFn: async () => {
-      const { data: profile } = await supabase.from("profiles").select("organization_id").maybeSingle();
-      if (!profile?.organization_id) throw new Error("Organização não encontrada.");
-      const { error } = await supabase.from("tickets").insert([{
-        organization_id: profile.organization_id,
-        subject,
-        description: description || null,
-        priority: "medium" as const,
-        status: "open" as const,
-      }]);
-      if (error) throw error;
+      await portalFetch("create-ticket", {
+        method: "POST",
+        body: { subject, description: description || null },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portal-tickets"] });

@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { usePortalApi } from "@/hooks/usePortalApi";
 import { formatCurrency, formatDate } from "@/utils/finance";
 import { FileText, Copy, CreditCard, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { generateBoletoPdf } from "@/utils/boletoPdf";
+import { useSubscriberAuth } from "@/hooks/useSubscriberAuth";
 
 const INVOICE_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   paid: { label: "Pago", variant: "default" },
@@ -18,25 +19,27 @@ const INVOICE_STATUS: Record<string, { label: string; variant: "default" | "seco
   cancelled: { label: "Cancelado", variant: "outline" },
 };
 
-function usePortalInvoices() {
-  return useQuery({
-    queryKey: ["portal-invoices"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invoices")
-        .select("id, amount, due_date, paid_date, status, barcode, pix_qrcode, customer_id, gateway_id, payment_method, customers(name)")
-        .order("due_date", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+interface PortalInvoice {
+  id: string;
+  amount: number;
+  due_date: string;
+  paid_date: string | null;
+  status: string;
+  barcode: string | null;
+  pix_qrcode: string | null;
+  payment_method: string | null;
 }
 
 export function InvoicesTab() {
-  const { data: invoices, isLoading } = usePortalInvoices();
+  const { portalFetch } = usePortalApi();
+  const { customer } = useSubscriberAuth();
   const { toast } = useToast();
   const [payingId, setPayingId] = useState<string | null>(null);
+
+  const { data: invoices, isLoading } = useQuery({
+    queryKey: ["portal-invoices"],
+    queryFn: () => portalFetch<PortalInvoice[]>("invoices"),
+  });
 
   const handleCopyBarcode = (barcode: string) => {
     navigator.clipboard.writeText(barcode);
@@ -48,29 +51,12 @@ export function InvoicesTab() {
     toast({ title: "Código PIX copiado!" });
   };
 
-  const handleGeneratePix = async (invoiceId: string) => {
-    setPayingId(invoiceId);
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      const resp = await supabase.functions.invoke("payment-gateway", {
-        body: { action: "generate_pix", params: { invoice_id: invoiceId } },
-        headers: { Authorization: `Bearer ${session.session?.access_token}` },
-      });
-      if (resp.error) throw resp.error;
-      toast({ title: "PIX gerado!", description: "Use o código PIX para pagar." });
-    } catch (e: any) {
-      toast({ title: "Erro ao gerar PIX", description: e.message, variant: "destructive" });
-    } finally {
-      setPayingId(null);
-    }
-  };
-
-  const handleDownloadPdf = async (inv: any) => {
+  const handleDownloadPdf = async (inv: PortalInvoice) => {
     const st = INVOICE_STATUS[inv.status] ?? { label: inv.status, variant: "outline" as const };
     try {
       await generateBoletoPdf({
         id: inv.id,
-        customerName: (inv.customers as any)?.name ?? "—",
+        customerName: customer?.name ?? "—",
         amount: inv.amount,
         dueDate: inv.due_date,
         status: inv.status,
@@ -111,7 +97,6 @@ export function InvoicesTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Cliente</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Status</TableHead>
@@ -124,9 +109,6 @@ export function InvoicesTab() {
                   const canPay = inv.status === "pending" || inv.status === "overdue";
                   return (
                     <TableRow key={inv.id}>
-                      <TableCell className="font-medium text-sm">
-                        {(inv.customers as any)?.name ?? "—"}
-                      </TableCell>
                       <TableCell className="text-sm">{formatDate(inv.due_date)}</TableCell>
                       <TableCell className="text-sm font-semibold">{formatCurrency(inv.amount)}</TableCell>
                       <TableCell>
@@ -150,7 +132,11 @@ export function InvoicesTab() {
                               variant="default"
                               className="h-7 text-xs gap-1"
                               disabled={payingId === inv.id}
-                              onClick={() => handleGeneratePix(inv.id)}
+                              onClick={() => {
+                                setPayingId(inv.id);
+                                toast({ title: "Função de pagamento será implementada via gateway" });
+                                setPayingId(null);
+                              }}
                             >
                               {payingId === inv.id ? <Loader2 className="size-3 animate-spin" /> : <CreditCard className="size-3" />}
                               Pagar PIX
