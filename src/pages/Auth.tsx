@@ -49,17 +49,6 @@ export default function Auth() {
     setIsSubmitting(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    if (error) {
-      toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Conta criada!", description: "Verifique seu email para confirmar o cadastro." });
-    }
-    setIsSubmitting(false);
-  };
 
   return (
     <div className="flex min-h-screen">
