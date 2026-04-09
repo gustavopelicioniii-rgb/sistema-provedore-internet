@@ -78,7 +78,7 @@ export default function LandingPage() {
           <div className="hidden items-center gap-6 md:flex">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planos</a>
-            <Link to="/auth">
+            <Link to="/portal/login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
             <Link to="/auth?tab=signup">
