@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { FullPageSpinner } from "@/components/ui/spinner";
-import { Navigate, Link, useSearchParams } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Shield, Zap, BarChart3, Users, Server,
