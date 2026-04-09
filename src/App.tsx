@@ -84,7 +84,7 @@ const AppRoutes = React.forwardRef<HTMLDivElement>(function AppRoutes(_props, _r
         <Route path="/fiscal" element={<Fiscal />} />
         <Route path="/estoque" element={<Estoque />} />
         <Route path="/frota" element={<Frota />} />
-        <Route path="/portal-assinante" element={<PortalAssinante />} />
+        <Route path="/portal-assinante" element={<SubscriberAuthProvider><PortalAssinante /></SubscriberAuthProvider>} />
         <Route path="/automacoes" element={<Automacoes />} />
         <Route path="/relatorios" element={<Relatorios />} />
         <Route path="/configuracoes" element={<Configuracoes />} />
