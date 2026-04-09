@@ -31,9 +31,8 @@ const socialProof = [
 export default function Auth() {
   const { user, loading, signIn, signUp } = useAuth();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab] = useState("login");
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
