@@ -263,10 +263,10 @@ export default function LandingPage() {
                         </li>
                       ))}
                     </ul>
-                    <Link to="/auth?tab=signup" className="mt-8 block">
+                    <Link to="/portal/login" className="mt-8 block">
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
-                          Começar Agora <ChevronRight className="ml-1 size-4" />
+                          Fale Conosco <ChevronRight className="ml-1 size-4" />
                         </Button>
                       </motion.div>
                     </Link>
@@ -292,11 +292,9 @@ export default function LandingPage() {
           <p className="mt-4 text-muted-foreground">
             Junte-se a centenas de ISPs que já automatizam sua operação com o NetPulse.
           </p>
-          <Link to="/auth?tab=signup">
-            <Button size="lg" className="mt-8 px-10 text-base">
-              Criar Conta Grátis <ArrowRight className="ml-2 size-4" />
-            </Button>
-          </Link>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Entre em contato com nossa equipe comercial para obter suas credenciais de acesso.
+          </p>
         </motion.div>
       </section>
 
