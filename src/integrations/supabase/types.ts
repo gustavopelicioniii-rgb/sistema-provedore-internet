@@ -2124,7 +2124,95 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      network_devices_safe: {
+        Row: {
+          api_port: number | null
+          api_username: string | null
+          connected_clients: number | null
+          cpu_usage: number | null
+          created_at: string | null
+          device_type: Database["public"]["Enums"]["device_type"] | null
+          firmware_version: string | null
+          id: string | null
+          ip_address: string | null
+          last_seen_at: string | null
+          location: string | null
+          mac_address: string | null
+          manufacturer:
+            | Database["public"]["Enums"]["device_manufacturer"]
+            | null
+          memory_usage: number | null
+          model: string | null
+          name: string | null
+          notes: string | null
+          organization_id: string | null
+          serial_number: string | null
+          status: Database["public"]["Enums"]["device_status"] | null
+          updated_at: string | null
+          uptime: string | null
+        }
+        Insert: {
+          api_port?: number | null
+          api_username?: string | null
+          connected_clients?: number | null
+          cpu_usage?: number | null
+          created_at?: string | null
+          device_type?: Database["public"]["Enums"]["device_type"] | null
+          firmware_version?: string | null
+          id?: string | null
+          ip_address?: string | null
+          last_seen_at?: string | null
+          location?: string | null
+          mac_address?: string | null
+          manufacturer?:
+            | Database["public"]["Enums"]["device_manufacturer"]
+            | null
+          memory_usage?: number | null
+          model?: string | null
+          name?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["device_status"] | null
+          updated_at?: string | null
+          uptime?: string | null
+        }
+        Update: {
+          api_port?: number | null
+          api_username?: string | null
+          connected_clients?: number | null
+          cpu_usage?: number | null
+          created_at?: string | null
+          device_type?: Database["public"]["Enums"]["device_type"] | null
+          firmware_version?: string | null
+          id?: string | null
+          ip_address?: string | null
+          last_seen_at?: string | null
+          location?: string | null
+          mac_address?: string | null
+          manufacturer?:
+            | Database["public"]["Enums"]["device_manufacturer"]
+            | null
+          memory_usage?: number | null
+          model?: string | null
+          name?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["device_status"] | null
+          updated_at?: string | null
+          uptime?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_devices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       dispatch_automation_event_inline: {
