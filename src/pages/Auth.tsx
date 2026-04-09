@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { FullPageSpinner } from "@/components/ui/spinner";
-import { Navigate, Link, useSearchParams } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Shield, Zap, BarChart3, Users, Server,
@@ -31,21 +31,12 @@ const socialProof = [
 export default function Auth() {
   const { user, loading, signIn, signUp } = useAuth();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") === "signup" ? "signup" : "login");
   const [forgotOpen, setForgotOpen] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupName, setSignupName] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
 
-  useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "signup") setActiveTab("signup");
-  }, [searchParams]);
 
   if (loading) return <FullPageSpinner />;
   if (user) return <Navigate to="/dashboard" replace />;
@@ -58,17 +49,6 @@ export default function Auth() {
     setIsSubmitting(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    if (error) {
-      toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Conta criada!", description: "Verifique seu email para confirmar o cadastro." });
-    }
-    setIsSubmitting(false);
-  };
 
   return (
     <div className="flex min-h-screen">
@@ -204,22 +184,15 @@ export default function Auth() {
           {/* Header */}
           <div className="lg:text-left text-center">
             <h1 className="text-2xl font-display font-bold tracking-tight">
-              {activeTab === "login" ? "Bem-vindo de volta 👋" : "Comece agora"}
+              Bem-vindo de volta 👋
             </h1>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              {activeTab === "login"
-                ? "Entre com suas credenciais para acessar o painel"
-                : "Crie sua conta grátis — 14 dias sem compromisso"}
+              Entre com suas credenciais para acessar o painel
             </p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-11">
-              <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
-              <TabsTrigger value="signup" className="text-sm">Criar Conta</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login" className="mt-6">
+          <Card className="border-border/60">
+            <CardContent className="pt-6">
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
                   <Label htmlFor="login-email" className="text-sm font-medium">Email</Label>
@@ -252,54 +225,12 @@ export default function Auth() {
                   {isSubmitting ? "Entrando..." : "Entrar no Painel"}
                 </Button>
               </form>
-            </TabsContent>
+            </CardContent>
+          </Card>
 
-            <TabsContent value="signup" className="mt-6">
-              <form onSubmit={handleSignup} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-sm font-medium">Nome Completo</Label>
-                  <Input id="signup-name" type="text" placeholder="Seu nome" value={signupName} onChange={(e) => setSignupName(e.target.value)} required className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-sm font-medium">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="seu@provedor.com.br" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-sm font-medium">Senha</Label>
-                  <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required minLength={6} className="h-11" />
-                </div>
-                <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={isSubmitting}>
-                  {isSubmitting ? "Criando conta..." : "Criar Conta Grátis"}
-                </Button>
-                <p className="text-center text-[11px] text-muted-foreground">
-                  Ao criar sua conta, você concorda com os{" "}
-                  <span className="text-primary cursor-pointer hover:underline">Termos de Uso</span> e{" "}
-                  <span className="text-primary cursor-pointer hover:underline">Política de Privacidade</span>
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex items-center gap-4 pt-2">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground">ou</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="size-3.5 text-success" />
-              <span>14 dias grátis</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="size-3.5 text-success" />
-              <span>Sem cartão</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="size-3.5 text-success" />
-              <span>Cancele quando quiser</span>
-            </div>
-          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Credenciais fornecidas pela equipe NetPulse.
+          </p>
 
           <p className="text-center text-xs text-muted-foreground lg:hidden">
             <Link to="/" className="text-primary hover:underline">← Voltar ao site</Link>

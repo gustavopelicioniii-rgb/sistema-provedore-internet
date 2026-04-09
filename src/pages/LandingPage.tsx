@@ -79,17 +79,11 @@ export default function LandingPage() {
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Planos</a>
             <Link to="/portal/login">
-              <Button variant="ghost" size="sm">Portal do Assinante</Button>
-            </Link>
-            <Link to="/auth">
-              <Button variant="outline" size="sm">Painel Admin</Button>
-            </Link>
-            <Link to="/auth?tab=signup">
-              <Button size="sm">Criar Conta <ArrowRight className="ml-1 size-3.5" /></Button>
+              <Button size="sm">Portal do Assinante <ArrowRight className="ml-1 size-3.5" /></Button>
             </Link>
           </div>
-          <Link to="/auth?tab=signup" className="md:hidden">
-            <Button size="sm">Começar</Button>
+          <Link to="/portal/login" className="md:hidden">
+            <Button size="sm">Portal do Assinante</Button>
           </Link>
         </div>
       </nav>
@@ -131,10 +125,10 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            <Link to="/auth?tab=signup">
+            <Link to="/portal/login">
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
                 <Button size="lg" className="px-8 text-base">
-                  Começar Grátis por 14 Dias <ArrowRight className="ml-2 size-4" />
+                  Acessar Portal do Assinante <ArrowRight className="ml-2 size-4" />
                 </Button>
               </motion.div>
             </Link>
@@ -269,10 +263,10 @@ export default function LandingPage() {
                         </li>
                       ))}
                     </ul>
-                    <Link to="/auth?tab=signup" className="mt-8 block">
+                    <Link to="/portal/login" className="mt-8 block">
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Button className="w-full" variant={plan.highlight ? "default" : "outline"}>
-                          Começar Agora <ChevronRight className="ml-1 size-4" />
+                          Fale Conosco <ChevronRight className="ml-1 size-4" />
                         </Button>
                       </motion.div>
                     </Link>
@@ -298,11 +292,9 @@ export default function LandingPage() {
           <p className="mt-4 text-muted-foreground">
             Junte-se a centenas de ISPs que já automatizam sua operação com o NetPulse.
           </p>
-          <Link to="/auth?tab=signup">
-            <Button size="lg" className="mt-8 px-10 text-base">
-              Criar Conta Grátis <ArrowRight className="ml-2 size-4" />
-            </Button>
-          </Link>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Entre em contato com nossa equipe comercial para obter suas credenciais de acesso.
+          </p>
         </motion.div>
       </section>
 
