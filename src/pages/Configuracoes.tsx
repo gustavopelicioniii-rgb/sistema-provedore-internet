@@ -60,7 +60,7 @@ function useUpdateOrganization() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async (updates: Record<string, unknown>) => {
+    mutationFn: async (updates: { name?: string; cnpj?: string; address?: Record<string, unknown>; settings?: Record<string, unknown>; logo_url?: string }) => {
       const { data: org } = await supabase.from("organizations").select("id").single();
       if (!org) throw new Error("Organização não encontrada");
       const { error } = await supabase.from("organizations").update(updates).eq("id", org.id);
