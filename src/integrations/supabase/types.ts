@@ -2126,6 +2126,7 @@ export type Database = {
     Views: {
       network_devices_safe: {
         Row: {
+          api_password: string | null
           api_port: number | null
           api_username: string | null
           connected_clients: number | null
@@ -2147,13 +2148,15 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           serial_number: string | null
+          snmp_community: string | null
           status: Database["public"]["Enums"]["device_status"] | null
           updated_at: string | null
           uptime: string | null
         }
         Insert: {
+          api_password?: never
           api_port?: number | null
-          api_username?: string | null
+          api_username?: never
           connected_clients?: number | null
           cpu_usage?: number | null
           created_at?: string | null
@@ -2173,13 +2176,15 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           serial_number?: string | null
+          snmp_community?: never
           status?: Database["public"]["Enums"]["device_status"] | null
           updated_at?: string | null
           uptime?: string | null
         }
         Update: {
+          api_password?: never
           api_port?: number | null
-          api_username?: string | null
+          api_username?: never
           connected_clients?: number | null
           cpu_usage?: number | null
           created_at?: string | null
@@ -2199,6 +2204,7 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           serial_number?: string | null
+          snmp_community?: never
           status?: Database["public"]["Enums"]["device_status"] | null
           updated_at?: string | null
           uptime?: string | null
@@ -2215,6 +2221,16 @@ export type Database = {
       }
     }
     Functions: {
+      create_public_lead: {
+        Args: {
+          p_email?: string
+          p_name: string
+          p_notes?: string
+          p_org_id: string
+          p_phone: string
+        }
+        Returns: string
+      }
       dispatch_automation_event_inline: {
         Args: {
           p_event: string
@@ -2223,7 +2239,39 @@ export type Database = {
         }
         Returns: Record<string, unknown>
       }
+      get_coverage_nodes: {
+        Args: { p_org_id: string }
+        Returns: {
+          capacity: number
+          id: string
+          lat: number
+          lng: number
+          name: string
+          node_type: string
+          status: string
+          used: number
+        }[]
+      }
       get_org_id_by_slug: { Args: { p_slug: string }; Returns: string }
+      get_org_public_info: {
+        Args: { p_slug: string }
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+        }[]
+      }
+      get_public_plans: {
+        Args: { p_org_id: string }
+        Returns: {
+          download_speed: number
+          id: string
+          name: string
+          price: number
+          technology: string
+          upload_speed: number
+        }[]
+      }
       get_user_organization_id: { Args: never; Returns: string }
       has_role: {
         Args: {

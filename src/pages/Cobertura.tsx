@@ -80,14 +80,12 @@ function LeadCaptureForm({ orgId, orgName }: { orgId: string; orgName: string })
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("leads").insert({
-        organization_id: orgId,
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || null,
-        notes: message.trim() || `Contato via mapa de cobertura - ${orgName}`,
-        source: "website" as any,
-        stage: "new" as any,
+      const { error } = await supabase.rpc("create_public_lead", {
+        p_org_id: orgId,
+        p_name: name.trim(),
+        p_phone: phone.trim(),
+        p_email: email.trim() || null,
+        p_notes: message.trim() || `Contato via mapa de cobertura - ${orgName}`,
       });
       if (error) throw error;
       setSubmitted(true);
@@ -158,12 +156,10 @@ export default function Cobertura() {
     queryKey: ["public-org", slug],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("organizations")
-        .select("id, name, logo_url")
-        .eq("slug", slug!)
-        .single();
+        .rpc("get_org_public_info", { p_slug: slug! });
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error("Organização não encontrada");
+      return data[0] as { id: string; name: string; logo_url: string | null };
     },
     enabled: !!slug,
   });
@@ -172,13 +168,10 @@ export default function Cobertura() {
     queryKey: ["public-ftth-nodes", org?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("ftth_nodes")
-        .select("*")
-        .eq("organization_id", org!.id)
-        .in("status", ["active", "full"])
-        .order("name");
+        .rpc("get_coverage_nodes", { p_org_id: org!.id });
       if (error) throw error;
-      return data;
+      // Filter active/full on client side
+      return (data ?? []).filter((n: any) => n.status === "active" || n.status === "full");
     },
     enabled: !!org?.id,
   });
@@ -188,13 +181,9 @@ export default function Cobertura() {
     queryKey: ["public-plans", org?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("plans")
-        .select("id, name, price, download_speed, upload_speed, technology")
-        .eq("organization_id", org!.id)
-        .eq("active", true)
-        .order("price");
+        .rpc("get_public_plans", { p_org_id: org!.id });
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     enabled: !!org?.id,
   });
@@ -385,7 +374,7 @@ export default function Cobertura() {
                       <Popup>
                         <div className="min-w-[160px]">
                           <p className="font-bold text-sm mb-1">{node.name}</p>
-                          {node.address && <p className="text-xs text-gray-500 mb-2">{node.address}</p>}
+                          {(node as any).address && <p className="text-xs text-gray-500 mb-2">{(node as any).address}</p>}
                           <div className="text-xs space-y-0.5">
                             <p><strong>Tipo:</strong> {typeLabels[node.node_type] ?? node.node_type}</p>
                             <p><strong>Status:</strong> {statusLabels[node.status] ?? node.status}</p>
