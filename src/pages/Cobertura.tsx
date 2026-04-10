@@ -80,14 +80,12 @@ function LeadCaptureForm({ orgId, orgName }: { orgId: string; orgName: string })
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("leads").insert({
-        organization_id: orgId,
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || null,
-        notes: message.trim() || `Contato via mapa de cobertura - ${orgName}`,
-        source: "website" as any,
-        stage: "new" as any,
+      const { error } = await supabase.rpc("create_public_lead", {
+        p_org_id: orgId,
+        p_name: name.trim(),
+        p_phone: phone.trim(),
+        p_email: email.trim() || null,
+        p_notes: message.trim() || `Contato via mapa de cobertura - ${orgName}`,
       });
       if (error) throw error;
       setSubmitted(true);
@@ -183,13 +181,9 @@ export default function Cobertura() {
     queryKey: ["public-plans", org?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("plans")
-        .select("id, name, price, download_speed, upload_speed, technology")
-        .eq("organization_id", org!.id)
-        .eq("active", true)
-        .order("price");
+        .rpc("get_public_plans", { p_org_id: org!.id });
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
     enabled: !!org?.id,
   });
