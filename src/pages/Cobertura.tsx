@@ -158,12 +158,10 @@ export default function Cobertura() {
     queryKey: ["public-org", slug],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("organizations")
-        .select("id, name, logo_url")
-        .eq("slug", slug!)
-        .single();
+        .rpc("get_org_public_info", { p_slug: slug! });
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error("Organização não encontrada");
+      return data[0] as { id: string; name: string; logo_url: string | null };
     },
     enabled: !!slug,
   });
@@ -172,13 +170,10 @@ export default function Cobertura() {
     queryKey: ["public-ftth-nodes", org?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("ftth_nodes")
-        .select("*")
-        .eq("organization_id", org!.id)
-        .in("status", ["active", "full"])
-        .order("name");
+        .rpc("get_coverage_nodes", { p_org_id: org!.id });
       if (error) throw error;
-      return data;
+      // Filter active/full on client side
+      return (data ?? []).filter((n: any) => n.status === "active" || n.status === "full");
     },
     enabled: !!org?.id,
   });

@@ -29,7 +29,7 @@ export default function PortalLogin() {
   const params = new URLSearchParams(window.location.search);
   const orgSlug = params.get("org") || "";
 
-  // Fetch organization branding
+  // Fetch organization branding via secure RPC
   useEffect(() => {
     async function fetchOrg() {
       if (!orgSlug) {
@@ -38,11 +38,8 @@ export default function PortalLogin() {
       }
       try {
         const { data } = await supabase
-          .from("organizations")
-          .select("id, name, logo_url")
-          .eq("slug", orgSlug)
-          .single();
-        if (data) setOrg(data);
+          .rpc("get_org_public_info", { p_slug: orgSlug });
+        if (data && data.length > 0) setOrg(data[0] as OrgBranding);
       } catch {
         // silently fail
       }

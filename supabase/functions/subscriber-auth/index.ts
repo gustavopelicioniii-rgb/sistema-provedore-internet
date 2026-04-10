@@ -1,8 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 import bcrypt from "npm:bcryptjs@2.4.3";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 const LoginSchema = z.object({
   cpf: z.string().min(11).max(18),
@@ -24,11 +29,11 @@ function checkRateLimit(key: string): boolean {
   const now = Date.now();
   const entry = loginAttempts.get(key);
   if (!entry || now > entry.resetAt) {
-    loginAttempts.set(key, { count: 1, resetAt: now + 60_000 }); // 1 min window
+    loginAttempts.set(key, { count: 1, resetAt: now + 60_000 });
     return true;
   }
   entry.count++;
-  if (entry.count > 5) return false; // max 5 attempts per minute
+  if (entry.count > 5) return false;
   return true;
 }
 
@@ -42,6 +47,13 @@ async function getJwtKey(): Promise<CryptoKey> {
     false,
     ["sign", "verify"]
   );
+}
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 Deno.serve(async (req: Request) => {
@@ -61,50 +73,43 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && path === "login") {
       return await handleLogin(req, adminClient);
     }
-
     if (req.method === "POST" && path === "register") {
       return await handleRegister(req, adminClient);
     }
-
     if (req.method === "POST" && path === "verify") {
       return await handleVerify(req);
     }
-
-    return new Response(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Not found" }, 404);
   } catch (err) {
     console.error("subscriber-auth error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });
 
-async function handleLogin(req: Request, adminClient: ReturnType<typeof createClient>) {
+async function handleLogin(
+  req: Request,
+  adminClient: ReturnType<typeof createClient>
+) {
   const body = await req.json();
   const parsed = LoginSchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
+      400
+    );
   }
 
   const { cpf, password, organization_slug } = parsed.data;
   const cpfDigits = cpf.replace(/\D/g, "");
 
-  // Rate limit by CPF
   if (!checkRateLimit(cpfDigits)) {
-    return new Response(JSON.stringify({ error: "Muitas tentativas. Tente novamente em 1 minuto." }), {
-      status: 429,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      { error: "Muitas tentativas. Tente novamente em 1 minuto." },
+      429
+    );
   }
 
-  // Find organization by slug
+  // Find organization by slug using service role (bypasses RLS)
   const { data: org, error: orgError } = await adminClient
     .from("organizations")
     .select("id, name, logo_url")
@@ -112,10 +117,7 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
     .single();
 
   if (orgError || !org) {
-    return new Response(JSON.stringify({ error: "CPF ou senha inválidos" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "CPF ou senha inválidos" }, 401);
   }
 
   // Find subscriber credentials
@@ -127,19 +129,13 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
     .single();
 
   if (credError || !cred) {
-    return new Response(JSON.stringify({ error: "CPF ou senha inválidos" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "CPF ou senha inválidos" }, 401);
   }
 
   // Verify password
   const match = bcrypt.compareSync(password, cred.password_hash);
   if (!match) {
-    return new Response(JSON.stringify({ error: "CPF ou senha inválidos" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "CPF ou senha inválidos" }, 401);
   }
 
   // Get customer info
@@ -158,7 +154,7 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
       customer_id: cred.customer_id,
       organization_id: cred.organization_id,
       type: "subscriber",
-      exp: getNumericDate(24 * 60 * 60), // 24h
+      exp: getNumericDate(24 * 60 * 60),
       iat: getNumericDate(0),
     },
     key
@@ -170,7 +166,7 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
     .update({ last_login_at: new Date().toISOString() })
     .eq("id", cred.id);
 
-  return new Response(JSON.stringify({
+  return jsonResponse({
     token,
     customer: {
       id: customer?.id,
@@ -183,45 +179,44 @@ async function handleLogin(req: Request, adminClient: ReturnType<typeof createCl
       name: org.name,
       logo_url: org.logo_url,
     },
-  }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-async function handleRegister(req: Request, adminClient: ReturnType<typeof createClient>) {
-  // Validate admin auth
+async function handleRegister(
+  req: Request,
+  adminClient: ReturnType<typeof createClient>
+) {
+  // Validate admin auth via JWT
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Não autorizado" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Não autorizado" }, 401);
   }
 
+  const token = authHeader.replace("Bearer ", "");
+
+  // Validate admin JWT using Supabase getUser
   const userClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const { data: claims, error: claimsError } = await userClient.auth.getClaims(
-    authHeader.replace("Bearer ", "")
-  );
-  if (claimsError || !claims?.claims?.sub) {
-    return new Response(JSON.stringify({ error: "Não autorizado" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  const {
+    data: { user },
+    error: userError,
+  } = await userClient.auth.getUser(token);
+
+  if (userError || !user) {
+    return jsonResponse({ error: "Não autorizado" }, 401);
   }
 
   const body = await req.json();
   const parsed = RegisterSchema.safeParse(body);
   if (!parsed.success) {
-    return new Response(JSON.stringify({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      { error: "Dados inválidos", details: parsed.error.flatten().fieldErrors },
+      400
+    );
   }
 
   const { customer_id, cpf, password, organization_id } = parsed.data;
@@ -242,25 +237,19 @@ async function handleRegister(req: Request, adminClient: ReturnType<typeof creat
     .single();
 
   if (error) {
-    return new Response(JSON.stringify({ error: "Erro ao registrar credenciais", details: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      { error: "Erro ao registrar credenciais", details: error.message },
+      400
+    );
   }
 
-  return new Response(JSON.stringify({ success: true, id: data.id }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return jsonResponse({ success: true, id: data.id });
 }
 
 async function handleVerify(req: Request) {
   const { token } = await req.json();
   if (!token) {
-    return new Response(JSON.stringify({ error: "Token ausente" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Token ausente" }, 400);
   }
 
   try {
@@ -271,14 +260,11 @@ async function handleVerify(req: Request) {
       throw new Error("Invalid token type");
     }
 
-    return new Response(JSON.stringify({ valid: true, payload }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ valid: true, payload });
   } catch {
-    return new Response(JSON.stringify({ valid: false, error: "Token inválido ou expirado" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      { valid: false, error: "Token inválido ou expirado" },
+      401
+    );
   }
 }
