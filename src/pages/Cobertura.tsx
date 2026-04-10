@@ -380,7 +380,7 @@ export default function Cobertura() {
                       <Popup>
                         <div className="min-w-[160px]">
                           <p className="font-bold text-sm mb-1">{node.name}</p>
-                          {node.address && <p className="text-xs text-gray-500 mb-2">{node.address}</p>}
+                          {(node as any).address && <p className="text-xs text-gray-500 mb-2">{(node as any).address}</p>}
                           <div className="text-xs space-y-0.5">
                             <p><strong>Tipo:</strong> {typeLabels[node.node_type] ?? node.node_type}</p>
                             <p><strong>Status:</strong> {statusLabels[node.status] ?? node.status}</p>
