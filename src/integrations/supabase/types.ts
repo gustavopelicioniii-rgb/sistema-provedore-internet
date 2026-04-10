@@ -2221,6 +2221,16 @@ export type Database = {
       }
     }
     Functions: {
+      create_public_lead: {
+        Args: {
+          p_email?: string
+          p_name: string
+          p_notes?: string
+          p_org_id: string
+          p_phone: string
+        }
+        Returns: string
+      }
       dispatch_automation_event_inline: {
         Args: {
           p_event: string
@@ -2249,6 +2259,17 @@ export type Database = {
           id: string
           logo_url: string
           name: string
+        }[]
+      }
+      get_public_plans: {
+        Args: { p_org_id: string }
+        Returns: {
+          download_speed: number
+          id: string
+          name: string
+          price: number
+          technology: string
+          upload_speed: number
         }[]
       }
       get_user_organization_id: { Args: never; Returns: string }
