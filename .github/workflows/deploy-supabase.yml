@@ -1,0 +1,52 @@
+name: Deploy Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+
+jobs:
+  deploy-functions:
+    name: Deploy Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase
+          supabase --version
+          
+      - name: Deploy Functions
+        run: supabase functions deploy
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+  deploy-migrations:
+    name: Deploy Database Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+          
+      - name: Link project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          
+      - name: Push migrations
+        run: supabase db push
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
