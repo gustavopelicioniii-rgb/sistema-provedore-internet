@@ -1,4 +1,20 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+// Rate limiting (in-memory, resets on cold start)
+const rateLimits = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(key: string, maxRequests = 100, windowMs = 60000): boolean {
+  const now = Date.now();
+  const entry = rateLimits.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimits.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  entry.count++;
+  if (entry.count > maxRequests) return false;
+  return true;
+}
+
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { verify } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
@@ -40,6 +56,15 @@ function jsonResponse(data: unknown, status = 200) {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Rate limiting
+  const clientIp = req.headers.get("x-forwarded-for") || "unknown";
+  if (!checkRateLimit(clientIp)) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+      status: 429,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const adminClient = createClient(
