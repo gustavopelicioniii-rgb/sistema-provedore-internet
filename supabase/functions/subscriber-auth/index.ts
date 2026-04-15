@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
-import bcrypt from "npm:bcryptjs@2.4.3";
+import bcrypt from "https://esm.sh/bcryptjs@2.4.3";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {

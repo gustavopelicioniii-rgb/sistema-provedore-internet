@@ -9,7 +9,7 @@ export enum LogLevel {
 }
 
 interface LogEntry {
-  timestamp: string;
+  timestamp?: string;
   level: LogLevel;
   message: string;
   context?: Record<string, unknown>;
