@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FullPageSpinner } from "@/components/ui/spinner";
 import { Navigate, Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useApiAuth } from "@/hooks/useApiAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ const socialProof = [
 ];
 
 export default function Auth() {
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, login } = useApiAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -44,8 +44,8 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const { error } = await signIn(loginEmail, loginPassword);
-    if (error) toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+    const { error } = await login(loginEmail, loginPassword);
+    if (error) toast({ title: "Erro ao entrar", description: error, variant: "destructive" });
     setIsSubmitting(false);
   };
 

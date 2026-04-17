@@ -6,7 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { ApiAuthProvider, useApiAuth } from "@/hooks/useApiAuth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Clientes from "@/pages/Clientes";
@@ -35,18 +35,19 @@ import PortalDashboard from "@/pages/PortalDashboard";
 import NotFound from "@/pages/NotFound";
 import Cobertura from "@/pages/Cobertura";
 import { SubscriberAuthProvider } from "@/hooks/useSubscriberAuth";
+import { useApiAuth } from "@/hooks/useApiAuth";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useApiAuth();
   if (loading) return <FullPageSpinner />;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
 function PublicHome() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useApiAuth();
   if (loading) return <FullPageSpinner />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <LandingPage />;
@@ -101,9 +102,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthProvider>
+          <ApiAuthProvider>
             <AppRoutes />
-          </AuthProvider>
+          </ApiAuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
