@@ -1,7 +1,6 @@
 import { Router, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
 import { AuthRequest } from '../middleware/auth.js'
-import { equipmentManager } from './equipmentManager.js'
 
 const router = Router()
 const prisma = new PrismaClient()
@@ -18,21 +17,10 @@ router.get('/', async (req: AuthRequest, res: Response) => {
     
     const equipment = await prisma.equipment.findMany({
       where,
-      include: {
-        credentials: {
-          select: { authType: true, username: true }
-        }
-      },
       orderBy: { name: 'asc' }
     })
     
-    // Remove sensitive data
-    const sanitized = equipment.map(eq => ({
-      ...eq,
-      credentials: undefined
-    }))
-    
-    res.json(sanitized)
+    res.json(equipment)
   } catch (error) {
     console.error('Get equipment error:', error)
     res.status(500).json({ error: 'Failed to get equipment' })
@@ -46,19 +34,14 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
     const { id } = req.params
     
     const equipment = await prisma.equipment.findFirst({
-      where: { id, organizationId },
-      include: {
-        credentials: true
-      }
+      where: { id, organizationId }
     })
     
     if (!equipment) {
       return res.status(404).json({ error: 'Equipment not found' })
     }
     
-    // Remove password from response
-    const { credentials, ...rest } = equipment
-    res.json({ ...rest, hasCredentials: !!credentials.password })
+    res.json(equipment)
   } catch (error) {
     console.error('Get equipment error:', error)
     res.status(500).json({ error: 'Failed to get equipment' })
@@ -69,7 +52,11 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 router.post('/', async (req: AuthRequest, res: Response) => {
   try {
     const { organizationId } = req
-    const { name, type, ipAddress, port, location, model, credentials } = req.body
+    const { name, type, ipAddress, port, location, model, firmware } = req.body
+    
+    if (!organizationId) {
+      return res.status(400).json({ error: 'Organization ID required' })
+    }
     
     const equipment = await prisma.equipment.create({
       data: {
@@ -80,21 +67,10 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         port: port || 80,
         location,
         model,
+        firmware,
         status: 'unknown'
       }
     })
-    
-    // Save credentials if provided
-    if (credentials && equipment) {
-      await prisma.equipmentCredential.create({
-        data: {
-          equipmentId: equipment.id,
-          authType: credentials.authType || 'basic',
-          username: credentials.username,
-          password: credentials.password
-        }
-      })
-    }
     
     res.json(equipment)
   } catch (error) {
@@ -160,16 +136,13 @@ router.post('/:id/test', async (req: AuthRequest, res: Response) => {
     const { id } = req.params
     
     const equipment = await prisma.equipment.findFirst({
-      where: { id, organizationId },
-      include: { credentials: true }
+      where: { id, organizationId }
     })
     
     if (!equipment) {
       return res.status(404).json({ error: 'Equipment not found' })
     }
     
-    // TODO: Implementar teste real de conexão
-    // Por enquanto simula
     res.json({ 
       success: true, 
       message: 'Connection test simulated',
@@ -195,7 +168,6 @@ router.get('/:id/status', async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Equipment not found' })
     }
     
-    // TODO: Implementar verificação real de status
     res.json({ 
       status: equipment.status,
       lastCheck: equipment.lastCheck

@@ -162,7 +162,7 @@ router.post('/trigger/:id', async (req: AuthRequest, res: Response) => {
     }
     
     // Execute action based on type
-    let result = { success: true }
+    let result: { success: boolean; message?: string } = { success: true }
     
     if (automation.actionType === 'webhook_call') {
       // Make webhook call

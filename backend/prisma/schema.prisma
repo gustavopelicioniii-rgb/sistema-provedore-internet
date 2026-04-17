@@ -18,12 +18,11 @@ model Organization {
   id          String   @id @default(uuid())
   name        String
   slug        String   @unique
-  plan        String   @default("starter") // starter, professional, enterprise
+  plan        String   @default("starter")
   metadata    Json     @default("{}")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   users            User[]
   clients         Client[]
   contracts       Contract[]
@@ -35,7 +34,6 @@ model Organization {
   conversations   Conversation[]
   automations     Automation[]
   equipment       Equipment[]
-  equipmentCredentials EquipmentCredential[]
   ftthNodes       FtthNode[]
   technicians     Technician[]
   vehicles       Vehicle[]
@@ -43,7 +41,6 @@ model Organization {
   bankTransactions BankTransaction[]
   auditLogs      AuditLog[]
   automationLogs  AutomationLog[]
-  chatMessages    ChatMessage[]
 
   @@map("organizations")
 }
@@ -59,20 +56,19 @@ model User {
   fullName       String
   phone          String?
   avatarUrl      String?
-  role           String   @default("technician") // admin, manager, technician, financial, support
-  status         String   @default("active") // active, inactive
+  role           String   @default("technician")
+  status         String   @default("active")
   lastLoginAt    DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
+  ticketsAssigned Ticket[] @relation("TicketAssignedTo")
+  ticketsCreated Ticket[] @relation("TicketCreatedBy")
   serviceOrders ServiceOrder[]
-  tickets       Ticket[]
   auditLogs     AuditLog[]
-  chatMessages  ChatMessage[]
 
   @@map("users")
 }
@@ -86,14 +82,12 @@ model Client {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Dados pessoais
   name           String
   email          String?
   phone          String?
-  document       String? // CPF/CNPJ
-  documentType   String? // cpf, cnpj
+  document       String?
+  documentType   String?
   
-  // Endereço
   street         String?
   number         String?
   complement     String?
@@ -104,17 +98,14 @@ model Client {
   latitude       Float?
   longitude      Float?
   
-  // Status
-  status         String   @default("active") // active, suspended, cancelled, defaulting
+  status         String   @default("active")
   statusReason   String?
   
-  // Dados extras
   metadata       Json     @default("{}")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
   contracts      Contract[]
   invoices       Invoice[]
   tickets        Ticket[]
@@ -135,22 +126,21 @@ model Contract {
   planId         String
   plan           Plan @relation(fields: [planId], references: [id])
   
-  status         String   @default("active") // active, suspended, cancelled, awaiting_installation, awaiting_signature
+  status         String   @default("active")
   startDate      DateTime
   endDate        DateTime?
   
-  // PPPoE / Access
   username       String?
   password       String?
   
-  // Endereço instalação
   installationAddress String?
   
-  // Dados extras
   metadata       Json     @default("{}")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  invoices       Invoice[]
 
   @@map("contracts")
 }
@@ -161,18 +151,17 @@ model Plan {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
   name           String
-  downloadSpeed  Int      // em Mbps
-  uploadSpeed    Int      // em Mbps
+  downloadSpeed  Int
+  uploadSpeed    Int
   price          Decimal  @db.Decimal(10, 2)
   description    String?
-  technology     String   @default("fiber") // fiber, radio, cable
+  technology     String   @default("fiber")
   isActive       Boolean  @default(true)
   sortOrder      Int      @default(0)
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
   contracts      Contract[]
   
   @@map("plans")
@@ -191,28 +180,24 @@ model Invoice {
   client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   
   contractId     String?
-  contract       Contract? @relation(fields: [contractId], references: [id])
+  contract       Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
   
-  // Dados da fatura
   number         String?
-  referenceMonth String   // formato: YYYY-MM
+  referenceMonth String
   dueDate        DateTime
   amount         Decimal  @db.Decimal(10, 2)
   discount       Decimal  @default(0) @db.Decimal(10, 2)
   
-  // Status
-  status         String   @default("pending") // pending, paid, overdue, cancelled
+  status         String   @default("pending")
   paidAt         DateTime?
   paidAmount     Decimal? @db.Decimal(10, 2)
   paymentMethod   String?
-  paymentProof   String? // URL do comprovante
+  paymentProof   String?
   
-  // NF-e
   nfeNumber      String?
   nfeKey         String?
   nfeStatus      String?
   
-  // Pix/Boleto
   pixCode        String?
   barcode        String?
   
@@ -229,23 +214,19 @@ model BankTransaction {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Dados do banco
   bankCode       String?
   agency         String?
   account        String?
   
-  // Transação
   date           DateTime
   amount         Decimal  @db.Decimal(10, 2)
-  type           String   // credit, debit
+  type           String
   description    String?
   
-  // Categorização
   category       String?
-  invoiceId      String?  // Linked to Invoice if matched
-  status         String   @default("unmatched") // unmatched, matched, ignored
+  invoiceId      String?
+  status         String   @default("unmatched")
   
-  // Dados originais
   rawData        Json?
   
   createdAt      DateTime @default(now())
@@ -265,18 +246,16 @@ model Ticket {
   clientId       String?
   client         Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   
-  // Dados do ticket
   subject        String
   description    String?
-  priority       String   @default("medium") // low, medium, high, urgent
-  status        String   @default("open") // open, in_progress, waiting, resolved, closed
+  priority       String   @default("medium")
+  status         String   @default("open")
   
-  // Responsável
   assignedToId   String?
-  assignedTo     User? @relation(fields: [assignedToId], references: [id])
+  assignedTo     User? @relation("TicketAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
   
   createdById    String
-  createdBy      User @relation(fields: [createdById], references: [id])
+  createdBy      User? @relation("TicketCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
   
   resolvedAt     DateTime?
   closedAt       DateTime?
@@ -297,24 +276,21 @@ model ServiceOrder {
   clientId       String
   client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   
-  // Dados da OS
   number         String   @unique
-  type           String   // installation, maintenance, technical_visit, repair
-  status         String   @default("open") // open, in_progress, completed, cancelled
+  type           String
+  status         String   @default("open")
   priority       String   @default("medium")
   
   description    String?
   scheduledDate  DateTime?
   completedAt    DateTime?
   
-  // Técnico
   technicianId   String?
-  technician     Technician? @relation(fields: [technicianId], references: [id])
+  technician     Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
   
   createdById    String
-  createdBy      User @relation(fields: [createdById], references: [id])
+  createdBy      User @relation(fields: [createdById], references: [id], onDelete: Cascade)
   
-  // Endereço
   address        String?
   
   metadata       Json     @default("{}")
@@ -337,15 +313,13 @@ model Lead {
   clientId       String?  @unique
   client         Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
   
-  // Dados do lead
   name           String
   email          String?
   phone          String?
-  source         String?  // website, phone, whatsapp, referral
-  stage         String   @default("new") // new, contacted, qualified, proposal, won, lost
+  source         String?
+  stage          String   @default("new")
   pipeline       String   @default("default")
   
-  // Dados extras
   interest       String?
   budget         Decimal? @db.Decimal(10, 2)
   
@@ -369,59 +343,24 @@ model Conversation {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
-  // Identificação
-  channel        String   // whatsapp, instagram, telegram, email
-  externalId     String?  // ID no canal externo
+  channel        String
+  externalId     String?
   
-  // Cliente
   clientId       String?
   clientName     String?
   clientPhone    String?
   
-  // Status
-  status         String   @default("open") // open, waiting, resolved, closed
+  status         String   @default("open")
   
-  // Última mensagem
   lastMessageAt  DateTime?
   lastMessagePreview String?
   
-  // Metadata
   metadata       Json     @default("{}")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
-  messages       ChatMessage[]
-
   @@map("conversations")
-}
-
-model ChatMessage {
-  id             String   @id @default(uuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
-  // Mensagem
-  content        String
-  direction      String   // inbound, outbound
-  
-  // Remetente
-  senderId       String?  // User ID se interno
-  senderName     String?
-  
-  // Status
-  status         String   @default("sent") // sent, delivered, read, failed
-  
-  // Metadata
-  metadata       Json     @default("{}")
-  
-  createdAt      DateTime @default(now())
-
-  @@map("chat_messages")
 }
 
 // =====================================================
@@ -436,26 +375,22 @@ model Automation {
   name           String
   description    String?
   
-  // Tipo
-  category       String   // cobranca, atendimento, operacional
-  triggerType    String   // webhook, schedule, event
+  category       String
+  triggerType    String
   triggerConfig Json     @default("{}")
   
-  actionType     String   // webhook_call, whatsapp, email, internal
+  actionType     String
   actionConfig   Json     @default("{}")
   
-  // Status
   enabled        Boolean  @default(true)
   lastTriggeredAt DateTime?
   
-  // Webhook
   webhookUrl     String?
   webhookSecret  String?
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
   logs           AutomationLog[]
 
   @@map("automations")
@@ -469,7 +404,7 @@ model AutomationLog {
   automationId   String
   automation     Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
   
-  status         String   // success, error, skipped
+  status         String
   triggerPayload Json?
   responsePayload Json?
   errorMessage   String?
@@ -489,7 +424,7 @@ model Equipment {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
   name           String
-  type           String   // mikrotik, intelbras, huawei_olt, huawei_ont, nokia_olt, unifi, etc
+  type           String
   ipAddress      String
   port           Int      @default(80)
   
@@ -497,7 +432,7 @@ model Equipment {
   model          String?
   firmware       String?
   
-  status         String   @default("unknown") // online, offline, maintenance, unknown
+  status         String   @default("unknown")
   lastCheck      DateTime?
   
   metadata       Json     @default("{}")
@@ -505,33 +440,7 @@ model Equipment {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
-  credentials    EquipmentCredential[]
-
   @@map("equipments")
-}
-
-model EquipmentCredential {
-  id             String   @id @default(uuid())
-  equipmentId    String
-  equipment      Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  
-  authType       String   // basic, api_key, snmp
-  
-  // Dados criptografados (a aplicação deve criptografar)
-  username       String?
-  password       String?
-  apiKey         String?
-  snmpCommunity  String?
-  
-  extraData      Json     @default("{}")
-  
-  expiresAt      DateTime?
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@map("equipment_credentials")
 }
 
 // =====================================================
@@ -544,19 +453,15 @@ model FtthNode {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
   name           String
-  type           String   // olt, splitter, junction, terminal
+  type           String
   latitude       Float?
   longitude      Float?
   
-  // Hierarquia
   parentId       String?
-  parent         FtthNode? @relation("FtthNodeHierarchy", fields: [parentId], references: [id])
-  children       FtthNode[] @relation("FtthNodeHierarchy")
   
-  // Capacidade
   totalPorts     Int?
   usedPorts      Int      @default(0)
-  status         String   @default("active") // active, full, inactive
+  status         String   @default("active")
   
   metadata       Json     @default("{}")
   
@@ -580,13 +485,12 @@ model Technician {
   email          String?
   phone          String?
   
-  specialty      String   @default("general") // installation, maintenance, support, general
-  status         String   @default("available") // available, in_field, off, vacation
+  specialty      String   @default("general")
+  status         String   @default("available")
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
   serviceOrders  ServiceOrder[]
 
   @@map("technicians")
@@ -599,15 +503,13 @@ model Vehicle {
   
   plate          String
   model          String
-  type           String   // car, motorcycle, van
-  status         String   @default("available") // available, in_use, maintenance, decommissioned
+  type           String
+  status         String   @default("available")
   
-  // Dados
-  fuelLevel      Int?     // percentage
+  fuelLevel      Int?
   mileage        Int?
   driverName     String?
   
-  // Manutenção
   nextMaintenance DateTime?
   
   createdAt      DateTime @default(now())
@@ -631,8 +533,8 @@ model InventoryItem {
   
   quantity       Int      @default(0)
   minQuantity    Int      @default(0)
-  unit           String   @default("un") // un, m, kg, etc
-  price         Decimal? @db.Decimal(10, 2)
+  unit           String   @default("un")
+  price          Decimal? @db.Decimal(10, 2)
   
   location       String?
   
@@ -652,11 +554,11 @@ model AuditLog {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
   userId         String?
-  user           User? @relation(fields: [userId], references: [id])
+  user           User? @relation(fields: [userId], references: [id], onDelete: SetNull)
   userName       String?
   
-  action         String   // created, updated, deleted, etc
-  entityType     String   // client, invoice, etc
+  action         String
+  entityType     String
   entityId       String?
   
   details        Json?

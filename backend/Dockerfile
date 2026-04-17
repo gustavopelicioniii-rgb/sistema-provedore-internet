@@ -2,7 +2,7 @@
 # NetPulse Backend - Dockerfile
 # =============================================================================
 
-FROM node:20-alpine AS builder
+FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependências
-RUN npm ci
+RUN npm install
 
 # Copiar código fonte
 COPY . .
@@ -24,13 +24,13 @@ RUN npm run build
 # ---------------------------------------------------------------------------
 # Imagem de produção
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS production
+FROM node:20-bookworm AS production
 
 WORKDIR /app
 
 # Copiar package e instalar apenas production deps
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copiar Prisma Schema e Client gerado
 COPY prisma ./prisma
@@ -40,7 +40,7 @@ RUN npx prisma generate
 COPY --from=builder /app/dist ./dist
 
 # Usuário não-root
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+RUN groupadd --gid 1001 nodejs && useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nodejs
 USER nodejs
 
 # Expor porta

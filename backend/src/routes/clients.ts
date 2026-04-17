@@ -85,7 +85,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
     // Audit log
     await prisma.auditLog.create({
       data: {
-        organizationId,
+        organizationId: organizationId!,
         userId: req.userId,
         userName: req.userId,
         action: 'created',
@@ -124,7 +124,7 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
     // Audit log
     await prisma.auditLog.create({
       data: {
-        organizationId,
+        organizationId: organizationId!,
         userId: req.userId,
         action: 'updated',
         entityType: 'client',

@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Router } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { PrismaClient } from '@prisma/client'
@@ -31,17 +31,23 @@ app.locals.prisma = prisma
 // Public routes
 app.use('/api/auth', authRoutes)
 
-// Protected routes
-app.use('/api/clients', authMiddleware, clientRoutes)
-app.use('/api/contracts', authMiddleware, contractRoutes)
-app.use('/api/plans', authMiddleware, planRoutes)
-app.use('/api/invoices', authMiddleware, invoiceRoutes)
-app.use('/api/tickets', authMiddleware, ticketRoutes)
-app.use('/api/service-orders', authMiddleware, serviceOrderRoutes)
-app.use('/api/leads', authMiddleware, leadRoutes)
-app.use('/api/automations', authMiddleware, automationRoutes)
-app.use('/api/equipment', authMiddleware, equipmentRoutes)
-app.use('/api/dashboard', authMiddleware, dashboardRoutes)
+// Protected routes - cast to any to avoid TypeScript router type issues
+const protectedRoutes: Record<string, Router> = {
+  clients: clientRoutes,
+  contracts: contractRoutes,
+  plans: planRoutes,
+  invoices: invoiceRoutes,
+  tickets: ticketRoutes,
+  'service-orders': serviceOrderRoutes,
+  leads: leadRoutes,
+  automations: automationRoutes,
+  equipment: equipmentRoutes,
+  dashboard: dashboardRoutes
+}
+
+for (const [path, router] of Object.entries(protectedRoutes)) {
+  app.use(`/api/${path}`, authMiddleware, router as any)
+}
 
 // Health check
 app.get('/api/health', (req, res) => {

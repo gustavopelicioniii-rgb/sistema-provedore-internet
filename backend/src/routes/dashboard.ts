@@ -124,7 +124,7 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       activePlans: plans.length,
       
       // Chart data - monthly clients
-      monthlyData: await getMonthlyData(organizationId)
+      monthlyData: await getMonthlyData(organizationId!)
     })
   } catch (error) {
     console.error('Dashboard error:', error)

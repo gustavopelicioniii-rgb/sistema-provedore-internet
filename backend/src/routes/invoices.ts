@@ -43,9 +43,9 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
     
     const [total, pending, paid, overdue] = await Promise.all([
       prisma.invoice.aggregate({ where, _sum: { amount: true } }),
-      prisma.invoice.aggregate({ where, _sum: { amount: true }, where: { status: 'pending' } }),
-      prisma.invoice.aggregate({ where, _sum: { amount: true }, where: { status: 'paid' } }),
-      prisma.invoice.aggregate({ where, _sum: { amount: true }, where: { status: 'overdue' } })
+      prisma.invoice.aggregate({ where: { ...where, status: 'pending' }, _sum: { amount: true } }),
+      prisma.invoice.aggregate({ where: { ...where, status: 'paid' }, _sum: { amount: true } }),
+      prisma.invoice.aggregate({ where: { ...where, status: 'overdue' }, _sum: { amount: true } })
     ])
     
     res.json({
@@ -162,7 +162,7 @@ router.post('/generate', async (req: AuthRequest, res: Response) => {
       contracts.map(contract => 
         prisma.invoice.create({
           data: {
-            organizationId,
+            organizationId: organizationId!,
             clientId: contract.clientId,
             contractId: contract.id,
             referenceMonth,
