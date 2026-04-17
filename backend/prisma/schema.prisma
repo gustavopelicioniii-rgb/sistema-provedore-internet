@@ -1,0 +1,668 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// ORGANIZATIONS (Multi-tenant)
+// =====================================================
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  plan        String   @default("starter") // starter, professional, enterprise
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users            User[]
+  clients         Client[]
+  contracts       Contract[]
+  plans           Plan[]
+  invoices        Invoice[]
+  tickets         Ticket[]
+  serviceOrders   ServiceOrder[]
+  leads           Lead[]
+  conversations   Conversation[]
+  automations     Automation[]
+  equipment       Equipment[]
+  equipmentCredentials EquipmentCredential[]
+  ftthNodes       FtthNode[]
+  technicians     Technician[]
+  vehicles       Vehicle[]
+  inventoryItems  InventoryItem[]
+  bankTransactions BankTransaction[]
+  auditLogs      AuditLog[]
+  automationLogs  AutomationLog[]
+  chatMessages    ChatMessage[]
+
+  @@map("organizations")
+}
+
+// =====================================================
+// USERS & AUTH
+// =====================================================
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  passwordHash   String
+  fullName       String
+  phone          String?
+  avatarUrl      String?
+  role           String   @default("technician") // admin, manager, technician, financial, support
+  status         String   @default("active") // active, inactive
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  serviceOrders ServiceOrder[]
+  tickets       Ticket[]
+  auditLogs     AuditLog[]
+  chatMessages  ChatMessage[]
+
+  @@map("users")
+}
+
+// =====================================================
+// CLIENTS & CONTRACTS
+// =====================================================
+
+model Client {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Dados pessoais
+  name           String
+  email          String?
+  phone          String?
+  document       String? // CPF/CNPJ
+  documentType   String? // cpf, cnpj
+  
+  // Endereço
+  street         String?
+  number         String?
+  complement     String?
+  neighborhood   String?
+  city           String?
+  state          String?
+  zipCode        String?
+  latitude       Float?
+  longitude      Float?
+  
+  // Status
+  status         String   @default("active") // active, suspended, cancelled, defaulting
+  statusReason   String?
+  
+  // Dados extras
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  contracts      Contract[]
+  invoices       Invoice[]
+  tickets        Ticket[]
+  serviceOrders  ServiceOrder[]
+  leads          Lead?
+
+  @@map("clients")
+}
+
+model Contract {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  clientId       String
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  planId         String
+  plan           Plan @relation(fields: [planId], references: [id])
+  
+  status         String   @default("active") // active, suspended, cancelled, awaiting_installation, awaiting_signature
+  startDate      DateTime
+  endDate        DateTime?
+  
+  // PPPoE / Access
+  username       String?
+  password       String?
+  
+  // Endereço instalação
+  installationAddress String?
+  
+  // Dados extras
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("contracts")
+}
+
+model Plan {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name           String
+  downloadSpeed  Int      // em Mbps
+  uploadSpeed    Int      // em Mbps
+  price          Decimal  @db.Decimal(10, 2)
+  description    String?
+  technology     String   @default("fiber") // fiber, radio, cable
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  contracts      Contract[]
+  
+  @@map("plans")
+}
+
+// =====================================================
+// FINANCES
+// =====================================================
+
+model Invoice {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  clientId       String
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  contractId     String?
+  contract       Contract? @relation(fields: [contractId], references: [id])
+  
+  // Dados da fatura
+  number         String?
+  referenceMonth String   // formato: YYYY-MM
+  dueDate        DateTime
+  amount         Decimal  @db.Decimal(10, 2)
+  discount       Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Status
+  status         String   @default("pending") // pending, paid, overdue, cancelled
+  paidAt         DateTime?
+  paidAmount     Decimal? @db.Decimal(10, 2)
+  paymentMethod   String?
+  paymentProof   String? // URL do comprovante
+  
+  // NF-e
+  nfeNumber      String?
+  nfeKey         String?
+  nfeStatus      String?
+  
+  // Pix/Boleto
+  pixCode        String?
+  barcode        String?
+  
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("invoices")
+}
+
+model BankTransaction {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Dados do banco
+  bankCode       String?
+  agency         String?
+  account        String?
+  
+  // Transação
+  date           DateTime
+  amount         Decimal  @db.Decimal(10, 2)
+  type           String   // credit, debit
+  description    String?
+  
+  // Categorização
+  category       String?
+  invoiceId      String?  // Linked to Invoice if matched
+  status         String   @default("unmatched") // unmatched, matched, ignored
+  
+  // Dados originais
+  rawData        Json?
+  
+  createdAt      DateTime @default(now())
+
+  @@map("bank_transactions")
+}
+
+// =====================================================
+// TICKETS & SERVICE ORDERS
+// =====================================================
+
+model Ticket {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  clientId       String?
+  client         Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  
+  // Dados do ticket
+  subject        String
+  description    String?
+  priority       String   @default("medium") // low, medium, high, urgent
+  status        String   @default("open") // open, in_progress, waiting, resolved, closed
+  
+  // Responsável
+  assignedToId   String?
+  assignedTo     User? @relation(fields: [assignedToId], references: [id])
+  
+  createdById    String
+  createdBy      User @relation(fields: [createdById], references: [id])
+  
+  resolvedAt     DateTime?
+  closedAt       DateTime?
+  
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("tickets")
+}
+
+model ServiceOrder {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  clientId       String
+  client         Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Dados da OS
+  number         String   @unique
+  type           String   // installation, maintenance, technical_visit, repair
+  status         String   @default("open") // open, in_progress, completed, cancelled
+  priority       String   @default("medium")
+  
+  description    String?
+  scheduledDate  DateTime?
+  completedAt    DateTime?
+  
+  // Técnico
+  technicianId   String?
+  technician     Technician? @relation(fields: [technicianId], references: [id])
+  
+  createdById    String
+  createdBy      User @relation(fields: [createdById], references: [id])
+  
+  // Endereço
+  address        String?
+  
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("service_orders")
+}
+
+// =====================================================
+// CRM & LEADS
+// =====================================================
+
+model Lead {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  clientId       String?  @unique
+  client         Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  
+  // Dados do lead
+  name           String
+  email          String?
+  phone          String?
+  source         String?  // website, phone, whatsapp, referral
+  stage         String   @default("new") // new, contacted, qualified, proposal, won, lost
+  pipeline       String   @default("default")
+  
+  // Dados extras
+  interest       String?
+  budget         Decimal? @db.Decimal(10, 2)
+  
+  lostReason     String?
+  wonAt          DateTime?
+  
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("leads")
+}
+
+// =====================================================
+// CHAT & CONVERSATIONS
+// =====================================================
+
+model Conversation {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Identificação
+  channel        String   // whatsapp, instagram, telegram, email
+  externalId     String?  // ID no canal externo
+  
+  // Cliente
+  clientId       String?
+  clientName     String?
+  clientPhone    String?
+  
+  // Status
+  status         String   @default("open") // open, waiting, resolved, closed
+  
+  // Última mensagem
+  lastMessageAt  DateTime?
+  lastMessagePreview String?
+  
+  // Metadata
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  messages       ChatMessage[]
+
+  @@map("conversations")
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  // Mensagem
+  content        String
+  direction      String   // inbound, outbound
+  
+  // Remetente
+  senderId       String?  // User ID se interno
+  senderName     String?
+  
+  // Status
+  status         String   @default("sent") // sent, delivered, read, failed
+  
+  // Metadata
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+
+  @@map("chat_messages")
+}
+
+// =====================================================
+// AUTOMATIONS
+// =====================================================
+
+model Automation {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name           String
+  description    String?
+  
+  // Tipo
+  category       String   // cobranca, atendimento, operacional
+  triggerType    String   // webhook, schedule, event
+  triggerConfig Json     @default("{}")
+  
+  actionType     String   // webhook_call, whatsapp, email, internal
+  actionConfig   Json     @default("{}")
+  
+  // Status
+  enabled        Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  
+  // Webhook
+  webhookUrl     String?
+  webhookSecret  String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  logs           AutomationLog[]
+
+  @@map("automations")
+}
+
+model AutomationLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  automationId   String
+  automation     Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  
+  status         String   // success, error, skipped
+  triggerPayload Json?
+  responsePayload Json?
+  errorMessage   String?
+  
+  executedAt     DateTime @default(now())
+
+  @@map("automation_logs")
+}
+
+// =====================================================
+// EQUIPMENT
+// =====================================================
+
+model Equipment {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name           String
+  type           String   // mikrotik, intelbras, huawei_olt, huawei_ont, nokia_olt, unifi, etc
+  ipAddress      String
+  port           Int      @default(80)
+  
+  location       String?
+  model          String?
+  firmware       String?
+  
+  status         String   @default("unknown") // online, offline, maintenance, unknown
+  lastCheck      DateTime?
+  
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  credentials    EquipmentCredential[]
+
+  @@map("equipments")
+}
+
+model EquipmentCredential {
+  id             String   @id @default(uuid())
+  equipmentId    String
+  equipment      Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  
+  authType       String   // basic, api_key, snmp
+  
+  // Dados criptografados (a aplicação deve criptografar)
+  username       String?
+  password       String?
+  apiKey         String?
+  snmpCommunity  String?
+  
+  extraData      Json     @default("{}")
+  
+  expiresAt      DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("equipment_credentials")
+}
+
+// =====================================================
+// FTTH / REDE FIBRA
+// =====================================================
+
+model FtthNode {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name           String
+  type           String   // olt, splitter, junction, terminal
+  latitude       Float?
+  longitude      Float?
+  
+  // Hierarquia
+  parentId       String?
+  parent         FtthNode? @relation("FtthNodeHierarchy", fields: [parentId], references: [id])
+  children       FtthNode[] @relation("FtthNodeHierarchy")
+  
+  // Capacidade
+  totalPorts     Int?
+  usedPorts      Int      @default(0)
+  status         String   @default("active") // active, full, inactive
+  
+  metadata       Json     @default("{}")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("ftth_nodes")
+}
+
+// =====================================================
+// TECHNICIANS & VEHICLES
+// =====================================================
+
+model Technician {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  userId         String?  @unique
+  name           String
+  email          String?
+  phone          String?
+  
+  specialty      String   @default("general") // installation, maintenance, support, general
+  status         String   @default("available") // available, in_field, off, vacation
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  serviceOrders  ServiceOrder[]
+
+  @@map("technicians")
+}
+
+model Vehicle {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  plate          String
+  model          String
+  type           String   // car, motorcycle, van
+  status         String   @default("available") // available, in_use, maintenance, decommissioned
+  
+  // Dados
+  fuelLevel      Int?     // percentage
+  mileage        Int?
+  driverName     String?
+  
+  // Manutenção
+  nextMaintenance DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("vehicles")
+}
+
+// =====================================================
+// INVENTORY
+// =====================================================
+
+model InventoryItem {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  name           String
+  category       String?
+  sku            String?
+  
+  quantity       Int      @default(0)
+  minQuantity    Int      @default(0)
+  unit           String   @default("un") // un, m, kg, etc
+  price         Decimal? @db.Decimal(10, 2)
+  
+  location       String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("inventory_items")
+}
+
+// =====================================================
+// AUDIT LOG
+// =====================================================
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  userId         String?
+  user           User? @relation(fields: [userId], references: [id])
+  userName       String?
+  
+  action         String   // created, updated, deleted, etc
+  entityType     String   // client, invoice, etc
+  entityId       String?
+  
+  details        Json?
+  ipAddress      String?
+  
+  createdAt      DateTime @default(now())
+
+  @@map("audit_logs")
+}
