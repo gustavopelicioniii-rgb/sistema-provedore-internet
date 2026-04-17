@@ -1,0 +1,31 @@
+# NetPulse Backend - Systemd Service
+# =============================================================================
+# Instale com:
+#   sudo cp netpulse.service /etc/systemd/system/
+#   sudo systemctl enable netpulse
+#   sudo systemctl start netpulse
+# =============================================================================
+
+[Unit]
+Description=NetPulse Backend API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/netpulse/backend
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/netpulse/backend/.env
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/netpulse/backend
+
+[Install]
+WantedBy=multi-user.target
