@@ -344,15 +344,26 @@ export default function Automacoes() {
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="icon" variant="ghost" onClick={() => { setEditing(a); setFormOpen(true); }}>
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
-                        <Trash2 className="size-4" />
-                      </Button>
-                      <Switch checked={a.enabled} onCheckedChange={(enabled) => toggleAutomation.mutate({ id: a.id, enabled })} />
-                    </div>
+                    {/* Toggle ATIVADO/DESATIVADO - Grande e visível */}
+                    <button
+                      onClick={() => toggleAutomation.mutate({ id: a.id, enabled: !a.enabled })}
+                      className={`relative flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all shrink-0 ${
+                        a.enabled
+                          ? "bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border border-emerald-300"
+                          : "bg-muted hover:bg-muted/80 text-muted-foreground border border-transparent"
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${
+                        a.enabled ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
+                      }`} />
+                      {a.enabled ? "ATIVADA" : "DESATIVADA"}
+                    </button>
+                    <Button size="icon" variant="ghost" onClick={() => { setEditing(a); setFormOpen(true); }}>
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteAutomation.mutate(a.id)}>
+                      <Trash2 className="size-4" />
+                    </Button>
                   </div>
 
                   {/* Webhook info */}
